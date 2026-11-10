@@ -7,6 +7,19 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     const photoUrl = vehicle.photo ? `/storage/${vehicle.photo}` : null;
 
     const [showLogModal, setShowLogModal] = useState(false);
+    const [showDeleteLogModal, setShowDeleteLogModal] = useState(false);
+    const [logToDelete, setLogToDelete] = useState(null);
+
+    // Inline row editing states
+    const [editingLogId, setEditingLogId] = useState(null);
+    const [inlineData, setInlineData] = useState({
+        services: '',
+        odo: '',
+        date: '',
+        cost: '',
+        notes: '',
+    });
+
     const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [showOdoModal, setShowOdoModal] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
@@ -38,7 +51,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         });
     };
     
-    // Multi-select dropdown state
+    // Multi-select dropdown state for filtering
     const [selectedServiceFilters, setSelectedServiceFilters] = useState([]);
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
     const dropdownRef = useRef(null);
@@ -69,7 +82,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         notes: '',
     });
 
-    const openModal = () => {
+    const openCreateModal = () => {
         clearErrors();
         setData({
             services: [],
@@ -86,6 +99,57 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         reset();
     };
 
+    // Start inline editing for a log row
+    const startEditingRow = (log) => {
+        setEditingLogId(log.id);
+        const currentService = (log.services && log.services.length > 0) ? log.services[0] : (servicePreferences[0]?.name || '');
+        setInlineData({
+            services: currentService,
+            odo: log.odo || '',
+            date: log.date || getPhilippineToday(),
+            cost: log.cost !== null && log.cost !== undefined ? log.cost : '',
+            notes: log.notes || '',
+        });
+    };
+
+    const cancelEditingRow = () => {
+        setEditingLogId(null);
+    };
+
+    const saveEditingRow = (logId) => {
+        router.put(`/maintenance-logs/${logId}`, {
+            services: [inlineData.services], // Backend expects array of services
+            odo: inlineData.odo,
+            date: inlineData.date,
+            cost: inlineData.cost,
+            notes: inlineData.notes,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setEditingLogId(null);
+                setToastMessage('Maintenance log updated successfully!');
+            },
+        });
+    };
+
+    const promptDeleteLog = (log) => {
+        setLogToDelete(log);
+        setShowDeleteLogModal(true);
+    };
+
+    const confirmDeleteLog = () => {
+        if (logToDelete) {
+            router.delete(`/maintenance-logs/${logToDelete.id}`, {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setShowDeleteLogModal(false);
+                    setLogToDelete(null);
+                    setToastMessage('Maintenance log deleted successfully!');
+                },
+            });
+        }
+    };
+
     const handleServiceToggle = (serviceName) => {
         if (data.services.includes(serviceName)) {
             setData('services', data.services.filter(s => s !== serviceName));
@@ -96,7 +160,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const handleSubmitLog = (e) => {
         e.preventDefault();
-        
         post(`/vehicles/${vehicle.id}/maintenance-logs`, {
             preserveScroll: true,
             onSuccess: () => {
@@ -487,33 +550,163 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         <th style={styles.th}>ODO</th>
                                         <th style={styles.th}>Cost</th>
                                         <th style={styles.th}>Notes</th>
+                                        <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredLogs.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" style={styles.emptyTableCell}>
+                                            <td colSpan="6" style={styles.emptyTableCell}>
                                                 No maintenance records found.
                                             </td>
                                         </tr>
                                     ) : (
-                                        filteredLogs.map((log) => (
-                                            <tr key={log.id} style={styles.tableBodyRow}>
-                                                <td style={styles.td}>{formatDateToReadable(log.date)}</td>
-                                                <td style={styles.td}>
-                                                    <div style={styles.serviceBadgeList}>
-                                                        {log.services && log.services.map((srv, i) => (
-                                                            <span key={i} style={styles.serviceBadge}>{srv}</span>
-                                                        ))}
-                                                    </div>
-                                                </td>
-                                                <td style={styles.td}>{log.odo}</td>
-                                                <td style={styles.td}>
-                                                    {log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
-                                                </td>
-                                                <td style={styles.td}>{log.notes || '—'}</td>
-                                            </tr>
-                                        ))
+                                        filteredLogs.map((log) => {
+                                            const isEditing = editingLogId === log.id;
+                                            return (
+                                                <tr key={log.id} style={styles.tableBodyRow}>
+                                                    {/* Date */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <input 
+                                                                type="date"
+                                                                value={inlineData.date}
+                                                                onChange={e => setInlineData({ ...inlineData, date: e.target.value })}
+                                                                style={styles.inlineInput}
+                                                            />
+                                                        ) : (
+                                                            formatDateToReadable(log.date)
+                                                        )}
+                                                    </td>
+
+                                                    {/* Service */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <select
+                                                                value={inlineData.services}
+                                                                onChange={e => setInlineData({ ...inlineData, services: e.target.value })}
+                                                                style={styles.inlineSelect}
+                                                            >
+                                                                {servicePreferences.map((srv, i) => (
+                                                                    <option key={i} value={srv.name}>{srv.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        ) : (
+                                                            <div style={styles.serviceBadgeList}>
+                                                                {log.services && log.services.map((srv, i) => (
+                                                                    <span key={i} style={styles.serviceBadge}>{srv}</span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </td>
+
+                                                    {/* ODO */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <input 
+                                                                type="text"
+                                                                value={inlineData.odo}
+                                                                onChange={e => {
+                                                                    const val = e.target.value;
+                                                                    if (/^\d*$/.test(val)) setInlineData({ ...inlineData, odo: val });
+                                                                }}
+                                                                style={styles.inlineInput}
+                                                            />
+                                                        ) : (
+                                                            log.odo
+                                                        )}
+                                                    </td>
+
+                                                    {/* Cost */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <input 
+                                                                type="text"
+                                                                value={inlineData.cost}
+                                                                onChange={e => {
+                                                                    const val = e.target.value;
+                                                                    if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
+                                                                }}
+                                                                style={styles.inlineInput}
+                                                            />
+                                                        ) : (
+                                                            log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
+                                                        )}
+                                                    </td>
+
+                                                    {/* Notes */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <input 
+                                                                type="text"
+                                                                value={inlineData.notes}
+                                                                onChange={e => setInlineData({ ...inlineData, notes: e.target.value })}
+                                                                style={styles.inlineInput}
+                                                            />
+                                                        ) : (
+                                                            log.notes || '—'
+                                                        )}
+                                                    </td>
+
+                                                    {/* Actions */}
+                                                    <td style={{ ...styles.td, textAlign: 'right' }}>
+                                                        <div style={styles.rowActions}>
+                                                            {isEditing ? (
+                                                                <>
+                                                                    <button 
+                                                                        onClick={() => saveEditingRow(log.id)} 
+                                                                        style={styles.iconBtnSave}
+                                                                        title="Save changes"
+                                                                        type="button"
+                                                                    >
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                            polyline points="20 6 9 17 4 12"
+                                                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                                                        </svg>
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={cancelEditingRow} 
+                                                                        style={styles.iconBtnCancel}
+                                                                        title="Cancel"
+                                                                        type="button"
+                                                                    >
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                                        </svg>
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <button 
+                                                                        onClick={() => startEditingRow(log)} 
+                                                                        style={styles.iconBtnEdit}
+                                                                        title="Edit record"
+                                                                        type="button"
+                                                                    >
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => promptDeleteLog(log)} 
+                                                                        style={styles.iconBtnDelete}
+                                                                        title="Delete record"
+                                                                        type="button"
+                                                                    >
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>
@@ -522,7 +715,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
                     {/* Sticky Floating Plus Action Button */}
                     <button 
-                        onClick={openModal} 
+                        onClick={openCreateModal} 
                         style={styles.floatingBtn}
                         title="Add Maintenance Log"
                         type="button"
@@ -691,6 +884,25 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </div>
                     )}
 
+                    {/* Delete Log Confirmation Modal */}
+                    {showDeleteLogModal && (
+                        <div style={styles.modalOverlay} className="animated-overlay">
+                            <div style={styles.modalBox} className="animated-modal">
+                                <div style={styles.modalHeader}>
+                                    <h3 style={styles.modalTitle}>Delete Maintenance Log</h3>
+                                    <button onClick={() => setShowDeleteLogModal(false)} style={styles.closeBtn} type="button">✕</button>
+                                </div>
+                                <p style={{ color: '#c9d1d9', fontSize: '13px', margin: '8px 0 16px 0' }}>
+                                    Are you sure you want to delete this maintenance record? This action cannot be undone.
+                                </p>
+                                <div style={styles.modalActions}>
+                                    <button type="button" onClick={() => setShowDeleteLogModal(false)} style={styles.cancelBtn}>Cancel</button>
+                                    <button type="button" onClick={confirmDeleteLog} style={styles.deleteCardBtn}>Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
         </div>
@@ -823,6 +1035,38 @@ const styles = {
     emptyTableCell: { padding: '24px', textAlign: 'center', color: '#8b949e', fontStyle: 'italic' },
     serviceBadgeList: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
     serviceBadge: { backgroundColor: '#1f6feb22', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600' },
+    
+    // Inline edit form controls
+    inlineInput: {
+        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px',
+        padding: '5px 8px', color: '#ffffff', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box'
+    },
+    inlineSelect: {
+        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px',
+        padding: '5px 8px', color: '#ffffff', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box'
+    },
+
+    rowActions: { display: 'flex', justifyContent: 'flex-end', gap: '6px', alignItems: 'center' },
+    iconBtnEdit: {
+        backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d',
+        width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center',
+        alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease'
+    },
+    iconBtnDelete: {
+        backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d',
+        width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center',
+        alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease'
+    },
+    iconBtnSave: {
+        backgroundColor: '#1f6feb22', color: '#3b82f6', border: '1px solid #30363d',
+        width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center',
+        alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease'
+    },
+    iconBtnCancel: {
+        backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d',
+        width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center',
+        alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease'
+    },
 
     // Fixed Sticky Floating Plus Button
     floatingBtn: {
@@ -866,4 +1110,5 @@ const styles = {
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #21262d', paddingTop: '14px', marginTop: '4px' },
     cancelBtn: { backgroundColor: 'transparent', color: '#8b949e', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
     saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    deleteCardBtn: { backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
 };
