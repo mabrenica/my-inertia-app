@@ -154,17 +154,53 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             nextDateStr = d.toISOString().split('T')[0];
         }
 
+        let nextOdoVal = null;
         let nextOdoStr = '—';
         if (highestOdo !== null && intervalOdo !== null) {
-            nextOdoStr = (highestOdo + intervalOdo).toLocaleString();
+            nextOdoVal = highestOdo + intervalOdo;
+            nextOdoStr = nextOdoVal.toLocaleString();
+        }
+
+        // --- Status Tag Calculations ---
+        const todayStr = getPhilippineToday();
+        const todayObj = new Date(todayStr);
+
+        // Date status tag calculation
+        let dateTag = null; // 'past_due' or 'upcoming'
+        if (nextDateStr !== '—') {
+            const targetDateObj = new Date(nextDateStr);
+            const diffTime = targetDateObj - todayObj;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) {
+                dateTag = 'past_due';
+            } else if (diffDays <= 15) {
+                dateTag = 'upcoming';
+            }
+        }
+
+        // ODO status tag calculation
+        let odoTag = null; // 'past_due' or 'upcoming'
+        const currentOdoNum = vehicle.current_odo !== null && vehicle.current_odo !== undefined && vehicle.current_odo !== '' 
+            ? Number(vehicle.current_odo) 
+            : null;
+
+        if (nextOdoVal !== null && currentOdoNum !== null) {
+            if (nextOdoVal <= currentOdoNum) {
+                odoTag = 'past_due';
+            } else if (nextOdoVal - currentOdoNum <= 1000) {
+                odoTag = 'upcoming';
+            }
         }
 
         return {
             name,
-            latestDate: latestDate || 'Never',
-            highestOdo: highestOdo !== null ? highestOdo.toLocaleString() : 'Never',
             nextDate: formatDateToReadable(nextDateStr),
+            nextDateRaw: nextDateStr,
+            dateTag,
             nextOdo: nextOdoStr,
+            nextOdoVal,
+            odoTag,
         };
     });
 
@@ -347,8 +383,28 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                 <td style={styles.td}>
                                                     <span style={styles.serviceBadge}>{item.name}</span>
                                                 </td>
-                                                <td style={styles.td}>{item.nextDate}</td>
-                                                <td style={styles.td}>{item.nextOdo}</td>
+                                                <td style={styles.td}>
+                                                    <div style={styles.cellWithTag}>
+                                                        <span>{item.nextDate}</span>
+                                                        {item.dateTag === 'past_due' && (
+                                                            <span style={styles.tagPastDue}>Past Due</span>
+                                                        )}
+                                                        {item.dateTag === 'upcoming' && (
+                                                            <span style={styles.tagUpcoming}>Upcoming</span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td style={styles.td}>
+                                                    <div style={styles.cellWithTag}>
+                                                        <span>{item.nextOdo}</span>
+                                                        {item.odoTag === 'past_due' && (
+                                                            <span style={styles.tagPastDue}>Past Due</span>
+                                                        )}
+                                                        {item.odoTag === 'upcoming' && (
+                                                            <span style={styles.tagUpcoming}>Upcoming</span>
+                                                        )}
+                                                    </div>
+                                                </td>
                                             </tr>
                                         ))
                                     )}
@@ -694,6 +750,19 @@ const styles = {
         display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s ease',
     },
     lastUpdatedText: { color: '#8b949e', fontSize: '11px', fontStyle: 'italic' },
+
+    // Status Tags Styles
+    cellWithTag: { display: 'flex', alignItems: 'center', gap: '10px' },
+    tagUpcoming: {
+        backgroundColor: 'rgba(210, 153, 34, 0.15)', color: '#d29922',
+        border: '1px solid rgba(210, 153, 34, 0.3)', padding: '2px 6px',
+        borderRadius: '4px', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.4px'
+    },
+    tagPastDue: {
+        backgroundColor: 'rgba(248, 81, 73, 0.15)', color: '#f85149',
+        border: '1px solid rgba(248, 81, 73, 0.3)', padding: '2px 6px',
+        borderRadius: '4px', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.4px'
+    },
 
     // Full Size Photo Modal Styles
     fullPhotoBox: {
