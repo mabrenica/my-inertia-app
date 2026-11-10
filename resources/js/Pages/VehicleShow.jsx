@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useForm } from '@inertiajs/react';
+import { Link, useForm, router } from '@inertiajs/react';
 import Sidebar from '@/Components/Sidebar';
 import Toast from '@/Components/Toast';
 
@@ -9,6 +9,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     const [showLogModal, setShowLogModal] = useState(false);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
+
+    // Editing & Deleting States
+    const [editingLogId, setEditingLogId] = useState(null);
+    const [editForm, setEditForm] = useState({ date: '', service: '', odo: '', cost: '', notes: '' });
+    const [deleteModalLog, setDeleteModalLog] = useState(null);
     
     // Multi-select dropdown state
     const [selectedServiceFilters, setSelectedServiceFilters] = useState([]);
@@ -77,6 +82,55 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         });
     };
 
+    // Inline Edit Handlers
+    const startEditing = (log) => {
+        setEditingLogId(log.id);
+        setEditForm({
+            date: log.date || '',
+            service: log.services && log.services.length > 0 ? log.services[0] : (servicePreferences[0]?.name || ''),
+            odo: log.odo || '',
+            cost: log.cost || '',
+            notes: log.notes || '',
+        });
+    };
+
+    const cancelEditing = () => {
+        setEditingLogId(null);
+        setEditForm({ date: '', service: '', odo: '', cost: '', notes: '' });
+    };
+
+    const saveEditing = (logId) => {
+        router.put(`/maintenance-logs/${logId}`, {
+            services: editForm.service ? [editForm.service] : [],
+            odo: editForm.odo,
+            date: editForm.date,
+            cost: editForm.cost,
+            notes: editForm.notes,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setEditingLogId(null);
+                setToastMessage('Maintenance log updated successfully!');
+            }
+        });
+    };
+
+    // Delete Handlers
+    const confirmDelete = (log) => {
+        setDeleteModalLog(log);
+    };
+
+    const handleDelete = () => {
+        if (!deleteModalLog) return;
+        router.delete(`/maintenance-logs/${deleteModalLog.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setDeleteModalLog(null);
+                setToastMessage('Maintenance log deleted successfully!');
+            }
+        });
+    };
+
     // Helper to format date string to "Nov 10, 2026" style
     const formatDateToReadable = (dateStr) => {
         if (!dateStr || dateStr === '—' || dateStr === 'Never') return dateStr;
@@ -93,27 +147,23 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         const intervalDays = pref.interval_days ? Number(pref.interval_days) : null;
         const intervalOdo = pref.interval_odo ? Number(pref.interval_odo) : null;
 
-        // Find all logs containing this service
         const matchingLogs = maintenanceLogs.filter(log => log.services && log.services.includes(name));
 
         let latestDate = null;
         let highestOdo = null;
 
         if (matchingLogs.length > 0) {
-            // Get latest date
             const dates = matchingLogs.map(l => l.date).filter(Boolean).sort();
             if (dates.length > 0) {
                 latestDate = dates[dates.length - 1];
             }
 
-            // Get highest ODO
             const odos = matchingLogs.map(l => Number(l.odo)).filter(o => !isNaN(o));
             if (odos.length > 0) {
                 highestOdo = Math.max(...odos);
             }
         }
 
-        // Calculate Next Date
         let nextDateStr = '—';
         if (latestDate && intervalDays) {
             const d = new Date(latestDate);
@@ -121,7 +171,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             nextDateStr = d.toISOString().split('T')[0];
         }
 
-        // Calculate Next ODO
         let nextOdoStr = '—';
         if (highestOdo !== null && intervalOdo !== null) {
             nextOdoStr = (highestOdo + intervalOdo).toLocaleString();
@@ -136,7 +185,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         };
     });
 
-    // Extract unique services from maintenance logs for filter
     const loggedServicesList = Array.from(
         new Set(
             maintenanceLogs.flatMap(log => log.services || [])
@@ -156,7 +204,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         setSelectedServiceFilters([]);
     };
 
-    // Filter logs: match if log includes ANY of the selected filter services
     const filteredLogs = maintenanceLogs.filter(log => {
         if (selectedServiceFilters.length === 0) return true;
         return log.services && log.services.some(s => selectedServiceFilters.includes(s));
@@ -375,33 +422,163 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         <th style={styles.th}>ODO</th>
                                         <th style={styles.th}>Cost</th>
                                         <th style={styles.th}>Notes</th>
+                                        <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredLogs.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" style={styles.emptyTableCell}>
+                                            <td colSpan="6" style={styles.emptyTableCell}>
                                                 No maintenance records found.
                                             </td>
                                         </tr>
                                     ) : (
-                                        filteredLogs.map((log) => (
-                                            <tr key={log.id} style={styles.tableBodyRow}>
-                                                <td style={styles.td}>{formatDateToReadable(log.date)}</td>
-                                                <td style={styles.td}>
-                                                    <div style={styles.serviceBadgeList}>
-                                                        {log.services && log.services.map((srv, i) => (
-                                                            <span key={i} style={styles.serviceBadge}>{srv}</span>
-                                                        ))}
-                                                    </div>
-                                                </td>
-                                                <td style={styles.td}>{log.odo}</td>
-                                                <td style={styles.td}>
-                                                    {log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
-                                                </td>
-                                                <td style={styles.td}>{log.notes || '—'}</td>
-                                            </tr>
-                                        ))
+                                        filteredLogs.map((log) => {
+                                            const isEditing = editingLogId === log.id;
+                                            return (
+                                                <tr key={log.id} style={styles.tableBodyRow}>
+                                                    {/* Date Column */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <input 
+                                                                type="date"
+                                                                value={editForm.date}
+                                                                onChange={e => setEditForm({ ...editForm, date: e.target.value })}
+                                                                style={styles.inlineInput}
+                                                            />
+                                                        ) : (
+                                                            formatDateToReadable(log.date)
+                                                        )}
+                                                    </td>
+
+                                                    {/* Service Column */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <select
+                                                                value={editForm.service}
+                                                                onChange={e => setEditForm({ ...editForm, service: e.target.value })}
+                                                                style={styles.inlineSelect}
+                                                            >
+                                                                <option value="">Select Service</option>
+                                                                {servicePreferences.map((pref, pIdx) => (
+                                                                    <option key={pIdx} value={pref.name}>{pref.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        ) : (
+                                                            <div style={styles.serviceBadgeList}>
+                                                                {log.services && log.services.map((srv, i) => (
+                                                                    <span key={i} style={styles.serviceBadge}>{srv}</span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </td>
+
+                                                    {/* ODO Column */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <input 
+                                                                type="text"
+                                                                value={editForm.odo}
+                                                                onChange={e => {
+                                                                    const val = e.target.value;
+                                                                    if (/^\d*$/.test(val)) setEditForm({ ...editForm, odo: val });
+                                                                }}
+                                                                style={styles.inlineInput}
+                                                            />
+                                                        ) : (
+                                                            log.odo
+                                                        )}
+                                                    </td>
+
+                                                    {/* Cost Column */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <input 
+                                                                type="text"
+                                                                value={editForm.cost}
+                                                                onChange={e => {
+                                                                    const val = e.target.value;
+                                                                    if (/^\d*\.?\d*$/.test(val)) setEditForm({ ...editForm, cost: val });
+                                                                }}
+                                                                style={styles.inlineInput}
+                                                            />
+                                                        ) : (
+                                                            log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
+                                                        )}
+                                                    </td>
+
+                                                    {/* Notes Column */}
+                                                    <td style={styles.td}>
+                                                        {isEditing ? (
+                                                            <input 
+                                                                type="text"
+                                                                value={editForm.notes}
+                                                                onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
+                                                                style={styles.inlineInput}
+                                                            />
+                                                        ) : (
+                                                            log.notes || '—'
+                                                        )}
+                                                    </td>
+
+                                                    {/* Actions Column */}
+                                                    <td style={{ ...styles.td, textAlign: 'right' }}>
+                                                        <div style={styles.actionIconsGroup}>
+                                                            {isEditing ? (
+                                                                <>
+                                                                    <button 
+                                                                        onClick={() => saveEditing(log.id)}
+                                                                        style={styles.iconActionBtn}
+                                                                        title="Save changes"
+                                                                        type="button"
+                                                                    >
+                                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#238636" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                                                        </svg>
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={cancelEditing}
+                                                                        style={styles.iconActionBtn}
+                                                                        title="Cancel"
+                                                                        type="button"
+                                                                    >
+                                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b949e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                                        </svg>
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <button 
+                                                                        onClick={() => startEditing(log)}
+                                                                        style={styles.iconActionBtn}
+                                                                        title="Edit log"
+                                                                        type="button"
+                                                                    >
+                                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b949e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => confirmDelete(log)}
+                                                                        style={styles.iconActionDeleteBtn}
+                                                                        title="Delete log"
+                                                                        type="button"
+                                                                    >
+                                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f85149" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>
@@ -427,6 +604,26 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             <div style={styles.fullPhotoBox} className="animated-modal" onClick={e => e.stopPropagation()}>
                                 <button onClick={() => setShowPhotoModal(false)} style={styles.closePhotoBtn} type="button">✕</button>
                                 <img src={photoUrl} alt={vehicle.make} style={styles.fullImage} />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Delete Confirmation Modal */}
+                    {deleteModalLog && (
+                        <div style={styles.modalOverlay} className="animated-overlay">
+                            <div style={styles.confirmModalBox} className="animated-modal">
+                                <h3 style={styles.modalTitle}>Delete Maintenance Log</h3>
+                                <p style={styles.confirmText}>
+                                    Are you sure you want to delete this maintenance record? This action cannot be undone.
+                                </p>
+                                <div style={styles.modalActions}>
+                                    <button onClick={() => setDeleteModalLog(null)} style={styles.cancelBtn} type="button">
+                                        Cancel
+                                    </button>
+                                    <button onClick={handleDelete} style={styles.deleteConfirmBtn} type="button">
+                                        Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -634,7 +831,6 @@ const styles = {
     dropdownItemLabel: {
         display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px',
         color: '#c9d1d9', fontSize: '12px', cursor: 'pointer',
-        ':hover': { backgroundColor: '#21262d' }
     },
     dropdownCheckbox: { accentColor: '#1f6feb', width: '13px', height: '13px', cursor: 'pointer' },
     dropdownEmpty: { padding: '12px', textAlign: 'center', color: '#8b949e', fontSize: '12px', fontStyle: 'italic' },
@@ -649,6 +845,24 @@ const styles = {
     emptyTableCell: { padding: '24px', textAlign: 'center', color: '#8b949e', fontStyle: 'italic' },
     serviceBadgeList: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
     serviceBadge: { backgroundColor: '#1f6feb22', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600' },
+
+    actionIconsGroup: { display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' },
+    iconActionBtn: {
+        backgroundColor: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
+        width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+    },
+    iconActionDeleteBtn: {
+        backgroundColor: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
+        width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+    },
+    inlineInput: {
+        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px',
+        padding: '4px 8px', color: '#ffffff', fontSize: '12px', width: '100%', outline: 'none', boxSizing: 'border-box'
+    },
+    inlineSelect: {
+        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px',
+        padding: '4px 8px', color: '#ffffff', fontSize: '12px', width: '100%', outline: 'none', boxSizing: 'border-box'
+    },
 
     // Fixed Sticky Floating Plus Button
     floatingBtn: {
@@ -667,6 +881,12 @@ const styles = {
         padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
         display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto',
     },
+    confirmModalBox: {
+        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px',
+        padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
+        display: 'flex', flexDirection: 'column', gap: '16px',
+    },
+    confirmText: { color: '#8b949e', fontSize: '13px', lineHeight: '1.5', margin: 0 },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     modalTitle: { color: '#ffffff', fontSize: '16px', fontWeight: '600', margin: 0 },
     closeBtn: { background: 'none', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer' },
@@ -692,4 +912,5 @@ const styles = {
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #21262d', paddingTop: '14px', marginTop: '4px' },
     cancelBtn: { backgroundColor: 'transparent', color: '#8b949e', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
     saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    deleteConfirmBtn: { backgroundColor: '#f85149', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
 };

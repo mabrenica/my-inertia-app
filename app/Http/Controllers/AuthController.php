@@ -255,4 +255,44 @@ class AuthController extends Controller
 
         return redirect()->back()->with('success', 'Maintenance logs added successfully!');
     }
+
+    public function updateMaintenanceLog(Request $request, $id)
+    {
+        $log = VehicleMaintenanceLog::findOrFail($id);
+
+        if ($log->vehicle->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'services' => 'required|array|min:1',
+            'odo' => 'required|string',
+            'date' => 'required|date',
+            'cost' => 'nullable|numeric',
+            'notes' => 'nullable|string',
+        ]);
+
+        $log->update([
+            'services' => $request->services,
+            'odo' => $request->odo,
+            'date' => $request->date,
+            'cost' => $request->cost,
+            'notes' => $request->notes,
+        ]);
+
+        return redirect()->back()->with('success', 'Maintenance log updated successfully!');
+    }
+
+    public function destroyMaintenanceLog($id)
+    {
+        $log = VehicleMaintenanceLog::findOrFail($id);
+
+        if ($log->vehicle->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $log->delete();
+
+        return redirect()->back()->with('success', 'Maintenance log deleted successfully!');
+    }
 }

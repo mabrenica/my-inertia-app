@@ -67,4 +67,6 @@ Route::get('/vehicles/{vehicle}', [AuthController::class, 'showVehicle'])->middl
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/vehicles/{vehicle}/maintenance-logs', [AuthController::class, 'storeMaintenanceLog']);
+    Route::put('/maintenance-logs/{id}', [AuthController::class, 'updateMaintenanceLog']);
+    Route::delete('/maintenance-logs/{id}', [AuthController::class, 'destroyMaintenanceLog']);
 });
