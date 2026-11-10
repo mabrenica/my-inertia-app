@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useForm, router } from '@inertiajs/react';
 import Sidebar from '@/Components/Sidebar';
 import Toast from '@/Components/Toast';
+import Breadcrumb from '@/Components/Breadcrumb';
 
 export default function VehicleShow({ vehicle, servicePreferences = [], maintenanceLogs = [] }) {
     const photoUrl = vehicle.photo ? `/storage/${vehicle.photo}` : null;
@@ -10,7 +11,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     const [showDeleteLogModal, setShowDeleteLogModal] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
 
-    // Inline row editing states
     const [editingLogId, setEditingLogId] = useState(null);
     const [inlineData, setInlineData] = useState({
         services: '',
@@ -24,7 +24,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     const [showOdoModal, setShowOdoModal] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
 
-    // ODO Update Form
     const { data: odoData, setData: setOdoData, put: putOdo, processing: odoProcessing, errors: odoErrors, reset: resetOdo, clearErrors: clearOdoErrors } = useForm({
         current_odo: vehicle.current_odo || '',
     });
@@ -51,12 +50,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         });
     };
     
-    // Multi-select dropdown state for filtering
     const [selectedServiceFilters, setSelectedServiceFilters] = useState([]);
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
     const dropdownRef = useRef(null);
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -67,7 +64,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Get today's date in Philippine time (YYYY-MM-DD)
     const getPhilippineToday = () => {
         const options = { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' };
         const formatter = new Intl.DateTimeFormat('en-CA', options);
@@ -99,7 +95,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         reset();
     };
 
-    // Start inline editing for a log row
     const startEditingRow = (log) => {
         setEditingLogId(log.id);
         const currentService = (log.services && log.services.length > 0) ? log.services[0] : (servicePreferences[0]?.name || '');
@@ -118,7 +113,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const saveEditingRow = (logId) => {
         router.put(`/maintenance-logs/${logId}`, {
-            services: [inlineData.services], // Backend expects array of services
+            services: [inlineData.services],
             odo: inlineData.odo,
             date: inlineData.date,
             cost: inlineData.cost,
@@ -169,7 +164,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         });
     };
 
-    // Helper to format date string to "Nov 10, 2026" style
     const formatDateToReadable = (dateStr) => {
         if (!dateStr || dateStr === '—' || dateStr === 'Never') return dateStr;
         const [year, month, day] = dateStr.split('-');
@@ -179,7 +173,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
-    // Format timestamp for ODO last updated date
     const formatTimestampToReadable = (timestamp) => {
         if (!timestamp) return null;
         const dateObj = new Date(timestamp);
@@ -187,7 +180,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
-    // Calculate Next Schedule for each service preference
     const serviceScheduleStatus = servicePreferences.map(pref => {
         const name = pref.name;
         const intervalDays = pref.interval_days ? Number(pref.interval_days) : null;
@@ -200,14 +192,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
         if (matchingLogs.length > 0) {
             const dates = matchingLogs.map(l => l.date).filter(Boolean).sort();
-            if (dates.length > 0) {
-                latestDate = dates[dates.length - 1];
-            }
+            if (dates.length > 0) latestDate = dates[dates.length - 1];
 
             const odos = matchingLogs.map(l => Number(l.odo)).filter(o => !isNaN(o));
-            if (odos.length > 0) {
-                highestOdo = Math.max(...odos);
-            }
+            if (odos.length > 0) highestOdo = Math.max(...odos);
         }
 
         let nextDateStr = '—';
@@ -224,36 +212,27 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             nextOdoStr = nextOdoVal.toLocaleString();
         }
 
-        // --- Status Tag Calculations ---
         const todayStr = getPhilippineToday();
         const todayObj = new Date(todayStr);
 
-        // Date status tag calculation
-        let dateTag = null; // 'past_due' or 'upcoming'
+        let dateTag = null;
         if (nextDateStr !== '—') {
             const targetDateObj = new Date(nextDateStr);
             const diffTime = targetDateObj - todayObj;
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            if (diffDays < 0) {
-                dateTag = 'past_due';
-            } else if (diffDays <= 15) {
-                dateTag = 'upcoming';
-            }
+            if (diffDays < 0) dateTag = 'past_due';
+            else if (diffDays <= 15) dateTag = 'upcoming';
         }
 
-        // ODO status tag calculation
-        let odoTag = null; // 'past_due' or 'upcoming'
+        let odoTag = null;
         const currentOdoNum = vehicle.current_odo !== null && vehicle.current_odo !== undefined && vehicle.current_odo !== '' 
             ? Number(vehicle.current_odo) 
             : null;
 
         if (nextOdoVal !== null && currentOdoNum !== null) {
-            if (nextOdoVal <= currentOdoNum) {
-                odoTag = 'past_due';
-            } else if (nextOdoVal - currentOdoNum <= 1000) {
-                odoTag = 'upcoming';
-            }
+            if (nextOdoVal <= currentOdoNum) odoTag = 'past_due';
+            else if (nextOdoVal - currentOdoNum <= 1000) odoTag = 'upcoming';
         }
 
         return {
@@ -308,7 +287,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                 .animated-overlay {
                     animation: fadeInOverlay 0.2s ease-out forwards;
                 }
-                
                 input[type="date"]::-webkit-calendar-picker-indicator {
                     filter: invert(100%) sepia(0%) saturate(7500%) hue-rotate(180deg) brightness(100%) contrast(100%);
                     cursor: pointer;
@@ -330,23 +308,21 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     <Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 
                     <div style={styles.topBar}>
-                        <div style={styles.breadcrumb}>
-                            <Link href="/home" style={styles.breadcrumbLink}>Main / Home</Link> / <span style={{ color: '#ffffff', fontWeight: '500' }}>{vehicle.make} {vehicle.model}</span>
-                        </div>
-                        <Link href="/home" style={styles.backButton}>
-                            ← Back to Rides
+                        <Breadcrumb items={[
+                            { label: 'Main / Home', href: '/home' },
+                            { label: `${vehicle.make} ${vehicle.model}` }
+                        ]} />
+                        <Link href="/home" style={styles.backIconButton} title="Back to Rides">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                <polyline points="12 19 5 12 12 5"></polyline>
+                            </svg>
                         </Link>
                     </div>
 
                     <div style={styles.contentBody}>
-                        {/* Compact Vehicle Profile Card */}
                         <div style={styles.profileCard}>
-                            <button 
-                                onClick={openOdoModal} 
-                                style={styles.updateOdoBtnTopRight}
-                                type="button"
-                                title="Update Current ODO"
-                            >
+                            <button onClick={openOdoModal} style={styles.updateOdoBtnTopRight} type="button" title="Update Current ODO">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -356,11 +332,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
                             <div style={styles.profileLeft}>
                                 {photoUrl ? (
-                                    <div 
-                                        style={styles.photoThumbContainer} 
-                                        onClick={() => setShowPhotoModal(true)}
-                                        title="Click to view full size"
-                                    >
+                                    <div style={styles.photoThumbContainer} onClick={() => setShowPhotoModal(true)} title="Click to view full size">
                                         <img src={photoUrl} alt={vehicle.make} style={styles.vehicleThumb} />
                                         <div style={styles.photoOverlay}>
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -419,7 +391,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             </div>
                         </div>
 
-                        {/* Service Schedule Status Section */}
                         <div style={styles.sectionHeaderRow}>
                             <h2 style={styles.sectionTitle}>Service Schedule Status</h2>
                         </div>
@@ -436,36 +407,24 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 <tbody>
                                     {serviceScheduleStatus.length === 0 ? (
                                         <tr>
-                                            <td colSpan="3" style={styles.emptyTableCell}>
-                                                No services configured in settings.
-                                            </td>
+                                            <td colSpan="3" style={styles.emptyTableCell}>No services configured in settings.</td>
                                         </tr>
                                     ) : (
                                         serviceScheduleStatus.map((item, idx) => (
                                             <tr key={idx} style={styles.tableBodyRow}>
-                                                <td style={styles.td}>
-                                                    <span style={styles.serviceBadge}>{item.name}</span>
-                                                </td>
+                                                <td style={styles.td}><span style={styles.serviceBadge}>{item.name}</span></td>
                                                 <td style={styles.td}>
                                                     <div style={styles.cellWithTag}>
                                                         <span>{item.nextDate}</span>
-                                                        {item.dateTag === 'past_due' && (
-                                                            <span style={styles.tagPastDue}>Past Due</span>
-                                                        )}
-                                                        {item.dateTag === 'upcoming' && (
-                                                            <span style={styles.tagUpcoming}>Upcoming</span>
-                                                        )}
+                                                        {item.dateTag === 'past_due' && <span style={styles.tagPastDue}>Past Due</span>}
+                                                        {item.dateTag === 'upcoming' && <span style={styles.tagUpcoming}>Upcoming</span>}
                                                     </div>
                                                 </td>
                                                 <td style={styles.td}>
                                                     <div style={styles.cellWithTag}>
                                                         <span>{item.nextOdo}</span>
-                                                        {item.odoTag === 'past_due' && (
-                                                            <span style={styles.tagPastDue}>Past Due</span>
-                                                        )}
-                                                        {item.odoTag === 'upcoming' && (
-                                                            <span style={styles.tagUpcoming}>Upcoming</span>
-                                                        )}
+                                                        {item.odoTag === 'past_due' && <span style={styles.tagPastDue}>Past Due</span>}
+                                                        {item.odoTag === 'upcoming' && <span style={styles.tagUpcoming}>Upcoming</span>}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -475,30 +434,17 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             </table>
                         </div>
 
-                        {/* Maintenance Logs Section & Multi-Select Dropdown Filter */}
                         <div style={styles.sectionHeaderRow}>
                             <h2 style={styles.sectionTitle}>Maintenance Logs</h2>
                             
                             <div style={styles.dropdownWrapper} ref={dropdownRef}>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                                    style={styles.dropdownToggleBtn}
-                                >
+                                <button type="button" onClick={() => setShowFilterDropdown(!showFilterDropdown)} style={styles.dropdownToggleBtn}>
                                     <span>
-                                        {selectedServiceFilters.length === 0
-                                            ? 'Filter Services'
-                                            : `Services (${selectedServiceFilters.length})`}
+                                        {selectedServiceFilters.length === 0 ? 'Filter Services' : `Services (${selectedServiceFilters.length})`}
                                     </span>
                                     <div style={styles.dropdownToggleRight}>
                                         {selectedServiceFilters.length > 0 && (
-                                            <span 
-                                                onClick={clearFilters} 
-                                                style={styles.clearIconBadge}
-                                                title="Clear filters"
-                                            >
-                                                ✕
-                                            </span>
+                                            <span onClick={clearFilters} style={styles.clearIconBadge} title="Clear filters">✕</span>
                                         )}
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                             <polyline points="6 9 12 15 18 9"></polyline>
@@ -511,9 +457,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         <div style={styles.dropdownHeader}>
                                             <span style={styles.dropdownTitle}>Filter by Service</span>
                                             {selectedServiceFilters.length > 0 && (
-                                                <button type="button" onClick={clearFilters} style={styles.dropdownClearText}>
-                                                    Clear All
-                                                </button>
+                                                <button type="button" onClick={clearFilters} style={styles.dropdownClearText}>Clear All</button>
                                             )}
                                         </div>
                                         <div style={styles.dropdownList}>
@@ -524,12 +468,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                     const isChecked = selectedServiceFilters.includes(serviceName);
                                                     return (
                                                         <label key={idx} style={styles.dropdownItemLabel}>
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={isChecked}
-                                                                onChange={() => handleFilterCheckboxToggle(serviceName)}
-                                                                style={styles.dropdownCheckbox}
-                                                            />
+                                                            <input type="checkbox" checked={isChecked} onChange={() => handleFilterCheckboxToggle(serviceName)} style={styles.dropdownCheckbox} />
                                                             {serviceName}
                                                         </label>
                                                     );
@@ -556,37 +495,23 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 <tbody>
                                     {filteredLogs.length === 0 ? (
                                         <tr>
-                                            <td colSpan="6" style={styles.emptyTableCell}>
-                                                No maintenance records found.
-                                            </td>
+                                            <td colSpan="6" style={styles.emptyTableCell}>No maintenance records found.</td>
                                         </tr>
                                     ) : (
                                         filteredLogs.map((log) => {
                                             const isEditing = editingLogId === log.id;
                                             return (
                                                 <tr key={log.id} style={styles.tableBodyRow}>
-                                                    {/* Date */}
                                                     <td style={styles.td}>
                                                         {isEditing ? (
-                                                            <input 
-                                                                type="date"
-                                                                value={inlineData.date}
-                                                                onChange={e => setInlineData({ ...inlineData, date: e.target.value })}
-                                                                style={styles.inlineInput}
-                                                            />
+                                                            <input type="date" value={inlineData.date} onChange={e => setInlineData({ ...inlineData, date: e.target.value })} style={styles.inlineInput} />
                                                         ) : (
                                                             formatDateToReadable(log.date)
                                                         )}
                                                     </td>
-
-                                                    {/* Service */}
                                                     <td style={styles.td}>
                                                         {isEditing ? (
-                                                            <select
-                                                                value={inlineData.services}
-                                                                onChange={e => setInlineData({ ...inlineData, services: e.target.value })}
-                                                                style={styles.inlineSelect}
-                                                            >
+                                                            <select value={inlineData.services} onChange={e => setInlineData({ ...inlineData, services: e.target.value })} style={styles.inlineSelect}>
                                                                 {servicePreferences.map((srv, i) => (
                                                                     <option key={i} value={srv.name}>{srv.name}</option>
                                                                 ))}
@@ -599,105 +524,51 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                             </div>
                                                         )}
                                                     </td>
-
-                                                    {/* ODO */}
                                                     <td style={styles.td}>
                                                         {isEditing ? (
-                                                            <input 
-                                                                type="text"
-                                                                value={inlineData.odo}
-                                                                onChange={e => {
-                                                                    const val = e.target.value;
-                                                                    if (/^\d*$/.test(val)) setInlineData({ ...inlineData, odo: val });
-                                                                }}
-                                                                style={styles.inlineInput}
-                                                            />
+                                                            <input type="text" value={inlineData.odo} onChange={e => {
+                                                                const val = e.target.value;
+                                                                if (/^\d*$/.test(val)) setInlineData({ ...inlineData, odo: val });
+                                                            }} style={styles.inlineInput} />
                                                         ) : (
                                                             log.odo
                                                         )}
                                                     </td>
-
-                                                    {/* Cost */}
                                                     <td style={styles.td}>
                                                         {isEditing ? (
-                                                            <input 
-                                                                type="text"
-                                                                value={inlineData.cost}
-                                                                onChange={e => {
-                                                                    const val = e.target.value;
-                                                                    if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
-                                                                }}
-                                                                style={styles.inlineInput}
-                                                            />
+                                                            <input type="text" value={inlineData.cost} onChange={e => {
+                                                                const val = e.target.value;
+                                                                if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
+                                                            }} style={styles.inlineInput} />
                                                         ) : (
                                                             log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
                                                         )}
                                                     </td>
-
-                                                    {/* Notes */}
                                                     <td style={styles.td}>
                                                         {isEditing ? (
-                                                            <input 
-                                                                type="text"
-                                                                value={inlineData.notes}
-                                                                onChange={e => setInlineData({ ...inlineData, notes: e.target.value })}
-                                                                style={styles.inlineInput}
-                                                            />
+                                                            <input type="text" value={inlineData.notes} onChange={e => setInlineData({ ...inlineData, notes: e.target.value })} style={styles.inlineInput} />
                                                         ) : (
                                                             log.notes || '—'
                                                         )}
                                                     </td>
-
-                                                    {/* Actions */}
                                                     <td style={{ ...styles.td, textAlign: 'right' }}>
                                                         <div style={styles.rowActions}>
                                                             {isEditing ? (
                                                                 <>
-                                                                    <button 
-                                                                        onClick={() => saveEditingRow(log.id)} 
-                                                                        style={styles.iconBtnSave}
-                                                                        title="Save changes"
-                                                                        type="button"
-                                                                    >
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                                            <polyline points="20 6 9 17 4 12"></polyline>
-                                                                        </svg>
+                                                                    <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} title="Save changes" type="button">
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                                     </button>
-                                                                    <button 
-                                                                        onClick={cancelEditingRow} 
-                                                                        style={styles.iconBtnCancel}
-                                                                        title="Cancel"
-                                                                        type="button"
-                                                                    >
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                                        </svg>
+                                                                    <button onClick={cancelEditingRow} style={styles.iconBtnCancel} title="Cancel" type="button">
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                                                     </button>
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <button 
-                                                                        onClick={() => startEditingRow(log)} 
-                                                                        style={styles.iconBtnEdit}
-                                                                        title="Edit record"
-                                                                        type="button"
-                                                                    >
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                                        </svg>
+                                                                    <button onClick={() => startEditingRow(log)} style={styles.iconBtnEdit} title="Edit record" type="button">
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                                                     </button>
-                                                                    <button 
-                                                                        onClick={() => promptDeleteLog(log)} 
-                                                                        style={styles.iconBtnDelete}
-                                                                        title="Delete record"
-                                                                        type="button"
-                                                                    >
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                                        </svg>
+                                                                    <button onClick={() => promptDeleteLog(log)} style={styles.iconBtnDelete} title="Delete record" type="button">
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                                                     </button>
                                                                 </>
                                                             )}
@@ -712,20 +583,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </div>
                     </div>
 
-                    {/* Sticky Floating Plus Action Button */}
-                    <button 
-                        onClick={openCreateModal} 
-                        style={styles.floatingBtn}
-                        title="Add Maintenance Log"
-                        type="button"
-                    >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
+                    <button onClick={openCreateModal} style={styles.floatingBtn} title="Add Maintenance Log" type="button">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </button>
 
-                    {/* Full-Size Photo Modal */}
                     {showPhotoModal && photoUrl && (
                         <div style={styles.modalOverlay} className="animated-overlay" onClick={() => setShowPhotoModal(false)}>
                             <div style={styles.fullPhotoBox} className="animated-modal" onClick={e => e.stopPropagation()}>
@@ -735,7 +596,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </div>
                     )}
 
-                    {/* Update ODO Modal */}
                     {showOdoModal && (
                         <div style={styles.modalOverlay} className="animated-overlay">
                             <div style={styles.modalBox} className="animated-modal">
@@ -743,41 +603,28 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     <h3 style={styles.modalTitle}>Update Current ODO</h3>
                                     <button onClick={closeOdoModal} style={styles.closeBtn} type="button">✕</button>
                                 </div>
-
                                 <form onSubmit={handleUpdateOdo} style={styles.form}>
                                     <div style={styles.inputGroup}>
                                         <label style={styles.label}>Current Odometer (km/miles) *</label>
                                         <input 
-                                            type="text"
-                                            placeholder="e.g. 15500"
-                                            value={odoData.current_odo}
+                                            type="text" placeholder="e.g. 15500" value={odoData.current_odo}
                                             onChange={e => {
                                                 const val = e.target.value;
-                                                if (/^\d*$/.test(val)) {
-                                                    setOdoData('current_odo', val);
-                                                }
+                                                if (/^\d*$/.test(val)) setOdoData('current_odo', val);
                                             }}
-                                            style={styles.input}
-                                            required
-                                            autoFocus
+                                            style={styles.input} required autoFocus
                                         />
                                         {odoErrors.current_odo && <span style={styles.errorText}>{odoErrors.current_odo}</span>}
                                     </div>
-
                                     <div style={styles.modalActions}>
-                                        <button type="button" onClick={closeOdoModal} style={styles.cancelBtn}>
-                                            Cancel
-                                        </button>
-                                        <button type="submit" style={styles.saveBtn} disabled={odoProcessing}>
-                                            {odoProcessing ? 'Saving...' : 'Save ODO'}
-                                        </button>
+                                        <button type="button" onClick={closeOdoModal} style={styles.cancelBtn}>Cancel</button>
+                                        <button type="submit" style={styles.saveBtn} disabled={odoProcessing}>{odoProcessing ? 'Saving...' : 'Save ODO'}</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     )}
 
-                    {/* Add Maintenance Log Modal */}
                     {showLogModal && (
                         <div style={styles.modalOverlay} className="animated-overlay">
                             <div style={styles.modalBox} className="animated-modal">
@@ -785,7 +632,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     <h3 style={styles.modalTitle}>Add Maintenance Log</h3>
                                     <button onClick={closeModal} style={styles.closeBtn} type="button">✕</button>
                                 </div>
-
                                 <form onSubmit={handleSubmitLog} style={styles.form}>
                                     <div style={styles.inputGroup}>
                                         <label style={styles.label}>Services Done * (Select one or more)</label>
@@ -795,12 +641,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             ) : (
                                                 servicePreferences.map((service, idx) => (
                                                     <label key={idx} style={styles.checkboxLabel}>
-                                                        <input 
-                                                            type="checkbox"
-                                                            checked={data.services.includes(service.name)}
-                                                            onChange={() => handleServiceToggle(service.name)}
-                                                            style={styles.checkboxInput}
-                                                        />
+                                                        <input type="checkbox" checked={data.services.includes(service.name)} onChange={() => handleServiceToggle(service.name)} style={styles.checkboxInput} />
                                                         {service.name}
                                                     </label>
                                                 ))
@@ -812,30 +653,19 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     <div style={styles.inputGroup}>
                                         <label style={styles.label}>Odometer (ODO) (miles/km) *</label>
                                         <input 
-                                            type="text"
-                                            placeholder="e.g. 45000"
-                                            value={data.odo}
+                                            type="text" placeholder="e.g. 45000" value={data.odo}
                                             onChange={e => {
                                                 const val = e.target.value;
-                                                if (/^\d*$/.test(val)) {
-                                                    setData('odo', val);
-                                                }
+                                                if (/^\d*$/.test(val)) setData('odo', val);
                                             }}
-                                            style={styles.input}
-                                            required
+                                            style={styles.input} required
                                         />
                                         {errors.odo && <span style={styles.errorText}>{errors.odo}</span>}
                                     </div>
 
                                     <div style={styles.inputGroup}>
                                         <label style={styles.label}>Date *</label>
-                                        <input 
-                                            type="date"
-                                            value={data.date}
-                                            onChange={e => setData('date', e.target.value)}
-                                            style={styles.input}
-                                            required
-                                        />
+                                        <input type="date" value={data.date} onChange={e => setData('date', e.target.value)} style={styles.input} required />
                                         {errors.date && <span style={styles.errorText}>{errors.date}</span>}
                                     </div>
 
@@ -844,14 +674,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         <div style={styles.currencyWrapper}>
                                             <span style={styles.currencySymbol}>₱</span>
                                             <input 
-                                                type="text"
-                                                placeholder="0.00"
-                                                value={data.cost}
+                                                type="text" placeholder="0.00" value={data.cost}
                                                 onChange={e => {
                                                     const val = e.target.value;
-                                                    if (/^\d*\.?\d*$/.test(val)) {
-                                                        setData('cost', val);
-                                                    }
+                                                    if (/^\d*\.?\d*$/.test(val)) setData('cost', val);
                                                 }}
                                                 style={{ ...styles.input, paddingLeft: '26px' }}
                                             />
@@ -861,29 +687,19 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
                                     <div style={styles.inputGroup}>
                                         <label style={styles.label}>Notes (Optional)</label>
-                                        <textarea 
-                                            placeholder="Mechanic notes, workshop details..."
-                                            value={data.notes}
-                                            onChange={e => setData('notes', e.target.value)}
-                                            style={{ ...styles.input, height: '60px', resize: 'none' }}
-                                        />
+                                        <textarea placeholder="Mechanic notes, workshop details..." value={data.notes} onChange={e => setData('notes', e.target.value)} style={{ ...styles.input, height: '60px', resize: 'none' }} />
                                         {errors.notes && <span style={styles.errorText}>{errors.notes}</span>}
                                     </div>
 
                                     <div style={styles.modalActions}>
-                                        <button type="button" onClick={closeModal} style={styles.cancelBtn}>
-                                            Cancel
-                                        </button>
-                                        <button type="submit" style={styles.saveBtn} disabled={processing}>
-                                            {processing ? 'Saving...' : 'Save Log'}
-                                        </button>
+                                        <button type="button" onClick={closeModal} style={styles.cancelBtn}>Cancel</button>
+                                        <button type="submit" style={styles.saveBtn} disabled={processing}>{processing ? 'Saving...' : 'Save Log'}</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     )}
 
-                    {/* Delete Log Confirmation Modal */}
                     {showDeleteLogModal && (
                         <div style={styles.modalOverlay} className="animated-overlay">
                             <div style={styles.modalBox} className="animated-modal">
@@ -891,9 +707,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     <h3 style={styles.modalTitle}>Delete Maintenance Log</h3>
                                     <button onClick={() => setShowDeleteLogModal(false)} style={styles.closeBtn} type="button">✕</button>
                                 </div>
-                                <p style={{ color: '#c9d1d9', fontSize: '13px', margin: '8px 0 16px 0' }}>
-                                    Are you sure you want to delete this maintenance record? This action cannot be undone.
-                                </p>
+                                <p style={{ color: '#c9d1d9', fontSize: '13px', margin: '8px 0 16px 0' }}>Are you sure you want to delete this maintenance record? This action cannot be undone.</p>
                                 <div style={styles.modalActions}>
                                     <button type="button" onClick={() => setShowDeleteLogModal(false)} style={styles.cancelBtn}>Cancel</button>
                                     <button type="button" onClick={confirmDeleteLog} style={styles.deleteCardBtn}>Delete</button>
@@ -901,7 +715,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             </div>
                         </div>
                     )}
-
                 </div>
             </div>
         </div>
@@ -922,12 +735,14 @@ const styles = {
     },
     mainContent: { flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
     topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%', maxWidth: '850px' },
-    breadcrumb: { fontSize: '12px', color: '#8b949e' },
-    breadcrumbLink: { color: '#8b949e', textDecoration: 'none' },
-    backButton: { backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', textDecoration: 'none' },
+    backIconButton: {
+        backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d',
+        width: '32px', height: '32px', borderRadius: '6px', display: 'flex',
+        justifyContent: 'center', alignItems: 'center', textDecoration: 'none',
+        transition: 'background-color 0.15s ease, color 0.15s ease',
+    },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '850px', width: '100%', paddingBottom: '60px', margin: '0 auto' },
     
-    // Minimalist Vehicle Profile Card Styles
     profileCard: { 
         backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', 
         padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', display: 'flex', alignItems: 'center', gap: '24px',
@@ -945,10 +760,7 @@ const styles = {
         backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center',
         opacity: 0, transition: 'opacity 0.2s ease',
     },
-    placeholderThumb: { 
-        width: '120px', height: '90px', borderRadius: '8px', backgroundColor: '#0d1117', 
-        border: '1px solid #30363d', display: 'flex', justifyContent: 'center', alignItems: 'center' 
-    },
+    placeholderThumb: { width: '120px', height: '90px', borderRadius: '8px', backgroundColor: '#0d1117', border: '1px solid #30363d', display: 'flex', justifyContent: 'center', alignItems: 'center' },
     profileRight: { flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' },
     detailItem: { display: 'flex', alignItems: 'center', fontSize: '13px', gap: '8px' },
     detailKey: { color: '#8b949e', fontWeight: '500', width: '105px', flexShrink: 0 },
@@ -962,33 +774,14 @@ const styles = {
     },
     lastUpdatedText: { color: '#8b949e', fontSize: '11px', fontStyle: 'italic' },
 
-    // Status Tags Styles
     cellWithTag: { display: 'flex', alignItems: 'center', gap: '10px' },
-    tagUpcoming: {
-        backgroundColor: 'rgba(210, 153, 34, 0.15)', color: '#d29922',
-        border: '1px solid rgba(210, 153, 34, 0.3)', padding: '2px 6px',
-        borderRadius: '4px', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.4px'
-    },
-    tagPastDue: {
-        backgroundColor: 'rgba(248, 81, 73, 0.15)', color: '#f85149',
-        border: '1px solid rgba(248, 81, 73, 0.3)', padding: '2px 6px',
-        borderRadius: '4px', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.4px'
-    },
+    tagUpcoming: { backgroundColor: 'rgba(210, 153, 34, 0.15)', color: '#d29922', border: '1px solid rgba(210, 153, 34, 0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.4px' },
+    tagPastDue: { backgroundColor: 'rgba(248, 81, 73, 0.15)', color: '#f85149', border: '1px solid rgba(248, 81, 73, 0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.4px' },
 
-    // Full Size Photo Modal Styles
-    fullPhotoBox: {
-        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px',
-        padding: '16px', maxWidth: '85vw', maxHeight: '85vh', position: 'relative',
-        display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 25px 50px rgba(0,0,0,0.8)'
-    },
+    fullPhotoBox: { backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', padding: '16px', maxWidth: '85vw', maxHeight: '85vh', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 25px 50px rgba(0,0,0,0.8)' },
     fullImage: { maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain' },
-    closePhotoBtn: {
-        position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.6)',
-        border: '1px solid #30363d', color: '#ffffff', width: '28px', height: '28px', borderRadius: '50%',
-        display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10
-    },
+    closePhotoBtn: { position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.6)', border: '1px solid #30363d', color: '#ffffff', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10 },
 
-    // Multi-Select Dropdown Filter Styles
     sectionHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', width: '100%' },
     sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#ffffff', margin: 0 },
     dropdownWrapper: { position: 'relative' },
@@ -999,32 +792,16 @@ const styles = {
         minWidth: '150px', justifyContent: 'space-between'
     },
     dropdownToggleRight: { display: 'flex', alignItems: 'center', gap: '8px' },
-    clearIconBadge: {
-        backgroundColor: '#f8514933', color: '#f85149', fontSize: '10px', fontWeight: '700',
-        width: '16px', height: '16px', borderRadius: '50%', display: 'flex', justifyContent: 'center',
-        alignItems: 'center', cursor: 'pointer',
-    },
-    dropdownMenu: {
-        position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: '220px',
-        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '8px',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', flexDirection: 'column',
-        overflow: 'hidden'
-    },
-    dropdownHeader: {
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '10px 12px', borderBottom: '1px solid #21262d', backgroundColor: '#21262d55'
-    },
+    clearIconBadge: { backgroundColor: '#f8514933', color: '#f85149', fontSize: '10px', fontWeight: '700', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
+    dropdownMenu: { position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: '220px', backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+    dropdownHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #21262d', backgroundColor: '#21262d55' },
     dropdownTitle: { fontSize: '11px', fontWeight: '600', color: '#8b949e', textTransform: 'uppercase' },
     dropdownClearText: { background: 'none', border: 'none', color: '#f85149', fontSize: '11px', cursor: 'pointer', fontWeight: '600' },
     dropdownList: { padding: '6px', display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '180px', overflowY: 'auto' },
-    dropdownItemLabel: {
-        display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px',
-        color: '#c9d1d9', fontSize: '12px', cursor: 'pointer',
-    },
+    dropdownItemLabel: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', color: '#c9d1d9', fontSize: '12px', cursor: 'pointer' },
     dropdownCheckbox: { accentColor: '#1f6feb', width: '13px', height: '13px', cursor: 'pointer' },
     dropdownEmpty: { padding: '12px', textAlign: 'center', color: '#8b949e', fontSize: '12px', fontStyle: 'italic' },
 
-    // Table Styles
     tableContainer: { backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', width: '100%', boxSizing: 'border-box' },
     table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' },
     tableHeaderRow: { backgroundColor: '#21262d', borderBottom: '1px solid #30363d', color: '#8b949e' },
@@ -1035,39 +812,15 @@ const styles = {
     serviceBadgeList: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
     serviceBadge: { backgroundColor: '#1f6feb22', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600' },
     
-    // Inline edit form controls
-    inlineInput: {
-        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px',
-        padding: '5px 8px', color: '#ffffff', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box'
-    },
-    inlineSelect: {
-        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px',
-        padding: '5px 8px', color: '#ffffff', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box'
-    },
+    inlineInput: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px', padding: '5px 8px', color: '#ffffff', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
+    inlineSelect: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px', padding: '5px 8px', color: '#ffffff', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
 
     rowActions: { display: 'flex', justifyContent: 'flex-end', gap: '6px', alignItems: 'center' },
-    iconBtnEdit: {
-        backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d',
-        width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center',
-        alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease'
-    },
-    iconBtnDelete: {
-        backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d',
-        width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center',
-        alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease'
-    },
-    iconBtnSave: {
-        backgroundColor: '#1f6feb22', color: '#3b82f6', border: '1px solid #30363d',
-        width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center',
-        alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease'
-    },
-    iconBtnCancel: {
-        backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d',
-        width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center',
-        alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease'
-    },
+    iconBtnEdit: { backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease' },
+    iconBtnDelete: { backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease' },
+    iconBtnSave: { backgroundColor: '#1f6feb22', color: '#3b82f6', border: '1px solid #30363d', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease' },
+    iconBtnCancel: { backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease' },
 
-    // Fixed Sticky Floating Plus Button
     floatingBtn: {
         position: 'fixed', bottom: '40px', right: '48px', width: '56px', height: '56px',
         backgroundColor: '#1f6feb', color: '#ffffff', borderRadius: '50%', border: 'none',
@@ -1075,39 +828,24 @@ const styles = {
         boxShadow: '0 8px 24px rgba(31, 111, 235, 0.5)', zIndex: 100,
         transition: 'transform 0.2s ease, background-color 0.2s ease',
     },
-    modalOverlay: {
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000,
-    },
-    modalBox: {
-        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px',
-        padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
-        display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto',
-    },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+    modalBox: { backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto' },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     modalTitle: { color: '#ffffff', fontSize: '16px', fontWeight: '600', margin: 0 },
     closeBtn: { background: 'none', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer' },
     form: { display: 'flex', flexDirection: 'column', gap: '12px' },
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
     label: { color: '#8b949e', fontSize: '11px', fontWeight: '500' },
-    input: {
-        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px',
-        padding: '8px 10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%',
-    },
-    checkboxContainer: {
-        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px',
-        padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '140px', overflowY: 'auto',
-    },
-    checkboxLabel: {
-        display: 'flex', alignItems: 'center', gap: '8px', color: '#c9d1d9', fontSize: '12px', cursor: 'pointer',
-    },
+    input: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '8px 10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%' },
+    checkboxContainer: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '140px', overflowY: 'auto' },
+    checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', color: '#c9d1d9', fontSize: '12px', cursor: 'pointer' },
     checkboxInput: { accentColor: '#1f6feb', width: '14px', height: '14px', cursor: 'pointer' },
     noServiceText: { color: '#8b949e', fontSize: '12px', fontStyle: 'italic', textAlign: 'center' },
     currencyWrapper: { position: 'relative', display: 'flex', alignItems: 'center' },
     currencySymbol: { position: 'absolute', left: '10px', color: '#8b949e', fontSize: '12px', fontWeight: '600' },
     errorText: { color: '#f85149', fontSize: '11px', marginTop: '2px' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #21262d', paddingTop: '14px', marginTop: '4px' },
-    cancelBtn: { backgroundColor: 'transparent', color: '#8b949e', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
+    cancelBtn: { backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
     saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
     deleteCardBtn: { backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
 };
