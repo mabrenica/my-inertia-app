@@ -51,6 +51,31 @@ class AuthController extends Controller
         return redirect('/home');
     }
 
+    public function home(Request $request)
+    {
+        $user = $request->user();
+        
+        // Load vehicles along with their maintenance logs
+        $vehicles = $user->vehicles()->with('maintenanceLogs')->get();
+        
+        // Retrieve or create service preferences for the user
+        $preference = UserServicePreference::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'car_services' => [],
+                'moto_services' => [],
+            ]
+        );
+
+        return Inertia::render('Home', [
+            'vehicles' => $vehicles,
+            'servicePreferences' => [
+                'car_services' => $preference->car_services ?? [],
+                'moto_services' => $preference->moto_services ?? [],
+            ],
+        ]);
+    }
+
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -312,5 +337,77 @@ class AuthController extends Controller
         ]);
 
         return back()->with('success', 'Current ODO updated successfully!');
+    }
+
+    // Helper function to calculate maintenance statuses for a vehicle
+    private function getVehicleServiceStatuses($vehicle)
+    {
+        $servicePreferences = $vehicle->user->servicePreferences ?? []; 
+        $maintenanceLogs = $vehicle->maintenanceLogs;
+        
+        // Determine service list based on vehicle type (Car vs Motorbike)
+        $preferences = (strtolower($vehicle->type) === 'car') 
+            ? ($servicePreferences->car_services ?? []) 
+            : ($servicePreferences->moto_services ?? []);
+
+        $today = now()->format('Y-m-d');
+        $currentOdo = (int) ($vehicle->current_odo ?? 0);
+        
+        $statuses = [];
+
+        foreach ($preferences as $pref) {
+            $name = $pref['name'];
+            $intervalDays = isset($pref['interval_days']) ? (int) $pref['interval_days'] : null;
+            $intervalOdo = isset($pref['interval_odo']) ? (int) $pref['interval_odo'] : null;
+
+            // Find matching logs for this service
+            $matchingLogs = $maintenanceLogs->filter(function ($log) use ($name) {
+                return $log->services && in_array($name, $log->services);
+            });
+
+            $latestDate = $matchingLogs->max('date');
+            $highestOdo = $matchingLogs->max(fn($l) => (int) $l->odo);
+
+            // Calculate next target date
+            $nextDate = null;
+            $dateStatus = null; // 'past_due', 'upcoming', or 'normal'
+            if ($latestDate && $intervalDays) {
+                $nextDate = \Carbon\Carbon::parse($latestDate)->addDays($intervalDays)->format('Y-m-d');
+                $diffDays = now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($nextDate), false);
+
+                if ($diffDays < 0) {
+                    $dateStatus = 'past_due';
+                } elseif ($diffDays <= 15) {
+                    $dateStatus = 'upcoming';
+                }
+            }
+
+            // Calculate next target ODO
+            $nextOdo = null;
+            $odoStatus = null; // 'past_due', 'upcoming', or 'normal'
+            if ($highestOdo !== null && $intervalOdo !== null) {
+                $nextOdo = $highestOdo + $intervalOdo;
+                $odoDiff = $nextOdo - $currentOdo;
+
+                if ($odoDiff <= 0) {
+                    $odoStatus = 'past_due'; 
+                } elseif ($odoDiff <= 1000) {
+                    $odoStatus = 'upcoming'; 
+                }
+            }
+
+            // If either metric is past due or upcoming, record it
+            if ($dateStatus || $odoStatus) {
+                $statuses[] = [
+                    'service_name' => $name,
+                    'date_status' => $dateStatus, 
+                    'next_date' => $nextDate,
+                    'odo_status' => $odoStatus,   
+                    'next_odo' => $nextOdo,
+                ];
+            }
+        }
+
+        return $statuses;
     }
 }

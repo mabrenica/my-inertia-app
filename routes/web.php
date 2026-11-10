@@ -22,11 +22,8 @@ Route::get('/create-account', function () {
 
 Route::post('/create-account', [AuthController::class, 'register']);
 
-Route::get('/home', function () {
-    return Inertia::render('Home', [
-        'vehicles' => Auth::user()->vehicles()->latest()->get(),
-    ]);
-})->middleware('auth')->name('home');
+// Replace your existing /home route with this:
+Route::get('/home', [AuthController::class, 'home'])->middleware('auth')->name('home');
 
 Route::get('/profile', function () {
     return Inertia::render('Profile', [
@@ -70,4 +67,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/vehicles/{vehicle}/maintenance-logs', [AuthController::class, 'storeMaintenanceLog']);
     Route::put('/maintenance-logs/{id}', [AuthController::class, 'updateMaintenanceLog']);
     Route::delete('/maintenance-logs/{id}', [AuthController::class, 'destroyMaintenanceLog']);
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/user/maintenance-alerts', [AuthController::class, 'getMaintenanceAlerts']);
 });
