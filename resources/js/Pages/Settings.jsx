@@ -38,6 +38,12 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
         setNewItemText('');
     };
 
+    const handleUpdateTempItem = (id, newName) => {
+        setTempServices(tempServices.map(item => 
+            item.id === id ? { ...item, name: newName } : item
+        ));
+    };
+
     const handleRemoveTempItem = (id) => {
         setTempServices(tempServices.filter(item => item.id !== id));
     };
@@ -202,7 +208,12 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                     ) : (
                                         tempServices.map((item) => (
                                             <div key={item.id} style={styles.modalListItem}>
-                                                <span style={styles.modalItemName}>{item.name}</span>
+                                                <input 
+                                                    type="text"
+                                                    value={item.name}
+                                                    onChange={(e) => handleUpdateTempItem(item.id, e.target.value)}
+                                                    style={styles.modalInlineInput}
+                                                />
                                                 <button 
                                                     onClick={() => handleRemoveTempItem(item.id)}
                                                     style={styles.iconDeleteBtn}
@@ -479,11 +490,17 @@ const styles = {
         backgroundColor: '#0d1117',
         border: '1px solid #21262d',
         borderRadius: '6px',
-        padding: '8px 12px',
+        padding: '6px 12px',
+        gap: '8px',
     },
-    modalItemName: {
+    modalInlineInput: {
+        flex: 1,
+        backgroundColor: 'transparent',
+        border: 'none',
         color: '#c9d1d9',
         fontSize: '12px',
+        outline: 'none',
+        padding: '4px 0',
     },
     iconDeleteBtn: {
         backgroundColor: 'transparent',
