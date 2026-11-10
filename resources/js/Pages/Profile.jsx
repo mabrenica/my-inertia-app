@@ -93,100 +93,233 @@ export default function Profile({ auth }) {
                         )}
                     </div>
 
-                    {/* Profile Header Card */}
-                    <div style={styles.profileHeader}>
-                        <div 
-                            style={styles.avatarContainer}
-                            onMouseEnter={() => setIsHovered(true)}
-                            onMouseLeave={() => setIsHovered(false)}
-                        >
-                            <div style={styles.avatarWrapper}>
-                                {avatarUrl ? (
-                                    <img 
-                                        src={avatarUrl} 
-                                        alt="User Avatar" 
-                                        style={styles.avatar} 
-                                    />
-                                ) : (
-                                    <div style={styles.blankAvatar}>
-                                        <svg style={styles.blankAvatarIcon} fill="#8b949e" viewBox="0 0 24 24">
-                                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                                        </svg>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Hover Overlay with No Blur/Darkening, only smooth icon appearance */}
-                            <div style={{
-                                ...styles.hoverOverlay,
-                                opacity: isHovered ? 1 : 0,
-                                visibility: isHovered ? 'visible' : 'hidden',
-                            }}>
-                                <div style={styles.bottomActionRow}>
-                                    {/* 1. Eye Icon (View Profile Picture - only shown if custom avatar exists) */}
-                                    {avatarUrl && (
-                                        <button 
-                                            onClick={() => setShowViewModal(true)} 
-                                            style={styles.iconBtn} 
-                                            title="View Profile Picture"
-                                            type="button"
-                                        >
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
+                    <div style={styles.contentBody}>
+                        {/* Profile Header Card */}
+                        <div style={styles.profileHeader}>
+                            <div 
+                                style={styles.avatarContainer}
+                                onMouseEnter={() => setIsHovered(true)}
+                                onMouseLeave={() => setIsHovered(false)}
+                            >
+                                <div style={styles.avatarWrapper}>
+                                    {avatarUrl ? (
+                                        <img 
+                                            src={avatarUrl} 
+                                            alt="User Avatar" 
+                                            style={styles.avatar} 
+                                        />
+                                    ) : (
+                                        <div style={styles.blankAvatar}>
+                                            <svg style={styles.blankAvatarIcon} fill="#8b949e" viewBox="0 0 24 24">
+                                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                                             </svg>
-                                        </button>
-                                    )}
-
-                                    {/* 2. Upload Icon */}
-                                    <button 
-                                        onClick={handleAvatarClick} 
-                                        style={styles.iconBtnUpload} 
-                                        title="Upload Avatar"
-                                        type="button"
-                                    >
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                            <polyline points="17 8 12 3 7 8"></polyline>
-                                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                                        </svg>
-                                    </button>
-
-                                    {/* 3. Delete Icon (Shown only if custom avatar exists) */}
-                                    {user.avatar && (
-                                        <button 
-                                            onClick={() => setShowDeleteModal(true)} 
-                                            style={styles.iconBtnDelete} 
-                                            title="Delete Avatar"
-                                            type="button"
-                                        >
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                            </svg>
-                                        </button>
+                                        </div>
                                     )}
                                 </div>
+
+                                <div style={{
+                                    ...styles.hoverOverlay,
+                                    opacity: isHovered ? 1 : 0,
+                                    visibility: isHovered ? 'visible' : 'hidden',
+                                }}>
+                                    <div style={styles.bottomActionRow}>
+                                        {avatarUrl && (
+                                            <button 
+                                                onClick={() => setShowViewModal(true)} 
+                                                style={styles.iconBtn} 
+                                                title="View Profile Picture"
+                                                type="button"
+                                            >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg>
+                                            </button>
+                                        )}
+
+                                        <button 
+                                            onClick={handleAvatarClick} 
+                                            style={styles.iconBtnUpload} 
+                                            title="Upload Avatar"
+                                            type="button"
+                                        >
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                <polyline points="17 8 12 3 7 8"></polyline>
+                                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                                            </svg>
+                                        </button>
+
+                                        {user.avatar && (
+                                            <button 
+                                                onClick={() => setShowDeleteModal(true)} 
+                                                style={styles.iconBtnDelete} 
+                                                title="Delete Avatar"
+                                                type="button"
+                                            >
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef} 
+                                    onChange={handleAvatarChange} 
+                                    accept="image/*" 
+                                    style={{ display: 'none' }} 
+                                />
                             </div>
 
-                            <input 
-                                type="file" 
-                                ref={fileInputRef} 
-                                onChange={handleAvatarChange} 
-                                accept="image/*" 
-                                style={{ display: 'none' }} 
-                            />
+                            {avatarError && <span style={styles.errorText}>{avatarError}</span>}
+
+                            <div style={styles.profileNameRow}>
+                                <h2 style={styles.profileName}>{user.name || 'User'}</h2>
+                                <svg style={styles.verifiedBadge} viewBox="0 0 24 24" fill="#3b82f6">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <p style={styles.profileEmail}>{user.email || 'name@example.com'}</p>
                         </div>
 
-                        {avatarError && <span style={styles.errorText}>{avatarError}</span>}
+                        {/* Personal Details Form/Card */}
+                        <div style={styles.gridContainer}>
+                            <form onSubmit={handleSave} style={styles.cardBox}>
+                                <div style={styles.cardHeaderRow}>
+                                    <h3 style={styles.cardTitle}>Personal details</h3>
+                                    {isEditing && (
+                                        <div style={styles.actionButtonGroup}>
+                                            <button 
+                                                type="button" 
+                                                onClick={handleCancel} 
+                                                style={styles.cancelButton}
+                                                disabled={processing}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button 
+                                                type="submit" 
+                                                style={styles.saveButton}
+                                                disabled={processing}
+                                            >
+                                                {processing ? 'Saving...' : 'Save Changes'}
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
 
-                        <div style={styles.profileNameRow}>
-                            <h2 style={styles.profileName}>{user.name || 'User'}</h2>
-                            <svg style={styles.verifiedBadge} viewBox="0 0 24 24" fill="#3b82f6">
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                                <div style={styles.detailRow}>
+                                    <span style={styles.key}>Full name:</span>
+                                    {isEditing ? (
+                                        <div style={styles.inputWrapper}>
+                                            <input 
+                                                type="text" 
+                                                value={data.name} 
+                                                onChange={e => setData('name', e.target.value)} 
+                                                style={styles.input} 
+                                            />
+                                            {errors.name && <span style={styles.errorText}>{errors.name}</span>}
+                                        </div>
+                                    ) : (
+                                        <span style={styles.value}>{user.name || 'N/A'}</span>
+                                    )}
+                                </div>
+
+                                <div style={styles.detailRow}>
+                                    <span style={styles.key}>Date of Birth:</span>
+                                    {isEditing ? (
+                                        <div style={styles.inputWrapper}>
+                                            <input 
+                                                type="text" 
+                                                value={data.date_of_birth} 
+                                                onChange={e => setData('date_of_birth', e.target.value)} 
+                                                placeholder="e.g. January 1, 1987"
+                                                style={styles.input} 
+                                            />
+                                        </div>
+                                    ) : (
+                                        <span style={styles.value}>{user.date_of_birth || 'N/A'}</span>
+                                    )}
+                                </div>
+
+                                <div style={styles.detailRow}>
+                                    <span style={styles.key}>Gender:</span>
+                                    {isEditing ? (
+                                        <div style={styles.inputWrapper}>
+                                            <input 
+                                                type="text" 
+                                                value={data.gender} 
+                                                onChange={e => setData('gender', e.target.value)} 
+                                                placeholder="e.g. Male"
+                                                style={styles.input} 
+                                            />
+                                        </div>
+                                    ) : (
+                                        <span style={styles.value}>{user.gender || 'N/A'}</span>
+                                    )}
+                                </div>
+
+                                <div style={styles.detailRow}>
+                                    <span style={styles.key}>Nationality:</span>
+                                    {isEditing ? (
+                                        <div style={styles.inputWrapper}>
+                                            <input 
+                                                type="text" 
+                                                value={data.nationality} 
+                                                onChange={e => setData('nationality', e.target.value)} 
+                                                placeholder="e.g. American"
+                                                style={styles.input} 
+                                            />
+                                        </div>
+                                    ) : (
+                                        <span style={styles.value}>{user.nationality || 'N/A'}</span>
+                                    )}
+                                </div>
+
+                                <div style={styles.detailRow}>
+                                    <span style={styles.key}>Address:</span>
+                                    {isEditing ? (
+                                        <div style={styles.inputWrapper}>
+                                            <input 
+                                                type="text" 
+                                                value={data.address} 
+                                                onChange={e => setData('address', e.target.value)} 
+                                                placeholder="e.g. California - United States"
+                                                style={styles.input} 
+                                            />
+                                        </div>
+                                    ) : (
+                                        <span style={styles.value}>{user.address || 'N/A'}</span>
+                                    )}
+                                </div>
+
+                                <div style={styles.detailRow}>
+                                    <span style={styles.key}>Phone Number:</span>
+                                    {isEditing ? (
+                                        <div style={styles.inputWrapper}>
+                                            <input 
+                                                type="text" 
+                                                value={data.phone_number} 
+                                                onChange={e => setData('phone_number', e.target.value)} 
+                                                placeholder="e.g. (213) 555-1234"
+                                                style={styles.input} 
+                                            />
+                                        </div>
+                                    ) : (
+                                        <span style={styles.value}>{user.phone_number || 'N/A'}</span>
+                                    )}
+                                </div>
+
+                                <div style={styles.detailRow}>
+                                    <span style={styles.key}>Email:</span>
+                                    <span style={styles.disabledValue}>{user.email || 'N/A'}</span>
+                                </div>
+                            </form>
                         </div>
-                        <p style={styles.profileEmail}>{user.email || 'name@example.com'}</p>
                     </div>
 
                     {/* View Profile Picture Modal */}
@@ -238,140 +371,6 @@ export default function Profile({ auth }) {
                         </div>
                     )}
 
-                    {/* Personal Details Form/Card */}
-                    <div style={styles.gridContainer}>
-                        <form onSubmit={handleSave} style={styles.cardBox}>
-                            <div style={styles.cardHeaderRow}>
-                                <h3 style={styles.cardTitle}>Personal details</h3>
-                                {isEditing && (
-                                    <div style={styles.actionButtonGroup}>
-                                        <button 
-                                            type="button" 
-                                            onClick={handleCancel} 
-                                            style={styles.cancelButton}
-                                            disabled={processing}
-                                        >
-                                            Cancel
-                                        </button>
-                                        <button 
-                                            type="submit" 
-                                            style={styles.saveButton}
-                                            disabled={processing}
-                                        >
-                                            {processing ? 'Saving...' : 'Save Changes'}
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div style={styles.detailRow}>
-                                <span style={styles.key}>Full name:</span>
-                                {isEditing ? (
-                                    <div style={styles.inputWrapper}>
-                                        <input 
-                                            type="text" 
-                                            value={data.name} 
-                                            onChange={e => setData('name', e.target.value)} 
-                                            style={styles.input} 
-                                        />
-                                        {errors.name && <span style={styles.errorText}>{errors.name}</span>}
-                                    </div>
-                                ) : (
-                                    <span style={styles.value}>{user.name || 'N/A'}</span>
-                                )}
-                            </div>
-
-                            <div style={styles.detailRow}>
-                                <span style={styles.key}>Date of Birth:</span>
-                                {isEditing ? (
-                                    <div style={styles.inputWrapper}>
-                                        <input 
-                                            type="text" 
-                                            value={data.date_of_birth} 
-                                            onChange={e => setData('date_of_birth', e.target.value)} 
-                                            placeholder="e.g. January 1, 1987"
-                                            style={styles.input} 
-                                        />
-                                    </div>
-                                ) : (
-                                    <span style={styles.value}>{user.date_of_birth || 'N/A'}</span>
-                                )}
-                            </div>
-
-                            <div style={styles.detailRow}>
-                                <span style={styles.key}>Gender:</span>
-                                {isEditing ? (
-                                    <div style={styles.inputWrapper}>
-                                        <input 
-                                            type="text" 
-                                            value={data.gender} 
-                                            onChange={e => setData('gender', e.target.value)} 
-                                            placeholder="e.g. Male"
-                                            style={styles.input} 
-                                        />
-                                    </div>
-                                ) : (
-                                    <span style={styles.value}>{user.gender || 'N/A'}</span>
-                                )}
-                            </div>
-
-                            <div style={styles.detailRow}>
-                                <span style={styles.key}>Nationality:</span>
-                                {isEditing ? (
-                                    <div style={styles.inputWrapper}>
-                                        <input 
-                                            type="text" 
-                                            value={data.nationality} 
-                                            onChange={e => setData('nationality', e.target.value)} 
-                                            placeholder="e.g. American"
-                                            style={styles.input} 
-                                        />
-                                    </div>
-                                ) : (
-                                    <span style={styles.value}>{user.nationality || 'N/A'}</span>
-                                )}
-                            </div>
-
-                            <div style={styles.detailRow}>
-                                <span style={styles.key}>Address:</span>
-                                {isEditing ? (
-                                    <div style={styles.inputWrapper}>
-                                        <input 
-                                            type="text" 
-                                            value={data.address} 
-                                            onChange={e => setData('address', e.target.value)} 
-                                            placeholder="e.g. California - United States"
-                                            style={styles.input} 
-                                        />
-                                    </div>
-                                ) : (
-                                    <span style={styles.value}>{user.address || 'N/A'}</span>
-                                )}
-                            </div>
-
-                            <div style={styles.detailRow}>
-                                <span style={styles.key}>Phone Number:</span>
-                                {isEditing ? (
-                                    <div style={styles.inputWrapper}>
-                                        <input 
-                                            type="text" 
-                                            value={data.phone_number} 
-                                            onChange={e => setData('phone_number', e.target.value)} 
-                                            placeholder="e.g. (213) 555-1234"
-                                            style={styles.input} 
-                                        />
-                                    </div>
-                                ) : (
-                                    <span style={styles.value}>{user.phone_number || 'N/A'}</span>
-                                )}
-                            </div>
-
-                            <div style={styles.detailRow}>
-                                <span style={styles.key}>Email:</span>
-                                <span style={styles.disabledValue}>{user.email || 'N/A'}</span>
-                            </div>
-                        </form>
-                    </div>
                 </div>
             </div>
         </div>
@@ -413,16 +412,28 @@ const styles = {
         backgroundColor: '#0d1117',
         overflowY: 'auto',
         padding: '24px 36px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
     },
     topBar: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: '24px',
+        width: '100%',
+        maxWidth: '750px',
     },
     breadcrumb: {
         fontSize: '12px',
         color: '#8b949e',
+    },
+    contentBody: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        maxWidth: '750px',
+        margin: '0 auto',
     },
     editButton: {
         backgroundColor: '#21262d',
@@ -439,6 +450,7 @@ const styles = {
         flexDirection: 'column',
         alignItems: 'center',
         marginBottom: '32px',
+        width: '100%',
     },
     avatarContainer: {
         position: 'relative',
@@ -663,14 +675,16 @@ const styles = {
         display: 'flex',
         justifyContent: 'center',
         paddingBottom: '20px',
+        width: '100%',
     },
     cardBox: {
         width: '100%',
-        maxWidth: '680px',
+        maxWidth: '750px',
         backgroundColor: '#161b22',
         borderRadius: '12px',
         border: '1px solid #30363d',
         padding: '20px',
+        boxSizing: 'border-box',
     },
     cardHeaderRow: {
         display: 'flex',

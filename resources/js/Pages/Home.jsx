@@ -445,7 +445,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                     <div style={styles.inputGroup}>
                                         <label style={styles.label}>Year *</label>
                                         <input type="text" placeholder="e.g. 2022" value={data.year} onChange={e => setData('year', e.target.value)} style={styles.input} />
-                                        {errors.year && <span style={styles.error}>{errors.year}</span>}
+                                        {errors.year && <span style={styles.error}>{errors.error}</span>}
                                     </div>
 
                                     <div style={styles.inputGroup}>
@@ -519,17 +519,17 @@ const styles = {
         backgroundColor: '#161b22', borderRadius: '16px', display: 'flex', overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)', border: '1px solid #21262d',
     },
-    mainContent: { flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative' },
-    topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
+    mainContent: { flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
+    topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', width: '100%', maxWidth: '900px' },
     breadcrumb: { fontSize: '12px', color: '#8b949e' },
-    pageHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    pageHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
     addButton: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '30px' },
+    contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '900px', width: '100%', paddingBottom: '30px', margin: '0 auto' },
     pageTitle: { fontSize: '26px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.5px', margin: 0 },
     sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#ffffff', margin: '4px 0 0 0' },
     
     // Dashboard Cards Grid
-    dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '16px' },
+    dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', width: '100%' },
     alertCardUpcoming: {
         backgroundColor: '#161b22', border: '1px solid rgba(210, 153, 34, 0.3)', borderRadius: '12px',
         padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
@@ -559,12 +559,12 @@ const styles = {
     triggerTextUpcoming: { fontSize: '11px', color: '#d29922', fontWeight: '500', flexShrink: 0 },
     triggerTextPastDue: { fontSize: '11px', color: '#f85149', fontWeight: '500', flexShrink: 0 },
 
-    vehicleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px', paddingBottom: '20px' },
+    vehicleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '16px', paddingBottom: '10px', width: '100%' },
     emptyText: { color: '#8b949e', fontSize: '13px', margin: 0 },
     vehicleCard: {
         backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px',
         padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', width: '100%', boxSizing: 'border-box',
     },
     cardContentClickable: {
         display: 'flex', gap: '14px', alignItems: 'flex-start', cursor: 'pointer',
@@ -594,6 +594,6 @@ const styles = {
     removePhotoBtn: { backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', flexShrink: 0 },
     error: { color: '#f85149', fontSize: '11px' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' },
-    cancelBtn: { backgroundColor: 'transparent', color: '#8b949e', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
+    cancelBtn: { backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
 };

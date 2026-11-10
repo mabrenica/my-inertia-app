@@ -660,7 +660,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                                         type="button"
                                                                     >
                                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                                            polyline points="20 6 9 17 4 12"
                                                                             <polyline points="20 6 9 17 4 12"></polyline>
                                                                         </svg>
                                                                     </button>
@@ -921,18 +920,18 @@ const styles = {
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)', border: '1px solid #21262d',
         position: 'relative',
     },
-    mainContent: { flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative' },
-    topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+    mainContent: { flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
+    topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%', maxWidth: '850px' },
     breadcrumb: { fontSize: '12px', color: '#8b949e' },
     breadcrumbLink: { color: '#8b949e', textDecoration: 'none' },
     backButton: { backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', textDecoration: 'none' },
-    contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '850px', paddingBottom: '60px' },
+    contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '850px', width: '100%', paddingBottom: '60px', margin: '0 auto' },
     
     // Minimalist Vehicle Profile Card Styles
     profileCard: { 
         backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', 
         padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', display: 'flex', alignItems: 'center', gap: '24px',
-        position: 'relative',
+        position: 'relative', width: '100%', boxSizing: 'border-box'
     },
     profileLeft: { flexShrink: 0 },
     photoThumbContainer: { 
@@ -990,7 +989,7 @@ const styles = {
     },
 
     // Multi-Select Dropdown Filter Styles
-    sectionHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' },
+    sectionHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', width: '100%' },
     sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#ffffff', margin: 0 },
     dropdownWrapper: { position: 'relative' },
     dropdownToggleBtn: {
@@ -1026,7 +1025,7 @@ const styles = {
     dropdownEmpty: { padding: '12px', textAlign: 'center', color: '#8b949e', fontSize: '12px', fontStyle: 'italic' },
 
     // Table Styles
-    tableContainer: { backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)' },
+    tableContainer: { backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', width: '100%', boxSizing: 'border-box' },
     table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' },
     tableHeaderRow: { backgroundColor: '#21262d', borderBottom: '1px solid #30363d', color: '#8b949e' },
     th: { padding: '10px 14px', fontWeight: '600', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.5px' },

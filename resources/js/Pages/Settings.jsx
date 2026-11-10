@@ -10,6 +10,10 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
     const [motoServices, setMotoServices] = useState(initialMotoServices);
     const [toastMessage, setToastMessage] = useState(null);
 
+    // Collapsible States (Set to false so they are collapsed by default)
+    const [carOpen, setCarOpen] = useState(false);
+    const [motoOpen, setMotoOpen] = useState(false);
+
     // Modal State
     const [activeModal, setActiveModal] = useState(null); // 'car' | 'moto' | null
     const [tempServices, setTempServices] = useState([]);
@@ -49,7 +53,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
         return `${parts[0]}, ${parts[1]}, and ${parts[2]}`;
     };
 
-    const openModal = (type) => {
+    const openModal = (type, e) => {
+        if (e) e.stopPropagation();
         setActiveModal(type);
         const currentList = type === 'car' ? carServices : motoServices;
         setTempServices(currentList.map(item => ({
@@ -185,90 +190,144 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
                             {/* Car Services Card */}
                             <div style={styles.settingsCard}>
-                                <div style={styles.cardTitleRow}>
-                                    <h3 style={styles.cardTitle}>Car Services</h3>
-                                    {carServices.length > 0 && (
-                                        <button 
-                                            onClick={() => openModal('car')} 
-                                            style={styles.iconEditBtn}
-                                            title="Edit Services"
-                                            type="button"
+                                <div 
+                                    style={styles.cardTitleRow} 
+                                    onClick={() => setCarOpen(!carOpen)}
+                                >
+                                    <div style={styles.cardTitleLeft}>
+                                        <svg 
+                                            width="16" 
+                                            height="16" 
+                                            viewBox="0 0 24 24" 
+                                            fill="none" 
+                                            stroke="#8b949e" 
+                                            strokeWidth="2.5" 
+                                            strokeLinecap="round" 
+                                            strokeLinejoin="round" 
+                                            style={{ 
+                                                transform: carOpen ? 'rotate(90deg)' : 'rotate(0deg)', 
+                                                transition: 'transform 0.2s ease' 
+                                            }}
                                         >
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                            </svg>
-                                        </button>
-                                    )}
+                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                        </svg>
+                                        <h3 style={styles.cardTitle}>Car Services</h3>
+                                    </div>
+                                    <div style={styles.cardTitleRight} onClick={e => e.stopPropagation()}>
+                                        {carServices.length > 0 && (
+                                            <button 
+                                                onClick={(e) => openModal('car', e)} 
+                                                style={styles.iconEditBtn}
+                                                title="Edit Services"
+                                                type="button"
+                                            >
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {carServices.length === 0 ? (
-                                    <div style={styles.emptyContainer}>
-                                        <span style={styles.emptyStateText}>No services available</span>
-                                        <button onClick={() => openModal('car')} style={styles.primaryAddBtn}>
-                                            + Add Services
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div style={styles.verticalList}>
-                                        {carServices.map((item) => (
-                                            <div key={item.id} style={styles.verticalItem}>
-                                                <span style={styles.verticalItemText}>{item.name}</span>
-                                                <div style={styles.intervalTagsGroup}>
-                                                    {item.interval_days && (
-                                                        <span style={styles.intervalBadge}>Every {formatIntervalDays(item.interval_days)}</span>
-                                                    )}
-                                                    {item.interval_odo && (
-                                                        <span style={styles.intervalBadge}>Every {Number(item.interval_odo).toLocaleString()} ODO</span>
-                                                    )}
-                                                </div>
+                                {carOpen && (
+                                    <div style={styles.collapsibleContent}>
+                                        {carServices.length === 0 ? (
+                                            <div style={styles.emptyContainer}>
+                                                <span style={styles.emptyStateText}>No services available</span>
+                                                <button onClick={(e) => openModal('car', e)} style={styles.primaryAddBtn}>
+                                                    + Add Services
+                                                </button>
                                             </div>
-                                        ))}
+                                        ) : (
+                                            <div style={styles.verticalList}>
+                                                {carServices.map((item) => (
+                                                    <div key={item.id} style={styles.verticalItem}>
+                                                        <span style={styles.verticalItemText}>{item.name}</span>
+                                                        <div style={styles.intervalTagsGroup}>
+                                                            {item.interval_days && (
+                                                                <span style={styles.intervalBadge}>Every {formatIntervalDays(item.interval_days)}</span>
+                                                            )}
+                                                            {item.interval_odo && (
+                                                                <span style={styles.intervalBadge}>Every {Number(item.interval_odo).toLocaleString()} ODO</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
 
                             {/* Motorbike Services Card */}
                             <div style={styles.settingsCard}>
-                                <div style={styles.cardTitleRow}>
-                                    <h3 style={styles.cardTitle}>Motorbike Services</h3>
-                                    {motoServices.length > 0 && (
-                                        <button 
-                                            onClick={() => openModal('moto')} 
-                                            style={styles.iconEditBtn}
-                                            title="Edit Services"
-                                            type="button"
+                                <div 
+                                    style={styles.cardTitleRow} 
+                                    onClick={() => setMotoOpen(!motoOpen)}
+                                >
+                                    <div style={styles.cardTitleLeft}>
+                                        <svg 
+                                            width="16" 
+                                            height="16" 
+                                            viewBox="0 0 24 24" 
+                                            fill="none" 
+                                            stroke="#8b949e" 
+                                            strokeWidth="2.5" 
+                                            strokeLinecap="round" 
+                                            strokeLinejoin="round" 
+                                            style={{ 
+                                                transform: motoOpen ? 'rotate(90deg)' : 'rotate(0deg)', 
+                                                transition: 'transform 0.2s ease' 
+                                            }}
                                         >
-                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                            </svg>
-                                        </button>
-                                    )}
+                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                        </svg>
+                                        <h3 style={styles.cardTitle}>Motorbike Services</h3>
+                                    </div>
+                                    <div style={styles.cardTitleRight} onClick={e => e.stopPropagation()}>
+                                        {motoServices.length > 0 && (
+                                            <button 
+                                                onClick={(e) => openModal('moto', e)} 
+                                                style={styles.iconEditBtn}
+                                                title="Edit Services"
+                                                type="button"
+                                            >
+                                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {motoServices.length === 0 ? (
-                                    <div style={styles.emptyContainer}>
-                                        <span style={styles.emptyStateText}>No services available</span>
-                                        <button onClick={() => openModal('moto')} style={styles.primaryAddBtn}>
-                                            + Add Services
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div style={styles.verticalList}>
-                                        {motoServices.map((item) => (
-                                            <div key={item.id} style={styles.verticalItem}>
-                                                <span style={styles.verticalItemText}>{item.name}</span>
-                                                <div style={styles.intervalTagsGroup}>
-                                                    {item.interval_days && (
-                                                        <span style={styles.intervalBadge}>Every {formatIntervalDays(item.interval_days)}</span>
-                                                    )}
-                                                    {item.interval_odo && (
-                                                        <span style={styles.intervalBadge}>Every {Number(item.interval_odo).toLocaleString()} ODO</span>
-                                                    )}
-                                                </div>
+                                {motoOpen && (
+                                    <div style={styles.collapsibleContent}>
+                                        {motoServices.length === 0 ? (
+                                            <div style={styles.emptyContainer}>
+                                                <span style={styles.emptyStateText}>No services available</span>
+                                                <button onClick={(e) => openModal('moto', e)} style={styles.primaryAddBtn}>
+                                                    + Add Services
+                                                </button>
                                             </div>
-                                        ))}
+                                        ) : (
+                                            <div style={styles.verticalList}>
+                                                {motoServices.map((item) => (
+                                                    <div key={item.id} style={styles.verticalItem}>
+                                                        <span style={styles.verticalItemText}>{item.name}</span>
+                                                        <div style={styles.intervalTagsGroup}>
+                                                            {item.interval_days && (
+                                                                <span style={styles.intervalBadge}>Every {formatIntervalDays(item.interval_days)}</span>
+                                                            )}
+                                                            {item.interval_odo && (
+                                                                <span style={styles.intervalBadge}>Every {Number(item.interval_odo).toLocaleString()} ODO</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -419,11 +478,11 @@ const styles = {
     },
     mainContent: {
         flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px',
-        display: 'flex', flexDirection: 'column', position: 'relative',
+        display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center',
     },
-    topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+    topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%', maxWidth: '750px' },
     breadcrumb: { fontSize: '12px', color: '#8b949e' },
-    contentBody: { display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '750px', paddingBottom: '40px' },
+    contentBody: { display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '750px', width: '100%', paddingBottom: '40px', margin: '0 auto' },
     pageTitle: { fontSize: '28px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.5px', margin: 0 },
     sectionBlock: { display: 'flex', flexDirection: 'column', gap: '16px' },
     sectionHeaderTitle: { color: '#ffffff', fontSize: '18px', fontWeight: '600', margin: 0 },
@@ -432,8 +491,11 @@ const styles = {
         backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px',
         padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', display: 'flex', flexDirection: 'column', gap: '16px',
     },
-    cardTitleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    cardTitleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' },
+    cardTitleLeft: { display: 'flex', alignItems: 'center', gap: '10px' },
+    cardTitleRight: { display: 'flex', alignItems: 'center' },
     cardTitle: { color: '#ffffff', fontSize: '15px', fontWeight: '600', margin: 0 },
+    collapsibleContent: { display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '4px' },
     iconEditBtn: {
         backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d', width: '32px', height: '32px',
         borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
