@@ -6,41 +6,86 @@ import Toast from '@/Components/Toast';
 export default function Settings({ carServices: initialCarServices = [], motoServices: initialMotoServices = [] }) {
     const { flash } = usePage().props;
 
-    // Services state initialized from backend props
     const [carServices, setCarServices] = useState(initialCarServices);
     const [motoServices, setMotoServices] = useState(initialMotoServices);
-
-    // Toast state
     const [toastMessage, setToastMessage] = useState(null);
 
-    // Modal state
+    // Modal State
     const [activeModal, setActiveModal] = useState(null); // 'car' | 'moto' | null
     const [tempServices, setTempServices] = useState([]);
-    const [newItemText, setNewItemText] = useState('');
+    const [newItem, setNewItem] = useState({
+        name: '',
+        interval_days: '',
+        interval_odo: '',
+    });
+
+    // Helper function to format days into Years, Months, and Days
+    const formatIntervalDays = (totalDays) => {
+        const daysNum = Number(totalDays);
+        if (!daysNum || isNaN(daysNum) || daysNum <= 0) return null;
+
+        if (daysNum < 30) {
+            return `${daysNum} ${daysNum === 1 ? 'Day' : 'Days'}`;
+        }
+
+        const years = Math.floor(daysNum / 365);
+        const remainingAfterYears = daysNum % 365;
+        const months = Math.floor(remainingAfterYears / 30);
+        const days = remainingAfterYears % 30;
+
+        let parts = [];
+        if (years > 0) {
+            parts.push(`${years} ${years === 1 ? 'Year' : 'Years'}`);
+        }
+        if (months > 0) {
+            parts.push(`${months} ${months === 1 ? 'Month' : 'Months'}`);
+        }
+        if (days > 0 || parts.length === 0) {
+            parts.push(`${days} ${days === 1 ? 'Day' : 'Days'}`);
+        }
+
+        if (parts.length === 1) return parts[0];
+        if (parts.length === 2) return `${parts[0]} and ${parts[1]}`;
+        return `${parts[0]}, ${parts[1]}, and ${parts[2]}`;
+    };
 
     const openModal = (type) => {
         setActiveModal(type);
         const currentList = type === 'car' ? carServices : motoServices;
-        setTempServices([...currentList]);
-        setNewItemText('');
+        setTempServices(currentList.map(item => ({
+            ...item,
+            interval_days: item.interval_days ?? '',
+            interval_odo: item.interval_odo ?? '',
+        })));
+        setNewItem({ name: '', interval_days: '', interval_odo: '' });
     };
 
     const closeModal = () => {
         setActiveModal(null);
         setTempServices([]);
-        setNewItemText('');
+        setNewItem({ name: '', interval_days: '', interval_odo: '' });
     };
 
     const handleAddItem = (e) => {
         e.preventDefault();
-        if (!newItemText.trim()) return;
-        setTempServices([...tempServices, { id: Date.now() + Math.random(), name: newItemText.trim() }]);
-        setNewItemText('');
+        if (!newItem.name.trim()) return;
+
+        setTempServices([
+            ...tempServices,
+            {
+                id: Date.now() + Math.random(),
+                name: newItem.name.trim(),
+                interval_days: newItem.interval_days ? Number(newItem.interval_days) : '',
+                interval_odo: newItem.interval_odo ? Number(newItem.interval_odo) : '',
+            }
+        ]);
+
+        setNewItem({ name: '', interval_days: '', interval_odo: '' });
     };
 
-    const handleUpdateTempItem = (id, newName) => {
+    const handleUpdateTempItem = (id, field, value) => {
         setTempServices(tempServices.map(item => 
-            item.id === id ? { ...item, name: newName } : item
+            item.id === id ? { ...item, [field]: value } : item
         ));
     };
 
@@ -82,6 +127,41 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 .animated-overlay {
                     animation: fadeInOverlay 0.2s ease-out forwards;
                 }
+                input::-webkit-outer-spin-button,
+                input::-webkit-inner-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+                .tooltip-container {
+                    position: relative;
+                    display: inline-flex;
+                    align-items: center;
+                }
+                .tooltip-text {
+                    visibility: hidden;
+                    width: 240px;
+                    background-color: #21262d;
+                    color: #c9d1d9;
+                    text-align: left;
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    position: absolute;
+                    z-index: 1050;
+                    bottom: 125%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    opacity: 0;
+                    transition: opacity 0.2s;
+                    font-size: 11px;
+                    font-weight: normal;
+                    line-height: 1.4;
+                    border: 1px solid #30363d;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+                }
+                .tooltip-container:hover .tooltip-text {
+                    visibility: visible;
+                    opacity: 1;
+                }
             `}</style>
 
             <div style={styles.appWindow}>
@@ -101,9 +181,9 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
                         <div style={styles.sectionBlock}>
                             <h2 style={styles.sectionHeaderTitle}>Services Configuration</h2>
-                            <p style={styles.sectionHeaderDesc}>Configure available maintenance and service types for your fleet vehicles.</p>
+                            <p style={styles.sectionHeaderDesc}>Configure maintenance service types and periodic intervals for your fleet vehicles.</p>
 
-                            {/* 1. Car Services Card */}
+                            {/* Car Services Card */}
                             <div style={styles.settingsCard}>
                                 <div style={styles.cardTitleRow}>
                                     <h3 style={styles.cardTitle}>Car Services</h3>
@@ -134,13 +214,21 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                         {carServices.map((item) => (
                                             <div key={item.id} style={styles.verticalItem}>
                                                 <span style={styles.verticalItemText}>{item.name}</span>
+                                                <div style={styles.intervalTagsGroup}>
+                                                    {item.interval_days && (
+                                                        <span style={styles.intervalBadge}>Every {formatIntervalDays(item.interval_days)}</span>
+                                                    )}
+                                                    {item.interval_odo && (
+                                                        <span style={styles.intervalBadge}>Every {Number(item.interval_odo).toLocaleString()} ODO</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
                             </div>
 
-                            {/* 2. Motorbike Services Card */}
+                            {/* Motorbike Services Card */}
                             <div style={styles.settingsCard}>
                                 <div style={styles.cardTitleRow}>
                                     <h3 style={styles.cardTitle}>Motorbike Services</h3>
@@ -171,6 +259,14 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                         {motoServices.map((item) => (
                                             <div key={item.id} style={styles.verticalItem}>
                                                 <span style={styles.verticalItemText}>{item.name}</span>
+                                                <div style={styles.intervalTagsGroup}>
+                                                    {item.interval_days && (
+                                                        <span style={styles.intervalBadge}>Every {formatIntervalDays(item.interval_days)}</span>
+                                                    )}
+                                                    {item.interval_odo && (
+                                                        <span style={styles.intervalBadge}>Every {Number(item.interval_odo).toLocaleString()} ODO</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -180,27 +276,68 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         </div>
                     </div>
 
-                    {/* Manage / Edit Services Modal */}
+                    {/* Manage Services Modal with Tooltip */}
                     {activeModal && (
                         <div style={styles.modalOverlay} className="animated-overlay">
                             <div style={styles.modalBox} className="animated-modal">
                                 <div style={styles.modalHeader}>
-                                    <h3 style={styles.modalTitle}>
-                                        {activeModal === 'car' ? 'Manage Car Services' : 'Manage Motorbike Services'}
-                                    </h3>
+                                    <div style={styles.modalTitleWrapper}>
+                                        <h3 style={styles.modalTitle}>
+                                            {activeModal === 'car' ? 'Manage Car Services' : 'Manage Motorbike Services'}
+                                        </h3>
+                                        <div className="tooltip-container" style={styles.tooltipIconWrapper}>
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b949e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer' }}>
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                            </svg>
+                                            <span className="tooltip-text">
+                                                Set the maintenance services along with their periodic days or ODO interval targets.
+                                            </span>
+                                        </div>
+                                    </div>
                                     <button onClick={closeModal} style={styles.closeBtn} type="button">✕</button>
                                 </div>
 
                                 <form onSubmit={handleAddItem} style={styles.addItemForm}>
-                                    <input 
-                                        type="text"
-                                        value={newItemText}
-                                        onChange={(e) => setNewItemText(e.target.value)}
-                                        placeholder="e.g. Oil change, Tire replacement..."
-                                        style={styles.modalInput}
-                                    />
-                                    <button type="submit" style={styles.modalAddBtn}>Add</button>
+                                    <div style={styles.formRow}>
+                                        <input 
+                                            type="text"
+                                            value={newItem.name}
+                                            onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                                            placeholder="Service name (e.g. Oil Change)"
+                                            style={{ ...styles.modalInput, flex: 2 }}
+                                        />
+                                        <input 
+                                            type="text"
+                                            value={newItem.interval_days}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (/^\d*$/.test(val)) setNewItem({ ...newItem, interval_days: val });
+                                            }}
+                                            placeholder="Days"
+                                            style={{ ...styles.modalInput, flex: 1 }}
+                                        />
+                                        <input 
+                                            type="text"
+                                            value={newItem.interval_odo}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (/^\d*$/.test(val)) setNewItem({ ...newItem, interval_odo: val });
+                                            }}
+                                            placeholder="ODO"
+                                            style={{ ...styles.modalInput, flex: 1 }}
+                                        />
+                                        <button type="submit" style={styles.modalAddBtn}>Add</button>
+                                    </div>
                                 </form>
+
+                                <div style={styles.modalListHeader}>
+                                    <span style={{ flex: 2 }}>Service Name</span>
+                                    <span style={{ flex: 1 }}>Every (Days)</span>
+                                    <span style={{ flex: 1 }}>Every (ODO)</span>
+                                    <span style={{ width: '28px' }}></span>
+                                </div>
 
                                 <div style={styles.modalListContainer}>
                                     {tempServices.length === 0 ? (
@@ -211,8 +348,29 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                                 <input 
                                                     type="text"
                                                     value={item.name}
-                                                    onChange={(e) => handleUpdateTempItem(item.id, e.target.value)}
-                                                    style={styles.modalInlineInput}
+                                                    onChange={(e) => handleUpdateTempItem(item.id, 'name', e.target.value)}
+                                                    placeholder="Service Name"
+                                                    style={{ ...styles.modalInlineInput, flex: 2 }}
+                                                />
+                                                <input 
+                                                    type="text"
+                                                    value={item.interval_days}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (/^\d*$/.test(val)) handleUpdateTempItem(item.id, 'interval_days', val);
+                                                    }}
+                                                    placeholder="Days"
+                                                    style={{ ...styles.modalInlineInput, flex: 1 }}
+                                                />
+                                                <input 
+                                                    type="text"
+                                                    value={item.interval_odo}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        if (/^\d*$/.test(val)) handleUpdateTempItem(item.id, 'interval_odo', val);
+                                                    }}
+                                                    placeholder="ODO"
+                                                    style={{ ...styles.modalInlineInput, flex: 1 }}
                                                 />
                                                 <button 
                                                     onClick={() => handleRemoveTempItem(item.id)}
@@ -250,294 +408,100 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
 const styles = {
     page: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: '#12161f',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: 0,
-        padding: '24px',
-        boxSizing: 'border-box',
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
+        backgroundColor: '#12161f', display: 'flex', justifyContent: 'center', alignItems: 'center',
+        margin: 0, padding: '24px', boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     },
     appWindow: {
-        width: '100%',
-        maxWidth: '1280px',
-        height: '100%',
-        maxHeight: '860px',
-        backgroundColor: '#161b22',
-        borderRadius: '16px',
-        display: 'flex',
-        overflow: 'hidden',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-        border: '1px solid #21262d',
+        width: '100%', maxWidth: '1280px', height: '100%', maxHeight: '860px',
+        backgroundColor: '#161b22', borderRadius: '16px', display: 'flex', overflow: 'hidden',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)', border: '1px solid #21262d',
     },
     mainContent: {
-        flex: 1,
-        backgroundColor: '#0d1117',
-        overflowY: 'auto',
-        padding: '24px 36px',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'relative',
+        flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px',
+        display: 'flex', flexDirection: 'column', position: 'relative',
     },
-    topBar: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px',
-    },
-    breadcrumb: {
-        fontSize: '12px',
-        color: '#8b949e',
-    },
-    contentBody: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '24px',
-        maxWidth: '750px',
-        paddingBottom: '40px',
-    },
-    pageTitle: {
-        fontSize: '28px',
-        fontWeight: '700',
-        color: '#ffffff',
-        letterSpacing: '-0.5px',
-        margin: 0,
-    },
-    sectionBlock: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-    },
-    sectionHeaderTitle: {
-        color: '#ffffff',
-        fontSize: '18px',
-        fontWeight: '600',
-        margin: 0,
-    },
-    sectionHeaderDesc: {
-        color: '#8b949e',
-        fontSize: '13px',
-        margin: '-10px 0 0 0',
-    },
+    topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
+    breadcrumb: { fontSize: '12px', color: '#8b949e' },
+    contentBody: { display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '750px', paddingBottom: '40px' },
+    pageTitle: { fontSize: '28px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.5px', margin: 0 },
+    sectionBlock: { display: 'flex', flexDirection: 'column', gap: '16px' },
+    sectionHeaderTitle: { color: '#ffffff', fontSize: '18px', fontWeight: '600', margin: 0 },
+    sectionHeaderDesc: { color: '#8b949e', fontSize: '13px', margin: '-10px 0 0 0' },
     settingsCard: {
-        backgroundColor: '#161b22',
-        border: '1px solid #30363d',
-        borderRadius: '12px',
-        padding: '20px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
+        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px',
+        padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', display: 'flex', flexDirection: 'column', gap: '16px',
     },
-    cardTitleRow: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    cardTitle: {
-        color: '#ffffff',
-        fontSize: '15px',
-        fontWeight: '600',
-        margin: 0,
-    },
+    cardTitleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    cardTitle: { color: '#ffffff', fontSize: '15px', fontWeight: '600', margin: 0 },
     iconEditBtn: {
-        backgroundColor: '#21262d',
-        color: '#8b949e',
-        border: '1px solid #30363d',
-        width: '32px',
-        height: '32px',
-        borderRadius: '6px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        transition: 'color 0.2s, background-color 0.2s',
+        backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d', width: '32px', height: '32px',
+        borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
     },
     emptyContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '12px',
-        padding: '24px 0',
-        border: '1px dashed #30363d',
-        borderRadius: '8px',
-        backgroundColor: '#0d1117',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: '12px', padding: '24px 0', border: '1px dashed #30363d', borderRadius: '8px', backgroundColor: '#0d1117',
     },
-    emptyStateText: {
-        color: '#8b949e',
-        fontSize: '13px',
-        fontStyle: 'italic',
-    },
-    primaryAddBtn: {
-        backgroundColor: '#1f6feb',
-        color: '#ffffff',
-        border: 'none',
-        borderRadius: '6px',
-        padding: '6px 14px',
-        fontSize: '12px',
-        fontWeight: '500',
-        cursor: 'pointer',
-    },
-    verticalList: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '8px',
-    },
+    emptyStateText: { color: '#8b949e', fontSize: '13px', fontStyle: 'italic' },
+    primaryAddBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    verticalList: { display: 'flex', flexDirection: 'column', gap: '8px' },
     verticalItem: {
-        backgroundColor: '#0d1117',
-        border: '1px solid #30363d',
-        borderRadius: '8px',
-        padding: '10px 14px',
+        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '8px',
+        padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     },
-    verticalItemText: {
-        color: '#c9d1d9',
-        fontSize: '13px',
-        fontWeight: '500',
-    },
+    verticalItemText: { color: '#c9d1d9', fontSize: '13px', fontWeight: '500' },
+    intervalTagsGroup: { display: 'flex', gap: '6px' },
+    intervalBadge: { backgroundColor: '#1f6feb22', color: '#3b82f6', fontSize: '11px', fontWeight: '600', padding: '3px 8px', borderRadius: '4px' },
+    
+    // Larger Modal Styles & Tooltip
     modalOverlay: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000,
     },
     modalBox: {
-        backgroundColor: '#161b22',
-        border: '1px solid #30363d',
-        borderRadius: '12px',
-        padding: '20px',
-        width: '100%',
-        maxWidth: '420px',
-        boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
+        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '14px',
+        padding: '24px', width: '100%', maxWidth: '640px', boxShadow: '0 25px 50px rgba(0,0,0,0.7)',
+        display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box',
     },
-    modalHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    modalTitle: {
-        color: '#ffffff',
-        fontSize: '15px',
-        fontWeight: '600',
-        margin: 0,
-    },
-    closeBtn: {
-        background: 'none',
-        border: 'none',
-        color: '#8b949e',
-        fontSize: '16px',
-        cursor: 'pointer',
-    },
-    addItemForm: {
-        display: 'flex',
-        gap: '8px',
-    },
+    modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    modalTitleWrapper: { display: 'flex', alignItems: 'center', gap: '10px' },
+    modalTitle: { color: '#ffffff', fontSize: '16px', fontWeight: '600', margin: 0 },
+    tooltipIconWrapper: { display: 'flex', alignItems: 'center' },
+    closeBtn: { background: 'none', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer' },
+    addItemForm: { display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' },
+    formRow: { display: 'flex', gap: '8px', width: '100%', alignItems: 'center', boxSizing: 'border-box' },
     modalInput: {
-        flex: 1,
-        backgroundColor: '#0d1117',
-        border: '1px solid #30363d',
-        borderRadius: '6px',
-        padding: '7px 10px',
-        color: '#ffffff',
-        fontSize: '12px',
-        outline: 'none',
+        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px',
+        padding: '8px 10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box',
     },
     modalAddBtn: {
-        backgroundColor: '#1f6feb',
-        color: '#ffffff',
-        border: 'none',
-        borderRadius: '6px',
-        padding: '0 14px',
-        fontSize: '12px',
-        fontWeight: '500',
-        cursor: 'pointer',
+        backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', borderRadius: '6px',
+        padding: '8px 16px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', flexShrink: 0,
+    },
+    modalListHeader: {
+        display: 'flex', gap: '8px', padding: '0 8px', color: '#8b949e', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', boxSizing: 'border-box'
     },
     modalListContainer: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-        maxHeight: '220px',
-        overflowY: 'auto',
-        paddingRight: '4px',
+        display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '260px', overflowY: 'auto', paddingRight: '4px', boxSizing: 'border-box',
     },
-    modalEmptyText: {
-        color: '#8b949e',
-        fontSize: '12px',
-        textAlign: 'center',
-        margin: '12px 0',
-    },
+    modalEmptyText: { color: '#8b949e', fontSize: '12px', textAlign: 'center', margin: '12px 0' },
     modalListItem: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        backgroundColor: '#0d1117',
-        border: '1px solid #21262d',
-        borderRadius: '6px',
-        padding: '6px 12px',
-        gap: '8px',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        backgroundColor: '#0d1117', border: '1px solid #21262d', borderRadius: '6px',
+        padding: '6px 8px', gap: '8px', boxSizing: 'border-box', width: '100%',
     },
     modalInlineInput: {
-        flex: 1,
-        backgroundColor: 'transparent',
-        border: 'none',
-        color: '#c9d1d9',
-        fontSize: '12px',
-        outline: 'none',
-        padding: '4px 0',
+        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '4px',
+        color: '#c9d1d9', fontSize: '12px', outline: 'none', padding: '6px 8px', boxSizing: 'border-box',
     },
     iconDeleteBtn: {
-        backgroundColor: 'transparent',
-        border: 'none',
-        color: '#f85149',
-        cursor: 'pointer',
-        padding: '2px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: 0.8,
+        backgroundColor: 'transparent', border: 'none', color: '#f85149', cursor: 'pointer',
+        padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.8, flexShrink: 0,
     },
     modalActions: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: '8px',
-        borderTop: '1px solid #21262d',
-        paddingTop: '14px',
-        marginTop: '4px',
+        display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #21262d',
+        paddingTop: '14px', marginTop: '4px', boxSizing: 'border-box',
     },
-    cancelBtn: {
-        backgroundColor: 'transparent',
-        color: '#8b949e',
-        border: '1px solid #30363d',
-        padding: '6px 14px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        cursor: 'pointer',
-    },
-    saveBtn: {
-        backgroundColor: '#1f6feb',
-        color: '#ffffff',
-        border: 'none',
-        padding: '6px 14px',
-        borderRadius: '6px',
-        fontSize: '12px',
-        fontWeight: '500',
-        cursor: 'pointer',
-    },
+    cancelBtn: { backgroundColor: 'transparent', color: '#8b949e', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
+    saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
 };
