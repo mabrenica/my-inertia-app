@@ -8,12 +8,35 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const [showLogModal, setShowLogModal] = useState(false);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [showOdoModal, setShowOdoModal] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
 
-    // Editing & Deleting States
-    const [editingLogId, setEditingLogId] = useState(null);
-    const [editForm, setEditForm] = useState({ date: '', service: '', odo: '', cost: '', notes: '' });
-    const [deleteModalLog, setDeleteModalLog] = useState(null);
+    // ODO Update Form
+    const { data: odoData, setData: setOdoData, put: putOdo, processing: odoProcessing, errors: odoErrors, reset: resetOdo, clearErrors: clearOdoErrors } = useForm({
+        current_odo: vehicle.current_odo || '',
+    });
+
+    const openOdoModal = () => {
+        clearOdoErrors();
+        setOdoData('current_odo', vehicle.current_odo || '');
+        setShowOdoModal(true);
+    };
+
+    const closeOdoModal = () => {
+        setShowOdoModal(false);
+        resetOdo();
+    };
+
+    const handleUpdateOdo = (e) => {
+        e.preventDefault();
+        putOdo(`/vehicles/${vehicle.id}/odo`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                closeOdoModal();
+                setToastMessage('Current ODO updated successfully!');
+            }
+        });
+    };
     
     // Multi-select dropdown state
     const [selectedServiceFilters, setSelectedServiceFilters] = useState([]);
@@ -75,59 +98,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         e.preventDefault();
         
         post(`/vehicles/${vehicle.id}/maintenance-logs`, {
+            preserveScroll: true,
             onSuccess: () => {
                 closeModal();
                 setToastMessage('Maintenance log added successfully!');
             },
-        });
-    };
-
-    // Inline Edit Handlers
-    const startEditing = (log) => {
-        setEditingLogId(log.id);
-        setEditForm({
-            date: log.date || '',
-            service: log.services && log.services.length > 0 ? log.services[0] : (servicePreferences[0]?.name || ''),
-            odo: log.odo || '',
-            cost: log.cost || '',
-            notes: log.notes || '',
-        });
-    };
-
-    const cancelEditing = () => {
-        setEditingLogId(null);
-        setEditForm({ date: '', service: '', odo: '', cost: '', notes: '' });
-    };
-
-    const saveEditing = (logId) => {
-        router.put(`/maintenance-logs/${logId}`, {
-            services: editForm.service ? [editForm.service] : [],
-            odo: editForm.odo,
-            date: editForm.date,
-            cost: editForm.cost,
-            notes: editForm.notes,
-        }, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setEditingLogId(null);
-                setToastMessage('Maintenance log updated successfully!');
-            }
-        });
-    };
-
-    // Delete Handlers
-    const confirmDelete = (log) => {
-        setDeleteModalLog(log);
-    };
-
-    const handleDelete = () => {
-        if (!deleteModalLog) return;
-        router.delete(`/maintenance-logs/${deleteModalLog.id}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                setDeleteModalLog(null);
-                setToastMessage('Maintenance log deleted successfully!');
-            }
         });
     };
 
@@ -138,6 +113,14 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         if (!year || !month || !day) return dateStr;
         const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
         if (isNaN(dateObj.getTime())) return dateStr;
+        return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    // Format timestamp for ODO last updated date
+    const formatTimestampToReadable = (timestamp) => {
+        if (!timestamp) return null;
+        const dateObj = new Date(timestamp);
+        if (isNaN(dateObj.getTime())) return null;
         return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
@@ -259,6 +242,19 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     <div style={styles.contentBody}>
                         {/* Compact Vehicle Profile Card */}
                         <div style={styles.profileCard}>
+                            <button 
+                                onClick={openOdoModal} 
+                                style={styles.updateOdoBtnTopRight}
+                                type="button"
+                                title="Update Current ODO"
+                            >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Update ODO
+                            </button>
+
                             <div style={styles.profileLeft}>
                                 {photoUrl ? (
                                     <div 
@@ -303,6 +299,19 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 <div style={styles.detailItem}>
                                     <span style={styles.detailKey}>Year:</span>
                                     <span style={styles.detailVal}>{vehicle.year}</span>
+                                </div>
+                                <div style={styles.detailItem}>
+                                    <span style={styles.detailKey}>Current ODO:</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                        <span style={styles.detailVal}>
+                                            {vehicle.current_odo ? `${Number(vehicle.current_odo).toLocaleString()} km` : '—'}
+                                        </span>
+                                        {vehicle.odo_updated_at && (
+                                            <span style={styles.lastUpdatedText}>
+                                                (Updated: {formatTimestampToReadable(vehicle.odo_updated_at)})
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <div style={styles.detailItem}>
                                     <span style={styles.detailKey}>Description:</span>
@@ -422,163 +431,33 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         <th style={styles.th}>ODO</th>
                                         <th style={styles.th}>Cost</th>
                                         <th style={styles.th}>Notes</th>
-                                        <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredLogs.length === 0 ? (
                                         <tr>
-                                            <td colSpan="6" style={styles.emptyTableCell}>
+                                            <td colSpan="5" style={styles.emptyTableCell}>
                                                 No maintenance records found.
                                             </td>
                                         </tr>
                                     ) : (
-                                        filteredLogs.map((log) => {
-                                            const isEditing = editingLogId === log.id;
-                                            return (
-                                                <tr key={log.id} style={styles.tableBodyRow}>
-                                                    {/* Date Column */}
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <input 
-                                                                type="date"
-                                                                value={editForm.date}
-                                                                onChange={e => setEditForm({ ...editForm, date: e.target.value })}
-                                                                style={styles.inlineInput}
-                                                            />
-                                                        ) : (
-                                                            formatDateToReadable(log.date)
-                                                        )}
-                                                    </td>
-
-                                                    {/* Service Column */}
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <select
-                                                                value={editForm.service}
-                                                                onChange={e => setEditForm({ ...editForm, service: e.target.value })}
-                                                                style={styles.inlineSelect}
-                                                            >
-                                                                <option value="">Select Service</option>
-                                                                {servicePreferences.map((pref, pIdx) => (
-                                                                    <option key={pIdx} value={pref.name}>{pref.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        ) : (
-                                                            <div style={styles.serviceBadgeList}>
-                                                                {log.services && log.services.map((srv, i) => (
-                                                                    <span key={i} style={styles.serviceBadge}>{srv}</span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </td>
-
-                                                    {/* ODO Column */}
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <input 
-                                                                type="text"
-                                                                value={editForm.odo}
-                                                                onChange={e => {
-                                                                    const val = e.target.value;
-                                                                    if (/^\d*$/.test(val)) setEditForm({ ...editForm, odo: val });
-                                                                }}
-                                                                style={styles.inlineInput}
-                                                            />
-                                                        ) : (
-                                                            log.odo
-                                                        )}
-                                                    </td>
-
-                                                    {/* Cost Column */}
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <input 
-                                                                type="text"
-                                                                value={editForm.cost}
-                                                                onChange={e => {
-                                                                    const val = e.target.value;
-                                                                    if (/^\d*\.?\d*$/.test(val)) setEditForm({ ...editForm, cost: val });
-                                                                }}
-                                                                style={styles.inlineInput}
-                                                            />
-                                                        ) : (
-                                                            log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
-                                                        )}
-                                                    </td>
-
-                                                    {/* Notes Column */}
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <input 
-                                                                type="text"
-                                                                value={editForm.notes}
-                                                                onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
-                                                                style={styles.inlineInput}
-                                                            />
-                                                        ) : (
-                                                            log.notes || '—'
-                                                        )}
-                                                    </td>
-
-                                                    {/* Actions Column */}
-                                                    <td style={{ ...styles.td, textAlign: 'right' }}>
-                                                        <div style={styles.actionIconsGroup}>
-                                                            {isEditing ? (
-                                                                <>
-                                                                    <button 
-                                                                        onClick={() => saveEditing(log.id)}
-                                                                        style={styles.iconActionBtn}
-                                                                        title="Save changes"
-                                                                        type="button"
-                                                                    >
-                                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#238636" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                                            <polyline points="20 6 9 17 4 12"></polyline>
-                                                                        </svg>
-                                                                    </button>
-                                                                    <button 
-                                                                        onClick={cancelEditing}
-                                                                        style={styles.iconActionBtn}
-                                                                        title="Cancel"
-                                                                        type="button"
-                                                                    >
-                                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b949e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                                                        </svg>
-                                                                    </button>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <button 
-                                                                        onClick={() => startEditing(log)}
-                                                                        style={styles.iconActionBtn}
-                                                                        title="Edit log"
-                                                                        type="button"
-                                                                    >
-                                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b949e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                                        </svg>
-                                                                    </button>
-                                                                    <button 
-                                                                        onClick={() => confirmDelete(log)}
-                                                                        style={styles.iconActionDeleteBtn}
-                                                                        title="Delete log"
-                                                                        type="button"
-                                                                    >
-                                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f85149" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                                        </svg>
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
+                                        filteredLogs.map((log) => (
+                                            <tr key={log.id} style={styles.tableBodyRow}>
+                                                <td style={styles.td}>{formatDateToReadable(log.date)}</td>
+                                                <td style={styles.td}>
+                                                    <div style={styles.serviceBadgeList}>
+                                                        {log.services && log.services.map((srv, i) => (
+                                                            <span key={i} style={styles.serviceBadge}>{srv}</span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td style={styles.td}>{log.odo}</td>
+                                                <td style={styles.td}>
+                                                    {log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                                                </td>
+                                                <td style={styles.td}>{log.notes || '—'}</td>
+                                            </tr>
+                                        ))
                                     )}
                                 </tbody>
                             </table>
@@ -608,22 +487,44 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </div>
                     )}
 
-                    {/* Delete Confirmation Modal */}
-                    {deleteModalLog && (
+                    {/* Update ODO Modal */}
+                    {showOdoModal && (
                         <div style={styles.modalOverlay} className="animated-overlay">
-                            <div style={styles.confirmModalBox} className="animated-modal">
-                                <h3 style={styles.modalTitle}>Delete Maintenance Log</h3>
-                                <p style={styles.confirmText}>
-                                    Are you sure you want to delete this maintenance record? This action cannot be undone.
-                                </p>
-                                <div style={styles.modalActions}>
-                                    <button onClick={() => setDeleteModalLog(null)} style={styles.cancelBtn} type="button">
-                                        Cancel
-                                    </button>
-                                    <button onClick={handleDelete} style={styles.deleteConfirmBtn} type="button">
-                                        Delete
-                                    </button>
+                            <div style={styles.modalBox} className="animated-modal">
+                                <div style={styles.modalHeader}>
+                                    <h3 style={styles.modalTitle}>Update Current ODO</h3>
+                                    <button onClick={closeOdoModal} style={styles.closeBtn} type="button">✕</button>
                                 </div>
+
+                                <form onSubmit={handleUpdateOdo} style={styles.form}>
+                                    <div style={styles.inputGroup}>
+                                        <label style={styles.label}>Current Odometer (km/miles) *</label>
+                                        <input 
+                                            type="text"
+                                            placeholder="e.g. 15500"
+                                            value={odoData.current_odo}
+                                            onChange={e => {
+                                                const val = e.target.value;
+                                                if (/^\d*$/.test(val)) {
+                                                    setOdoData('current_odo', val);
+                                                }
+                                            }}
+                                            style={styles.input}
+                                            required
+                                            autoFocus
+                                        />
+                                        {odoErrors.current_odo && <span style={styles.errorText}>{odoErrors.current_odo}</span>}
+                                    </div>
+
+                                    <div style={styles.modalActions}>
+                                        <button type="button" onClick={closeOdoModal} style={styles.cancelBtn}>
+                                            Cancel
+                                        </button>
+                                        <button type="submit" style={styles.saveBtn} disabled={odoProcessing}>
+                                            {odoProcessing ? 'Saving...' : 'Save ODO'}
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}
@@ -762,7 +663,8 @@ const styles = {
     // Minimalist Vehicle Profile Card Styles
     profileCard: { 
         backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', 
-        padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', display: 'flex', alignItems: 'center', gap: '24px' 
+        padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', display: 'flex', alignItems: 'center', gap: '24px',
+        position: 'relative',
     },
     profileLeft: { flexShrink: 0 },
     photoThumbContainer: { 
@@ -782,9 +684,16 @@ const styles = {
     },
     profileRight: { flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' },
     detailItem: { display: 'flex', alignItems: 'center', fontSize: '13px', gap: '8px' },
-    detailKey: { color: '#8b949e', fontWeight: '500', width: '85px', flexShrink: 0 },
+    detailKey: { color: '#8b949e', fontWeight: '500', width: '105px', flexShrink: 0 },
     detailVal: { color: '#ffffff', fontWeight: '500' },
     typeBadge: { display: 'inline-block', backgroundColor: '#1f6feb22', color: '#3b82f6', fontSize: '10px', fontWeight: '600', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' },
+    updateOdoBtnTopRight: {
+        position: 'absolute', top: '16px', right: '16px',
+        backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d',
+        padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s ease',
+    },
+    lastUpdatedText: { color: '#8b949e', fontSize: '11px', fontStyle: 'italic' },
 
     // Full Size Photo Modal Styles
     fullPhotoBox: {
@@ -846,24 +755,6 @@ const styles = {
     serviceBadgeList: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
     serviceBadge: { backgroundColor: '#1f6feb22', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600' },
 
-    actionIconsGroup: { display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' },
-    iconActionBtn: {
-        backgroundColor: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
-        width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
-    },
-    iconActionDeleteBtn: {
-        backgroundColor: '#21262d', border: '1px solid #30363d', borderRadius: '6px',
-        width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
-    },
-    inlineInput: {
-        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px',
-        padding: '4px 8px', color: '#ffffff', fontSize: '12px', width: '100%', outline: 'none', boxSizing: 'border-box'
-    },
-    inlineSelect: {
-        backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px',
-        padding: '4px 8px', color: '#ffffff', fontSize: '12px', width: '100%', outline: 'none', boxSizing: 'border-box'
-    },
-
     // Fixed Sticky Floating Plus Button
     floatingBtn: {
         position: 'fixed', bottom: '40px', right: '48px', width: '56px', height: '56px',
@@ -881,12 +772,6 @@ const styles = {
         padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
         display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto',
     },
-    confirmModalBox: {
-        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px',
-        padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)',
-        display: 'flex', flexDirection: 'column', gap: '16px',
-    },
-    confirmText: { color: '#8b949e', fontSize: '13px', lineHeight: '1.5', margin: 0 },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     modalTitle: { color: '#ffffff', fontSize: '16px', fontWeight: '600', margin: 0 },
     closeBtn: { background: 'none', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer' },
@@ -912,5 +797,4 @@ const styles = {
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #21262d', paddingTop: '14px', marginTop: '4px' },
     cancelBtn: { backgroundColor: 'transparent', color: '#8b949e', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
     saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    deleteConfirmBtn: { backgroundColor: '#f85149', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
 };

@@ -55,6 +55,7 @@ Route::post('/logout', function (Request $request) {
 Route::middleware(['auth'])->group(function () {
     Route::post('/vehicles', [AuthController::class, 'storeVehicle']);
     Route::post('/vehicles/{vehicle}', [AuthController::class, 'updateVehicle']);
+    Route::put('/vehicles/{vehicle}/odo', [AuthController::class, 'updateVehicleOdo']); // <--- Add this route
     Route::delete('/vehicles/{vehicle}', [AuthController::class, 'destroyVehicle']); 
 });
 

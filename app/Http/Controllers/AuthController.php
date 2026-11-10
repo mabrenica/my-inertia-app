@@ -295,4 +295,22 @@ class AuthController extends Controller
 
         return redirect()->back()->with('success', 'Maintenance log deleted successfully!');
     }
+
+    public function updateVehicleOdo(Request $request, Vehicle $vehicle)
+    {
+        if ($vehicle->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'current_odo' => ['required', 'string', 'max:50'],
+        ]);
+
+        $vehicle->update([
+            'current_odo' => $validated['current_odo'],
+            'odo_updated_at' => now(),
+        ]);
+
+        return back()->with('success', 'Current ODO updated successfully!');
+    }
 }
