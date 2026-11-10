@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use App\Models\Vehicle;
+use App\Models\UserServicePreference;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use App\Models\VehicleMaintenanceLog;
 
 class AuthController extends Controller
 {
@@ -202,8 +204,55 @@ class AuthController extends Controller
             abort(403);
         }
 
+        // Retrieve user service preferences to prepopulate options based on vehicle type
+        $preference = UserServicePreference::where('user_id', auth()->id())->first();
+
+        $services = [];
+        if ($preference) {
+            if (strtolower($vehicle->type) === 'car') {
+                $services = $preference->car_services ?? [];
+            } else {
+                $services = $preference->moto_services ?? [];
+            }
+        }
+
+        // Fetch maintenance logs sorted by date descending (latest first)
+        $logs = $vehicle->maintenanceLogs()->latest('date')->get();
+
         return Inertia::render('VehicleShow', [
             'vehicle' => $vehicle,
+            'servicePreferences' => $services,
+            'maintenanceLogs' => $logs,
         ]);
+    }
+
+    public function storeMaintenanceLog(Request $request, Vehicle $vehicle)
+    {
+        // Ensure the authenticated user owns this vehicle
+        if ($vehicle->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'services' => 'required|array|min:1',
+            'odo' => 'required|string',
+            'date' => 'required|date',
+            'cost' => 'nullable|numeric',
+            'notes' => 'nullable|string',
+        ]);
+
+        // Create an individual record for each selected service
+        foreach ($request->services as $serviceName) {
+            VehicleMaintenanceLog::create([
+                'vehicle_id' => $vehicle->id,
+                'services' => [$serviceName],
+                'odo' => $request->odo,
+                'date' => $request->date,
+                'cost' => $request->cost,
+                'notes' => $request->notes,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Maintenance logs added successfully!');
     }
 }

@@ -23,4 +23,9 @@ class Vehicle extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function maintenanceLogs()
+    {
+        return $this->hasMany(VehicleMaintenanceLog::class)->latest('date');
+    }
 }

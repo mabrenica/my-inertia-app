@@ -42,7 +42,7 @@ Route::patch('/profile', [AuthController::class, 'updateProfile'])->middleware('
 // Handle profile avatar photo update
 Route::post('/profile/avatar', [AuthController::class, 'updateAvatar'])->middleware('auth');
 
-Route::delete('/profile/avatar', [AuthController::class, 'removeAvatar'])->middleware('auth');//Route::delete('/profile/avatar', [AuthController::class, 'removeAvatar'])->middleware('auth');
+Route::delete('/profile/avatar', [AuthController::class, 'removeAvatar'])->middleware('auth');
 
 Route::post('/logout', function (Request $request) {
     Auth::logout();
@@ -64,3 +64,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::get('/vehicles/{vehicle}', [AuthController::class, 'showVehicle'])->middleware(['auth']);
+
+Route::middleware(['auth'])->group(function () {
+    Route::post('/vehicles/{vehicle}/maintenance-logs', [AuthController::class, 'storeMaintenanceLog']);
+});

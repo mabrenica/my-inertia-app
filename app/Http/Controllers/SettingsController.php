@@ -31,7 +31,11 @@ class SettingsController extends Controller
             ['id' => 5, 'name' => 'Spark Plug Replacement'],
         ];
 
-        // Retrieve user preferences or create with defaults if it doesn't exist yet
+        // Sort defaults alphabetically by name
+        usort($defaultCarServices, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        usort($defaultMotoServices, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+
+        // Retrieve user preferences or create with sorted defaults if it doesn't exist yet
         $preference = UserServicePreference::firstOrCreate(
             ['user_id' => $user->id],
             [
@@ -40,15 +44,21 @@ class SettingsController extends Controller
             ]
         );
 
+        // Ensure existing saved preferences are also sorted alphabetically when fetched
+        $carServices = $preference->car_services ?? [];
+        $motoServices = $preference->moto_services ?? [];
+
+        usort($carServices, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        usort($motoServices, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+
         return Inertia::render('Settings', [
-            'carServices' => $preference->car_services ?? [],
-            'motoServices' => $preference->moto_services ?? [],
+            'carServices' => $carServices,
+            'motoServices' => $motoServices,
         ]);
     }
 
     public function update(Request $request)
     {
-        // Changed 'required' to 'nullable' to allow completely empty arrays
         $request->validate([
             'car_services' => 'nullable|array',
             'moto_services' => 'nullable|array',
@@ -56,11 +66,18 @@ class SettingsController extends Controller
 
         $user = $request->user();
 
+        $carServices = $request->car_services ?? [];
+        $motoServices = $request->moto_services ?? [];
+
+        // Sort incoming lists alphabetically before saving
+        usort($carServices, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        usort($motoServices, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+
         UserServicePreference::updateOrCreate(
             ['user_id' => $user->id],
             [
-                'car_services' => $request->car_services ?? [],
-                'moto_services' => $request->moto_services ?? [],
+                'car_services' => $carServices,
+                'moto_services' => $motoServices,
             ]
         );
 
