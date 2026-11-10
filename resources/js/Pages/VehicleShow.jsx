@@ -77,7 +77,66 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         });
     };
 
-    // Extract unique services from maintenance logs
+    // Helper to format date string to "Nov 10, 2026" style
+    const formatDateToReadable = (dateStr) => {
+        if (!dateStr || dateStr === '—' || dateStr === 'Never') return dateStr;
+        const [year, month, day] = dateStr.split('-');
+        if (!year || !month || !day) return dateStr;
+        const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
+        if (isNaN(dateObj.getTime())) return dateStr;
+        return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    // Calculate Next Schedule for each service preference
+    const serviceScheduleStatus = servicePreferences.map(pref => {
+        const name = pref.name;
+        const intervalDays = pref.interval_days ? Number(pref.interval_days) : null;
+        const intervalOdo = pref.interval_odo ? Number(pref.interval_odo) : null;
+
+        // Find all logs containing this service
+        const matchingLogs = maintenanceLogs.filter(log => log.services && log.services.includes(name));
+
+        let latestDate = null;
+        let highestOdo = null;
+
+        if (matchingLogs.length > 0) {
+            // Get latest date
+            const dates = matchingLogs.map(l => l.date).filter(Boolean).sort();
+            if (dates.length > 0) {
+                latestDate = dates[dates.length - 1];
+            }
+
+            // Get highest ODO
+            const odos = matchingLogs.map(l => Number(l.odo)).filter(o => !isNaN(o));
+            if (odos.length > 0) {
+                highestOdo = Math.max(...odos);
+            }
+        }
+
+        // Calculate Next Date
+        let nextDateStr = '—';
+        if (latestDate && intervalDays) {
+            const d = new Date(latestDate);
+            d.setDate(d.getDate() + intervalDays);
+            nextDateStr = d.toISOString().split('T')[0];
+        }
+
+        // Calculate Next ODO
+        let nextOdoStr = '—';
+        if (highestOdo !== null && intervalOdo !== null) {
+            nextOdoStr = (highestOdo + intervalOdo).toLocaleString();
+        }
+
+        return {
+            name,
+            latestDate: latestDate || 'Never',
+            highestOdo: highestOdo !== null ? highestOdo.toLocaleString() : 'Never',
+            nextDate: formatDateToReadable(nextDateStr),
+            nextOdo: nextOdoStr,
+        };
+    });
+
+    // Extract unique services from maintenance logs for filter
     const loggedServicesList = Array.from(
         new Set(
             maintenanceLogs.flatMap(log => log.services || [])
@@ -205,6 +264,42 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             </div>
                         </div>
 
+                        {/* Service Schedule Status Section */}
+                        <div style={styles.sectionHeaderRow}>
+                            <h2 style={styles.sectionTitle}>Service Schedule Status</h2>
+                        </div>
+
+                        <div style={styles.tableContainer}>
+                            <table style={styles.table}>
+                                <thead>
+                                    <tr style={styles.tableHeaderRow}>
+                                        <th style={styles.th}>List of Services</th>
+                                        <th style={styles.th}>Next Service Schedule (Date)</th>
+                                        <th style={styles.th}>Next Service Schedule (ODO)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {serviceScheduleStatus.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="3" style={styles.emptyTableCell}>
+                                                No services configured in settings.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        serviceScheduleStatus.map((item, idx) => (
+                                            <tr key={idx} style={styles.tableBodyRow}>
+                                                <td style={styles.td}>
+                                                    <span style={styles.serviceBadge}>{item.name}</span>
+                                                </td>
+                                                <td style={styles.td}>{item.nextDate}</td>
+                                                <td style={styles.td}>{item.nextOdo}</td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
                         {/* Maintenance Logs Section & Multi-Select Dropdown Filter */}
                         <div style={styles.sectionHeaderRow}>
                             <h2 style={styles.sectionTitle}>Maintenance Logs</h2>
@@ -292,7 +387,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     ) : (
                                         filteredLogs.map((log) => (
                                             <tr key={log.id} style={styles.tableBodyRow}>
-                                                <td style={styles.td}>{log.date}</td>
+                                                <td style={styles.td}>{formatDateToReadable(log.date)}</td>
                                                 <td style={styles.td}>
                                                     <div style={styles.serviceBadgeList}>
                                                         {log.services && log.services.map((srv, i) => (
