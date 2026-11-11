@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { useForm, router, usePage } from '@inertiajs/react';
+import { useForm, router, usePage, Link } from '@inertiajs/react';
 import Sidebar from '@/Components/Sidebar';
 import Toast from '@/Components/Toast';
+import Breadcrumb from '@/Components/Breadcrumb';
 
-export default function Home({ vehicles = [] }) {
+export default function Home({ vehicles = [], servicePreferences = {} }) {
     const { flash } = usePage().props;
 
     const [showModal, setShowModal] = useState(false);
@@ -30,6 +31,113 @@ export default function Home({ vehicles = [] }) {
         year: '',
         description: '',
         photo: null,
+    });
+
+    const getPhilippineToday = () => {
+        const options = { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' };
+        const formatter = new Intl.DateTimeFormat('en-CA', options);
+        return formatter.format(new Date());
+    };
+
+    const formatDateToReadable = (dateStr) => {
+        if (!dateStr || dateStr === '—') return dateStr;
+        const [year, month, day] = dateStr.split('-');
+        if (!year || !month || !day) return dateStr;
+        const dateObj = new Date(Number(year), Number(month) - 1, Number(day));
+        if (isNaN(dateObj.getTime())) return dateStr;
+        return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    const todayStr = getPhilippineToday();
+    const todayObj = new Date(todayStr);
+
+    const upcomingAlerts = [];
+    const pastDueAlerts = [];
+
+    vehicles.forEach(vehicle => {
+        const currentOdoNum = vehicle.current_odo !== null && vehicle.current_odo !== undefined && vehicle.current_odo !== '' 
+            ? Number(vehicle.current_odo) 
+            : null;
+
+        const isCar = (vehicle.type || '').toLowerCase() === 'car';
+        const prefs = isCar ? (servicePreferences.car_services || []) : (servicePreferences.moto_services || []);
+        const logs = vehicle.maintenance_logs || vehicle.maintenanceLogs || [];
+
+        prefs.forEach(pref => {
+            const name = pref.name;
+            const intervalDays = pref.interval_days ? Number(pref.interval_days) : null;
+            const intervalOdo = pref.interval_odo ? Number(pref.interval_odo) : null;
+
+            const matchingLogs = logs.filter(log => log.services && log.services.includes(name));
+
+            let latestDate = null;
+            let highestOdo = null;
+
+            if (matchingLogs.length > 0) {
+                const dates = matchingLogs.map(l => l.date).filter(Boolean).sort();
+                if (dates.length > 0) latestDate = dates[dates.length - 1];
+
+                const odos = matchingLogs.map(l => Number(l.odo)).filter(o => !isNaN(o));
+                if (odos.length > 0) highestOdo = Math.max(...odos);
+            }
+
+            let nextDateStr = null;
+            let dateStatus = null;
+            if (latestDate && intervalDays) {
+                const d = new Date(latestDate);
+                d.setDate(d.getDate() + intervalDays);
+                nextDateStr = d.toISOString().split('T')[0];
+
+                const targetDateObj = new Date(nextDateStr);
+                const diffTime = targetDateObj - todayObj;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays < 0) {
+                    dateStatus = 'past_due';
+                } else if (diffDays <= 15) {
+                    dateStatus = 'upcoming';
+                }
+            }
+
+            let nextOdoVal = null;
+            let odoStatus = null;
+            if (highestOdo !== null && intervalOdo !== null && currentOdoNum !== null) {
+                nextOdoVal = highestOdo + intervalOdo;
+                const odoDiff = nextOdoVal - currentOdoNum;
+
+                if (odoDiff <= 0) {
+                    odoStatus = 'past_due';
+                } else if (odoDiff <= 1000) {
+                    odoStatus = 'upcoming';
+                }
+            }
+
+            const isPastDue = dateStatus === 'past_due' || odoStatus === 'past_due';
+            const isUpcoming = !isPastDue && (dateStatus === 'upcoming' || odoStatus === 'upcoming');
+
+            if (isPastDue || isUpcoming) {
+                const triggerReasons = [];
+                if (dateStatus) {
+                    triggerReasons.push(`Date: ${formatDateToReadable(nextDateStr)}`);
+                }
+                if (odoStatus && nextOdoVal !== null) {
+                    triggerReasons.push(`ODO: ${nextOdoVal.toLocaleString()} km`);
+                }
+
+                const alertItem = {
+                    vehicleId: vehicle.id,
+                    vehicleName: `${vehicle.make} ${vehicle.model}`,
+                    serviceName: name,
+                    triggerText: triggerReasons.join(' • '),
+                };
+
+                if (isPastDue) {
+                    pastDueAlerts.push(alertItem);
+                } else {
+                    upcomingAlerts.push(alertItem);
+                }
+            }
+        });
     });
 
     const openCreateModal = () => {
@@ -89,6 +197,15 @@ export default function Home({ vehicles = [] }) {
             }
             setData('photo', file);
             setRemoveExistingPhoto(false);
+        }
+    };
+
+    const handleRemovePhotoClick = (e) => {
+        e.stopPropagation();
+        setData('photo', null);
+        setRemoveExistingPhoto(true);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
@@ -155,29 +272,27 @@ export default function Home({ vehicles = [] }) {
                 <div style={styles.mainContent}>
                     <Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 
-                    <div style={styles.topBar}>
-                        <div style={styles.breadcrumb}>
-                            Main / <span style={{ color: '#ffffff', fontWeight: '500' }}>Home</span>
-                        </div>
-                        <button 
-                            onClick={openCreateModal} 
-                            style={styles.addButton}
-                            type="button"
-                        >
-                            + Add Vehicle
-                        </button>
-                    </div>
+                    <Breadcrumb items={[{ label: 'Main', href: '#' }, { label: 'Home' }]} />
 
                     <div style={styles.contentBody}>
-                        <h1 style={styles.pageTitle}>My Rides</h1>
+                        <div style={styles.pageHeaderRow}>
+                            <h1 style={styles.pageTitle}>My Rides</h1>
+                            <button 
+                                onClick={openCreateModal} 
+                                style={styles.addButton}
+                                type="button"
+                            >
+                                + Add Vehicle
+                            </button>
+                        </div>
 
+                        {/* Vehicles Grid Section - Two Columns */}
                         <div style={styles.vehicleGrid}>
                             {vehicles.length === 0 ? (
                                 <p style={styles.emptyText}>No vehicle records added yet. Click "+ Add Vehicle" to get started.</p>
                             ) : (
                                 vehicles.map((vehicle) => (
                                     <div key={vehicle.id} style={styles.vehicleCard}>
-                                        {/* Clickable Card Content area redirecting to Vehicle Information page */}
                                         <div 
                                             style={styles.cardContentClickable} 
                                             onClick={() => router.visit(`/vehicles/${vehicle.id}`)}
@@ -231,6 +346,61 @@ export default function Home({ vehicles = [] }) {
                                 ))
                             )}
                         </div>
+
+                        {/* Dashboard Section */}
+                        <h2 style={styles.sectionTitle}>Dashboard</h2>
+                        <div style={styles.dashboardGrid}>
+                            <div style={styles.alertCardUpcoming}>
+                                <div style={styles.alertCardHeader}>
+                                    <div style={styles.headerTitleGroup}>
+                                        <span style={styles.dotUpcoming} />
+                                        <h3 style={styles.alertCardTitleUpcoming}>Upcoming Maintenance</h3>
+                                    </div>
+                                    <span style={styles.badgeUpcoming}>{upcomingAlerts.length}</span>
+                                </div>
+                                <div style={styles.alertList}>
+                                    {upcomingAlerts.length === 0 ? (
+                                        <p style={styles.emptyAlertText}>No upcoming maintenance due in the next 15 days or 1,000 km.</p>
+                                    ) : (
+                                        upcomingAlerts.map((item, idx) => (
+                                            <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow}>
+                                                <div style={styles.alertRowLeft}>
+                                                    <span style={styles.vehicleNameTag}>{item.vehicleName}</span>
+                                                    <span style={styles.serviceNameText}>{item.serviceName}</span>
+                                                </div>
+                                                <span style={styles.triggerTextUpcoming}>{item.triggerText}</span>
+                                            </Link>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={styles.alertCardPastDue}>
+                                <div style={styles.alertCardHeader}>
+                                    <div style={styles.headerTitleGroup}>
+                                        <span style={styles.dotPastDue} />
+                                        <h3 style={styles.alertCardTitlePastDue}>Past Due Maintenance</h3>
+                                    </div>
+                                    <span style={styles.badgePastDue}>{pastDueAlerts.length}</span>
+                                </div>
+                                <div style={styles.alertList}>
+                                    {pastDueAlerts.length === 0 ? (
+                                        <p style={styles.emptyAlertText}>No past due maintenance records. All up to date!</p>
+                                    ) : (
+                                        pastDueAlerts.map((item, idx) => (
+                                            <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow}>
+                                                <div style={styles.alertRowLeft}>
+                                                    <span style={styles.vehicleNameTag}>{item.vehicleName}</span>
+                                                    <span style={styles.serviceNameText}>{item.serviceName}</span>
+                                                </div>
+                                                <span style={styles.triggerTextPastDue}>{item.triggerText}</span>
+                                            </Link>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
 
                     {showModal && (
@@ -265,7 +435,7 @@ export default function Home({ vehicles = [] }) {
                                     <div style={styles.inputGroup}>
                                         <label style={styles.label}>Year *</label>
                                         <input type="text" placeholder="e.g. 2022" value={data.year} onChange={e => setData('year', e.target.value)} style={styles.input} />
-                                        {errors.year && <span style={styles.error}>{errors.year}</span>}
+                                        {errors.year && <span style={styles.error}>{errors.error}</span>}
                                     </div>
 
                                     <div style={styles.inputGroup}>
@@ -275,10 +445,22 @@ export default function Home({ vehicles = [] }) {
 
                                     <div style={styles.inputGroup}>
                                         <label style={styles.label}>Photo (Optional - Max 2100 KB)</label>
-                                        <div style={styles.uploadBox} onClick={() => fileInputRef.current?.click()}>
-                                            <span style={styles.uploadText}>
-                                                {data.photo ? data.photo.name : (editingVehicle?.photo && !removeExistingPhoto) ? 'Current photo attached' : 'Click to upload'}
-                                            </span>
+                                        <div style={styles.uploadBoxWrapper}>
+                                            <div style={styles.uploadBox} onClick={() => fileInputRef.current?.click()}>
+                                                <span style={styles.uploadText}>
+                                                    {data.photo ? data.photo.name : (editingVehicle?.photo && !removeExistingPhoto) ? 'Current photo attached' : 'Click to upload'}
+                                                </span>
+                                            </div>
+                                            {((data.photo) || (editingVehicle?.photo && !removeExistingPhoto)) && (
+                                                <button 
+                                                    type="button" 
+                                                    onClick={handleRemovePhotoClick} 
+                                                    style={styles.removePhotoBtn}
+                                                    title="Remove photo"
+                                                >
+                                                    Remove
+                                                </button>
+                                            )}
                                         </div>
                                         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
                                         {errors.photo && <span style={styles.error}>{errors.photo}</span>}
@@ -292,6 +474,24 @@ export default function Home({ vehicles = [] }) {
                             </div>
                         </div>
                     )}
+
+                    {showDeleteModal && (
+                        <div style={styles.modalOverlay} className="animated-overlay">
+                            <div style={styles.modalBox} className="animated-modal">
+                                <div style={styles.modalHeader}>
+                                    <h3 style={styles.modalTitle}>Delete Vehicle</h3>
+                                    <button onClick={() => setShowDeleteModal(false)} style={styles.closeBtn} type="button">✕</button>
+                                </div>
+                                <p style={{ color: '#c9d1d9', fontSize: '13px', margin: '8px 0 16px 0' }}>
+                                    Are you sure you want to delete <strong style={{ color: '#ffffff' }}>{vehicleToDelete?.make} {vehicleToDelete?.model}</strong>? This action cannot be undone.
+                                </p>
+                                <div style={styles.modalActions}>
+                                    <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.cancelBtn}>Cancel</button>
+                                    <button type="button" onClick={confirmDeleteVehicle} style={styles.deleteCardBtn}>Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -299,7 +499,6 @@ export default function Home({ vehicles = [] }) {
 }
 
 const styles = {
-    // ... (retain existing styles from your Home.jsx and add the following card content style)
     page: {
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
         backgroundColor: '#12161f', display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -310,22 +509,51 @@ const styles = {
         backgroundColor: '#161b22', borderRadius: '16px', display: 'flex', overflow: 'hidden',
         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)', border: '1px solid #21262d',
     },
-    mainContent: { flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative' },
-    topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
-    breadcrumb: { fontSize: '12px', color: '#8b949e' },
+    mainContent: { flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
+    contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '900px', width: '100%', paddingBottom: '30px', margin: '0 auto' },
+    pageHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
     addButton: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    contentBody: { display: 'flex', flexDirection: 'column', gap: '20px' },
-    pageTitle: { fontSize: '28px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.5px', margin: 0 },
-    vehicleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px', paddingBottom: '20px' },
+    pageTitle: { fontSize: '26px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.5px', margin: 0 },
+    sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#ffffff', margin: '4px 0 0 0' },
+    
+    dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', width: '100%' },
+    alertCardUpcoming: {
+        backgroundColor: '#161b22', border: '1px solid rgba(210, 153, 34, 0.3)', borderRadius: '12px',
+        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+    },
+    alertCardPastDue: {
+        backgroundColor: '#161b22', border: '1px solid rgba(248, 81, 73, 0.3)', borderRadius: '12px',
+        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+    },
+    alertCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    headerTitleGroup: { display: 'flex', alignItems: 'center', gap: '8px' },
+    dotUpcoming: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#d29922' },
+    dotPastDue: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f85149' },
+    alertCardTitleUpcoming: { fontSize: '14px', fontWeight: '600', color: '#d29922', margin: 0 },
+    alertCardTitlePastDue: { fontSize: '14px', fontWeight: '600', color: '#f85149', margin: 0 },
+    badgeUpcoming: { backgroundColor: 'rgba(210, 153, 34, 0.2)', color: '#d29922', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' },
+    badgePastDue: { backgroundColor: 'rgba(248, 81, 73, 0.2)', color: '#f85149', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' },
+    alertList: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '150px', overflowY: 'auto' },
+    emptyAlertText: { fontSize: '12px', color: '#8b949e', fontStyle: 'italic', margin: 0, padding: '8px 0' },
+    alertRow: {
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '8px 10px', backgroundColor: '#0d1117', borderRadius: '6px', border: '1px solid #21262d',
+        textDecoration: 'none', transition: 'background-color 0.15s'
+    },
+    alertRowLeft: { display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' },
+    vehicleNameTag: { fontSize: '11px', fontWeight: '600', color: '#ffffff', backgroundColor: '#21262d', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 },
+    serviceNameText: { fontSize: '12px', color: '#c9d1d9', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
+    triggerTextUpcoming: { fontSize: '11px', color: '#d29922', fontWeight: '500', flexShrink: 0 },
+    triggerTextPastDue: { fontSize: '11px', color: '#f85149', fontWeight: '500', flexShrink: 0 },
+
+    vehicleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '16px', paddingBottom: '10px', width: '100%' },
     emptyText: { color: '#8b949e', fontSize: '13px', margin: 0 },
     vehicleCard: {
         backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px',
         padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', width: '100%', boxSizing: 'border-box',
     },
-    cardContentClickable: {
-        display: 'flex', gap: '14px', alignItems: 'flex-start', cursor: 'pointer',
-    },
+    cardContentClickable: { display: 'flex', gap: '14px', alignItems: 'flex-start', cursor: 'pointer' },
     vehicleThumb: { width: '56px', height: '56px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid #30363d' },
     placeholderThumb: { width: '56px', height: '56px', borderRadius: '8px', backgroundColor: '#0d1117', border: '1px solid #21262d', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
     vehicleInfo: { flex: 1, overflow: 'hidden' },
@@ -345,10 +573,12 @@ const styles = {
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
     label: { color: '#8b949e', fontSize: '11px', fontWeight: '500' },
     input: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' },
-    uploadBox: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box' },
+    uploadBoxWrapper: { display: 'flex', gap: '8px', alignItems: 'center' },
+    uploadBox: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box', flex: 1, overflow: 'hidden' },
     uploadText: { color: '#c9d1d9', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    removePhotoBtn: { backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', flexShrink: 0 },
     error: { color: '#f85149', fontSize: '11px' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' },
-    cancelBtn: { backgroundColor: 'transparent', color: '#8b949e', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', cursor: 'pointer' },
+    cancelBtn: { backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
 };

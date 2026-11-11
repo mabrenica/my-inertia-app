@@ -16,9 +16,10 @@ class Vehicle extends Model
         'model',
         'year',
         'description',
+        'current_odo',
+        'odo_updated_at',
         'photo',
     ];
-
     public function user()
     {
         return $this->belongsTo(User::class);

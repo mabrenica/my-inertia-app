@@ -46,9 +46,62 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        // Automatically seed default service preferences for the new account
+        $defaultCarServices = [
+            ['id' => 1, 'name' => 'Engine Oil & Filter Change', 'interval_days' => 90, 'interval_odo' => 5000],
+            ['id' => 2, 'name' => 'Tire Rotation & Balance', 'interval_days' => 180, 'interval_odo' => 10000],
+            ['id' => 3, 'name' => 'Air Cleaner Filter Element Replacement', 'interval_days' => 365, 'interval_odo' => 20000],
+            ['id' => 4, 'name' => 'Brake Fluid Replacement', 'interval_days' => 730, 'interval_odo' => 40000],
+            ['id' => 5, 'name' => 'Fuel Filter Replacement', 'interval_days' => 730, 'interval_odo' => 40000],
+            ['id' => 6, 'name' => 'CVT Fluid Replacement', 'interval_days' => 1460, 'interval_odo' => 80000],
+            ['id' => 7, 'name' => 'Iridium Spark Plugs Replacement', 'interval_days' => 1825, 'interval_odo' => 100000],
+            ['id' => 8, 'name' => 'Engine Coolant Flush (SLLC)', 'interval_days' => 2920, 'interval_odo' => 160000],
+        ];
+
+        $defaultMotoServices = [
+            ['id' => 1, 'name' => 'Engine Oil Change', 'interval_days' => 90, 'interval_odo' => 3000],
+            ['id' => 2, 'name' => 'Spark Plug Inspection & Replacement', 'interval_days' => 365, 'interval_odo' => 12000],
+            ['id' => 3, 'name' => 'Air Cleaner Element Replacement', 'interval_days' => 547, 'interval_odo' => 18000],
+            ['id' => 4, 'name' => 'Drive Belt (CVT) Replacement', 'interval_days' => 730, 'interval_odo' => 24000],
+            ['id' => 5, 'name' => 'Final Drive Gear Oil Change', 'interval_days' => 730, 'interval_odo' => 24000],
+            ['id' => 6, 'name' => 'Brake Fluid Replacement', 'interval_days' => 730, 'interval_odo' => 24000],
+            ['id' => 7, 'name' => 'Radiator Coolant Replacement', 'interval_days' => 1095, 'interval_odo' => 36000],
+        ];
+
+        UserServicePreference::create([
+            'user_id' => $user->id,
+            'car_services' => $defaultCarServices,
+            'moto_services' => $defaultMotoServices,
+        ]);
+
         Auth::login($user);
 
         return redirect('/home');
+    }
+
+    public function home(Request $request)
+    {
+        $user = $request->user();
+        
+        // Load vehicles along with their maintenance logs
+        $vehicles = $user->vehicles()->with('maintenanceLogs')->get();
+        
+        // Retrieve or create service preferences for the user
+        $preference = UserServicePreference::firstOrCreate(
+            ['user_id' => $user->id],
+            [
+                'car_services' => [],
+                'moto_services' => [],
+            ]
+        );
+
+        return Inertia::render('Home', [
+            'vehicles' => $vehicles,
+            'servicePreferences' => [
+                'car_services' => $preference->car_services ?? [],
+                'moto_services' => $preference->moto_services ?? [],
+            ],
+        ]);
     }
 
     public function updateProfile(Request $request)
@@ -254,5 +307,135 @@ class AuthController extends Controller
         }
 
         return redirect()->back()->with('success', 'Maintenance logs added successfully!');
+    }
+
+    public function updateMaintenanceLog(Request $request, $id)
+    {
+        $log = VehicleMaintenanceLog::findOrFail($id);
+
+        if ($log->vehicle->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $request->validate([
+            'services' => 'required|array|min:1',
+            'odo' => 'required|string',
+            'date' => 'required|date',
+            'cost' => 'nullable|numeric',
+            'notes' => 'nullable|string',
+        ]);
+
+        $log->update([
+            'services' => $request->services,
+            'odo' => $request->odo,
+            'date' => $request->date,
+            'cost' => $request->cost,
+            'notes' => $request->notes,
+        ]);
+
+        return redirect()->back()->with('success', 'Maintenance log updated successfully!');
+    }
+
+    public function destroyMaintenanceLog($id)
+    {
+        $log = VehicleMaintenanceLog::findOrFail($id);
+
+        if ($log->vehicle->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        $log->delete();
+
+        return redirect()->back()->with('success', 'Maintenance log deleted successfully!');
+    }
+
+    public function updateVehicleOdo(Request $request, Vehicle $vehicle)
+    {
+        if ($vehicle->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'current_odo' => ['required', 'string', 'max:50'],
+        ]);
+
+        $vehicle->update([
+            'current_odo' => $validated['current_odo'],
+            'odo_updated_at' => now(),
+        ]);
+
+        return back()->with('success', 'Current ODO updated successfully!');
+    }
+
+    // Helper function to calculate maintenance statuses for a vehicle
+    private function getVehicleServiceStatuses($vehicle)
+    {
+        $servicePreferences = $vehicle->user->servicePreferences ?? []; 
+        $maintenanceLogs = $vehicle->maintenanceLogs;
+        
+        // Determine service list based on vehicle type (Car vs Motorbike)
+        $preferences = (strtolower($vehicle->type) === 'car') 
+            ? ($servicePreferences->car_services ?? []) 
+            : ($servicePreferences->moto_services ?? []);
+
+        $today = now()->format('Y-m-d');
+        $currentOdo = (int) ($vehicle->current_odo ?? 0);
+        
+        $statuses = [];
+
+        foreach ($preferences as $pref) {
+            $name = $pref['name'];
+            $intervalDays = isset($pref['interval_days']) ? (int) $pref['interval_days'] : null;
+            $intervalOdo = isset($pref['interval_odo']) ? (int) $pref['interval_odo'] : null;
+
+            // Find matching logs for this service
+            $matchingLogs = $maintenanceLogs->filter(function ($log) use ($name) {
+                return $log->services && in_array($name, $log->services);
+            });
+
+            $latestDate = $matchingLogs->max('date');
+            $highestOdo = $matchingLogs->max(fn($l) => (int) $l->odo);
+
+            // Calculate next target date
+            $nextDate = null;
+            $dateStatus = null; // 'past_due', 'upcoming', or 'normal'
+            if ($latestDate && $intervalDays) {
+                $nextDate = \Carbon\Carbon::parse($latestDate)->addDays($intervalDays)->format('Y-m-d');
+                $diffDays = now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($nextDate), false);
+
+                if ($diffDays < 0) {
+                    $dateStatus = 'past_due';
+                } elseif ($diffDays <= 15) {
+                    $dateStatus = 'upcoming';
+                }
+            }
+
+            // Calculate next target ODO
+            $nextOdo = null;
+            $odoStatus = null; // 'past_due', 'upcoming', or 'normal'
+            if ($highestOdo !== null && $intervalOdo !== null) {
+                $nextOdo = $highestOdo + $intervalOdo;
+                $odoDiff = $nextOdo - $currentOdo;
+
+                if ($odoDiff <= 0) {
+                    $odoStatus = 'past_due'; 
+                } elseif ($odoDiff <= 1000) {
+                    $odoStatus = 'upcoming'; 
+                }
+            }
+
+            // If either metric is past due or upcoming, record it
+            if ($dateStatus || $odoStatus) {
+                $statuses[] = [
+                    'service_name' => $name,
+                    'date_status' => $dateStatus, 
+                    'next_date' => $nextDate,
+                    'odo_status' => $odoStatus,   
+                    'next_odo' => $nextOdo,
+                ];
+            }
+        }
+
+        return $statuses;
     }
 }

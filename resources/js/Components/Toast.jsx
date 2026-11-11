@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export default function Toast({ message, duration = 3000, onClose }) {
+export default function Toast({ message, duration = 2000, onClose }) {
     const [visible, setVisible] = useState(true);
 
     useEffect(() => {
@@ -20,12 +20,12 @@ export default function Toast({ message, duration = 3000, onClose }) {
     return (
         <>
             <style>{`
-                @keyframes slideUpFade {
-                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+                @keyframes slideDownFade {
+                    from { opacity: 0; transform: translateY(-12px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 .animated-toast {
-                    animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    animation: slideDownFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
             `}</style>
             <div style={styles.toast} className="animated-toast">
@@ -40,9 +40,10 @@ export default function Toast({ message, duration = 3000, onClose }) {
 
 const styles = {
     toast: {
-        position: 'absolute',
-        bottom: '24px',
-        right: '36px',
+        position: 'fixed',
+        top: '24px',
+        left: '50%',
+        transform: 'translateX(-50%)',
         backgroundColor: '#161b22',
         border: '1px solid #238636',
         color: '#ffffff',
@@ -54,6 +55,6 @@ const styles = {
         alignItems: 'center',
         gap: '10px',
         boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-        zIndex: 1100,
+        zIndex: 9999,
     },
 };
