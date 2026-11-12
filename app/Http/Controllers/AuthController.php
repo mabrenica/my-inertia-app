@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use App\Models\Vehicle;
 use App\Models\UserServicePreference;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Models\VehicleMaintenanceLog;
 
@@ -46,7 +45,6 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Automatically seed default service preferences for the new account
         $defaultCarServices = [
             ['id' => 1, 'name' => 'Engine Oil & Filter Change', 'interval_days' => 90, 'interval_odo' => 5000],
             ['id' => 2, 'name' => 'Tire Rotation & Balance', 'interval_days' => 180, 'interval_odo' => 10000],
@@ -82,11 +80,8 @@ class AuthController extends Controller
     public function home(Request $request)
     {
         $user = $request->user();
-        
-        // Load vehicles along with their maintenance logs
         $vehicles = $user->vehicles()->with('maintenanceLogs')->get();
         
-        // Retrieve or create service preferences for the user
         $preference = UserServicePreference::firstOrCreate(
             ['user_id' => $user->id],
             [
@@ -138,12 +133,9 @@ class AuthController extends Controller
         $user = $request->user();
 
         if ($request->hasFile('avatar')) {
-            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-
-            $path = $request->file('avatar')->store('avatars', 'public');
-            $user->update(['avatar' => $path]);
+            $file = $request->file('avatar');
+            $base64Image = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            $user->update(['avatar' => $base64Image]);
         }
 
         return back();
@@ -152,13 +144,7 @@ class AuthController extends Controller
     public function removeAvatar(Request $request)
     {
         $user = $request->user();
-
-        if ($user->avatar) {
-            if (Storage::disk('public')->exists($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
-            }
-            $user->update(['avatar' => null]);
-        }
+        $user->update(['avatar' => null]);
 
         return back();
     }
@@ -174,9 +160,10 @@ class AuthController extends Controller
             'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2100'],
         ]);
 
-        $path = null;
+        $photoData = null;
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('vehicles', 'public');
+            $file = $request->file('photo');
+            $photoData = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
         }
 
         $request->user()->vehicles()->create([
@@ -185,7 +172,7 @@ class AuthController extends Controller
             'model' => $validated['model'],
             'year' => $validated['year'],
             'description' => $validated['description'] ?? null,
-            'photo' => $path,
+            'photo' => $photoData,
         ]);
 
         return back()->with('success', 'Vehicle successfully added!');
@@ -207,20 +194,15 @@ class AuthController extends Controller
             'remove_photo' => ['nullable', 'boolean'],
         ]);
 
-        $path = $vehicle->photo;
+        $photoData = $vehicle->photo;
 
         if ($request->boolean('remove_photo')) {
-            if ($vehicle->photo && Storage::disk('public')->exists($vehicle->photo)) {
-                Storage::disk('public')->delete($vehicle->photo);
-            }
-            $path = null;
+            $photoData = null;
         }
 
         if ($request->hasFile('photo')) {
-            if ($vehicle->photo && Storage::disk('public')->exists($vehicle->photo)) {
-                Storage::disk('public')->delete($vehicle->photo);
-            }
-            $path = $request->file('photo')->store('vehicles', 'public');
+            $file = $request->file('photo');
+            $photoData = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
         }
 
         $vehicle->update([
@@ -229,7 +211,7 @@ class AuthController extends Controller
             'model' => $validated['model'],
             'year' => $validated['year'],
             'description' => $validated['description'] ?? null,
-            'photo' => $path,
+            'photo' => $photoData,
         ]);
 
         return back()->with('success', 'Vehicle successfully updated!');
@@ -241,10 +223,6 @@ class AuthController extends Controller
             abort(403);
         }
 
-        if ($vehicle->photo && Storage::disk('public')->exists($vehicle->photo)) {
-            Storage::disk('public')->delete($vehicle->photo);
-        }
-
         $vehicle->delete();
 
         return back()->with('success', 'Vehicle successfully deleted!');
@@ -252,12 +230,10 @@ class AuthController extends Controller
 
     public function showVehicle(Vehicle $vehicle)
     {
-        // Ensure the authenticated user owns this vehicle
         if ($vehicle->user_id !== auth()->id()) {
             abort(403);
         }
 
-        // Retrieve user service preferences to prepopulate options based on vehicle type
         $preference = UserServicePreference::where('user_id', auth()->id())->first();
 
         $services = [];
@@ -269,7 +245,6 @@ class AuthController extends Controller
             }
         }
 
-        // Fetch maintenance logs sorted by date descending (latest first)
         $logs = $vehicle->maintenanceLogs()->latest('date')->get();
 
         return Inertia::render('VehicleShow', [
@@ -281,7 +256,6 @@ class AuthController extends Controller
 
     public function storeMaintenanceLog(Request $request, Vehicle $vehicle)
     {
-        // Ensure the authenticated user owns this vehicle
         if ($vehicle->user_id !== auth()->id()) {
             abort(403);
         }
@@ -294,7 +268,6 @@ class AuthController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // Create an individual record for each selected service
         foreach ($request->services as $serviceName) {
             VehicleMaintenanceLog::create([
                 'vehicle_id' => $vehicle->id,
@@ -365,77 +338,5 @@ class AuthController extends Controller
         ]);
 
         return back()->with('success', 'Current ODO updated successfully!');
-    }
-
-    // Helper function to calculate maintenance statuses for a vehicle
-    private function getVehicleServiceStatuses($vehicle)
-    {
-        $servicePreferences = $vehicle->user->servicePreferences ?? []; 
-        $maintenanceLogs = $vehicle->maintenanceLogs;
-        
-        // Determine service list based on vehicle type (Car vs Motorbike)
-        $preferences = (strtolower($vehicle->type) === 'car') 
-            ? ($servicePreferences->car_services ?? []) 
-            : ($servicePreferences->moto_services ?? []);
-
-        $today = now()->format('Y-m-d');
-        $currentOdo = (int) ($vehicle->current_odo ?? 0);
-        
-        $statuses = [];
-
-        foreach ($preferences as $pref) {
-            $name = $pref['name'];
-            $intervalDays = isset($pref['interval_days']) ? (int) $pref['interval_days'] : null;
-            $intervalOdo = isset($pref['interval_odo']) ? (int) $pref['interval_odo'] : null;
-
-            // Find matching logs for this service
-            $matchingLogs = $maintenanceLogs->filter(function ($log) use ($name) {
-                return $log->services && in_array($name, $log->services);
-            });
-
-            $latestDate = $matchingLogs->max('date');
-            $highestOdo = $matchingLogs->max(fn($l) => (int) $l->odo);
-
-            // Calculate next target date
-            $nextDate = null;
-            $dateStatus = null; // 'past_due', 'upcoming', or 'normal'
-            if ($latestDate && $intervalDays) {
-                $nextDate = \Carbon\Carbon::parse($latestDate)->addDays($intervalDays)->format('Y-m-d');
-                $diffDays = now()->startOfDay()->diffInDays(\Carbon\Carbon::parse($nextDate), false);
-
-                if ($diffDays < 0) {
-                    $dateStatus = 'past_due';
-                } elseif ($diffDays <= 15) {
-                    $dateStatus = 'upcoming';
-                }
-            }
-
-            // Calculate next target ODO
-            $nextOdo = null;
-            $odoStatus = null; // 'past_due', 'upcoming', or 'normal'
-            if ($highestOdo !== null && $intervalOdo !== null) {
-                $nextOdo = $highestOdo + $intervalOdo;
-                $odoDiff = $nextOdo - $currentOdo;
-
-                if ($odoDiff <= 0) {
-                    $odoStatus = 'past_due'; 
-                } elseif ($odoDiff <= 1000) {
-                    $odoStatus = 'upcoming'; 
-                }
-            }
-
-            // If either metric is past due or upcoming, record it
-            if ($dateStatus || $odoStatus) {
-                $statuses[] = [
-                    'service_name' => $name,
-                    'date_status' => $dateStatus, 
-                    'next_date' => $nextDate,
-                    'odo_status' => $odoStatus,   
-                    'next_odo' => $nextOdo,
-                ];
-            }
-        }
-
-        return $statuses;
     }
 }

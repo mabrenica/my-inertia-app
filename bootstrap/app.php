@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\HandleCors;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -11,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Register the Inertia middleware right here
+        // Register CORS middleware to handle cross-origin requests
+        $middleware->append(HandleCors::class);
+
+        // Register the Inertia middleware
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
         ]);
