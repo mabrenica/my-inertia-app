@@ -1,13 +1,14 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import react from '@vitejs/plugin-react'; // Imports the React compiler plugin
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+    base: './',
     plugins: [
         laravel({
-            input: 'resources/js/app.jsx', // Changes .js to .jsx
+            input: 'resources/js/app.jsx',
             refresh: true,
         }),
-        react(), // Activates React compilation support
+        react(),
     ],
 });
