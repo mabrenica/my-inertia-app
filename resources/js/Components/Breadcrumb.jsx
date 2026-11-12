@@ -34,14 +34,15 @@ const styles = {
     },
     breadcrumb: {
         fontSize: '12px',
-        color: '#8b949e',
+        color: '#6e6962',
     },
     breadcrumbLink: {
-        color: '#8b949e',
+        color: '#6e6962',
         textDecoration: 'none',
+        transition: 'color 0.2s ease',
     },
     currentLabel: {
-        color: '#ffffff',
+        color: '#1c1c1c',
         fontWeight: '500',
     },
 };

@@ -251,18 +251,51 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         <div style={styles.page}>
             <style>{`
                 @keyframes slideUpFade {
-                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+                    from { opacity: 0; transform: translateY(16px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 @keyframes fadeInOverlay {
                     from { opacity: 0; }
                     to { opacity: 1; }
                 }
+                @keyframes staggerFadeIn {
+                    from { opacity: 0; transform: translateY(12px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
                 .animated-modal {
                     animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
                 .animated-overlay {
                     animation: fadeInOverlay 0.2s ease-out forwards;
+                }
+                .page-card-anim {
+                    animation: staggerFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .interactive-card {
+                    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .interactive-card:hover {
+                    transform: translateY(-3px);
+                    box-shadow: 0 10px 25px rgba(28, 28, 28, 0.08);
+                    border-color: #b5b0a6;
+                }
+                .hover-list-item {
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .hover-list-item:hover {
+                    transform: translateX(4px);
+                    background-color: rgba(237, 230, 216, 0.8) !important;
+                    border-color: #b5b0a6 !important;
+                }
+                .hover-btn {
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .hover-btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(28, 28, 28, 0.12);
+                }
+                .hover-btn:active {
+                    transform: translateY(1px);
                 }
             `}</style>
 
@@ -280,19 +313,19 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                             <button 
                                 onClick={openCreateModal} 
                                 style={styles.addButton}
+                                className="hover-btn"
                                 type="button"
                             >
                                 + Add Vehicle
                             </button>
                         </div>
 
-                        {/* Vehicles Grid Section - Two Columns */}
                         <div style={styles.vehicleGrid}>
                             {vehicles.length === 0 ? (
                                 <p style={styles.emptyText}>No vehicle records added yet. Click "+ Add Vehicle" to get started.</p>
                             ) : (
                                 vehicles.map((vehicle) => (
-                                    <div key={vehicle.id} style={styles.vehicleCard}>
+                                    <div key={vehicle.id} style={styles.vehicleCard} className="interactive-card page-card-anim">
                                         <div 
                                             style={styles.cardContentClickable} 
                                             onClick={() => router.visit(`/vehicles/${vehicle.id}`)}
@@ -302,13 +335,13 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                             ) : (
                                                 <div style={styles.placeholderThumb}>
                                                     {vehicle.type === 'Car' ? (
-                                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                             <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
                                                             <circle cx="7" cy="17" r="2"></circle>
                                                             <circle cx="17" cy="17" r="2"></circle>
                                                         </svg>
                                                     ) : (
-                                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                             <circle cx="5.5" cy="17.5" r="3.5"></circle>
                                                             <circle cx="18.5" cy="17.5" r="3.5"></circle>
                                                             <path d="M15 6h4l3 7"></path>
@@ -330,6 +363,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                             <button 
                                                 onClick={() => openEditModal(vehicle)} 
                                                 style={styles.editCardBtn}
+                                                className="hover-btn"
                                                 type="button"
                                             >
                                                 Edit
@@ -337,6 +371,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                             <button 
                                                 onClick={() => promptDeleteVehicle(vehicle)} 
                                                 style={styles.deleteCardBtn}
+                                                className="hover-btn"
                                                 type="button"
                                             >
                                                 Delete
@@ -347,10 +382,9 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                             )}
                         </div>
 
-                        {/* Dashboard Section */}
                         <h2 style={styles.sectionTitle}>Dashboard</h2>
                         <div style={styles.dashboardGrid}>
-                            <div style={styles.alertCardUpcoming}>
+                            <div style={styles.alertCardUpcoming} className="interactive-card page-card-anim">
                                 <div style={styles.alertCardHeader}>
                                     <div style={styles.headerTitleGroup}>
                                         <span style={styles.dotUpcoming} />
@@ -363,7 +397,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                         <p style={styles.emptyAlertText}>No upcoming maintenance due in the next 15 days or 1,000 km.</p>
                                     ) : (
                                         upcomingAlerts.map((item, idx) => (
-                                            <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow}>
+                                            <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow} className="hover-list-item">
                                                 <div style={styles.alertRowLeft}>
                                                     <span style={styles.vehicleNameTag}>{item.vehicleName}</span>
                                                     <span style={styles.serviceNameText}>{item.serviceName}</span>
@@ -375,7 +409,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 </div>
                             </div>
 
-                            <div style={styles.alertCardPastDue}>
+                            <div style={styles.alertCardPastDue} className="interactive-card page-card-anim">
                                 <div style={styles.alertCardHeader}>
                                     <div style={styles.headerTitleGroup}>
                                         <span style={styles.dotPastDue} />
@@ -388,7 +422,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                         <p style={styles.emptyAlertText}>No past due maintenance records. All up to date!</p>
                                     ) : (
                                         pastDueAlerts.map((item, idx) => (
-                                            <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow}>
+                                            <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow} className="hover-list-item">
                                                 <div style={styles.alertRowLeft}>
                                                     <span style={styles.vehicleNameTag}>{item.vehicleName}</span>
                                                     <span style={styles.serviceNameText}>{item.serviceName}</span>
@@ -456,6 +490,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                                     type="button" 
                                                     onClick={handleRemovePhotoClick} 
                                                     style={styles.removePhotoBtn}
+                                                    className="hover-btn"
                                                     title="Remove photo"
                                                 >
                                                     Remove
@@ -467,8 +502,8 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                     </div>
 
                                     <div style={styles.modalActions}>
-                                        <button type="button" onClick={() => setShowModal(false)} style={styles.cancelBtn}>Cancel</button>
-                                        <button type="submit" style={styles.saveBtn} disabled={processing}>Save</button>
+                                        <button type="button" onClick={() => setShowModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                        <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>Save</button>
                                     </div>
                                 </form>
                             </div>
@@ -482,12 +517,12 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                     <h3 style={styles.modalTitle}>Delete Vehicle</h3>
                                     <button onClick={() => setShowDeleteModal(false)} style={styles.closeBtn} type="button">✕</button>
                                 </div>
-                                <p style={{ color: '#c9d1d9', fontSize: '13px', margin: '8px 0 16px 0' }}>
-                                    Are you sure you want to delete <strong style={{ color: '#ffffff' }}>{vehicleToDelete?.make} {vehicleToDelete?.model}</strong>? This action cannot be undone.
+                                <p style={{ color: '#6e6962', fontSize: '13px', margin: '8px 0 16px 0' }}>
+                                    Are you sure you want to delete <strong style={{ color: '#1c1c1c' }}>{vehicleToDelete?.make} {vehicleToDelete?.model}</strong>? This action cannot be undone.
                                 </p>
                                 <div style={styles.modalActions}>
-                                    <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.cancelBtn}>Cancel</button>
-                                    <button type="button" onClick={confirmDeleteVehicle} style={styles.deleteCardBtn}>Delete</button>
+                                    <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                    <button type="button" onClick={confirmDeleteVehicle} style={styles.deleteCardBtn} className="hover-btn">Delete</button>
                                 </div>
                             </div>
                         </div>
@@ -501,84 +536,84 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
 const styles = {
     page: {
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
-        backgroundColor: '#12161f', display: 'flex', justifyContent: 'center', alignItems: 'center',
+        backgroundColor: '#ede6d8', display: 'flex', justifyContent: 'center', alignItems: 'center',
         margin: 0, padding: '24px', boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     },
     appWindow: {
         width: '100%', maxWidth: '1280px', height: '100%', maxHeight: '820px',
-        backgroundColor: '#161b22', borderRadius: '16px', display: 'flex', overflow: 'hidden',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)', border: '1px solid #21262d',
+        backgroundColor: '#ffffff', borderRadius: '16px', display: 'flex', overflow: 'hidden',
+        boxShadow: '0 20px 40px rgba(28, 28, 28, 0.1)', border: '1px solid #d6ccbb',
     },
-    mainContent: { flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
+    mainContent: { flex: 1, backgroundColor: '#ede6d8', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '900px', width: '100%', paddingBottom: '30px', margin: '0 auto' },
     pageHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
-    addButton: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    pageTitle: { fontSize: '26px', fontWeight: '700', color: '#ffffff', letterSpacing: '-0.5px', margin: 0 },
-    sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#ffffff', margin: '4px 0 0 0' },
+    addButton: { backgroundColor: '#1c1c1c', color: '#ede6d8', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
+    pageTitle: { fontSize: '26px', fontWeight: '700', color: '#1c1c1c', letterSpacing: '-0.5px', margin: 0 },
+    sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#1c1c1c', margin: '4px 0 0 0' },
     
     dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', width: '100%' },
     alertCardUpcoming: {
-        backgroundColor: '#161b22', border: '1px solid rgba(210, 153, 34, 0.3)', borderRadius: '12px',
-        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+        backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px',
+        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 12px rgba(28, 28, 28, 0.04)'
     },
     alertCardPastDue: {
-        backgroundColor: '#161b22', border: '1px solid rgba(248, 81, 73, 0.3)', borderRadius: '12px',
-        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+        backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px',
+        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 12px rgba(28, 28, 28, 0.04)'
     },
     alertCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     headerTitleGroup: { display: 'flex', alignItems: 'center', gap: '8px' },
-    dotUpcoming: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#d29922' },
-    dotPastDue: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#f85149' },
-    alertCardTitleUpcoming: { fontSize: '14px', fontWeight: '600', color: '#d29922', margin: 0 },
-    alertCardTitlePastDue: { fontSize: '14px', fontWeight: '600', color: '#f85149', margin: 0 },
-    badgeUpcoming: { backgroundColor: 'rgba(210, 153, 34, 0.2)', color: '#d29922', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' },
-    badgePastDue: { backgroundColor: 'rgba(248, 81, 73, 0.2)', color: '#f85149', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' },
+    dotUpcoming: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#b3251e' },
+    dotPastDue: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#1c1c1c' },
+    alertCardTitleUpcoming: { fontSize: '14px', fontWeight: '600', color: '#1c1c1c', margin: 0 },
+    alertCardTitlePastDue: { fontSize: '14px', fontWeight: '600', color: '#1c1c1c', margin: 0 },
+    badgeUpcoming: { backgroundColor: '#b3251e15', color: '#b3251e', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' },
+    badgePastDue: { backgroundColor: '#1c1c1c15', color: '#1c1c1c', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' },
     alertList: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '150px', overflowY: 'auto' },
-    emptyAlertText: { fontSize: '12px', color: '#8b949e', fontStyle: 'italic', margin: 0, padding: '8px 0' },
+    emptyAlertText: { fontSize: '12px', color: '#6e6962', fontStyle: 'italic', margin: 0, padding: '8px 0' },
     alertRow: {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '8px 10px', backgroundColor: '#0d1117', borderRadius: '6px', border: '1px solid #21262d',
-        textDecoration: 'none', transition: 'background-color 0.15s'
+        padding: '8px 10px', backgroundColor: '#ede6d8', borderRadius: '6px', border: '1px solid #d6ccbb',
+        textDecoration: 'none',
     },
     alertRowLeft: { display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' },
-    vehicleNameTag: { fontSize: '11px', fontWeight: '600', color: '#ffffff', backgroundColor: '#21262d', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 },
-    serviceNameText: { fontSize: '12px', color: '#c9d1d9', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
-    triggerTextUpcoming: { fontSize: '11px', color: '#d29922', fontWeight: '500', flexShrink: 0 },
-    triggerTextPastDue: { fontSize: '11px', color: '#f85149', fontWeight: '500', flexShrink: 0 },
+    vehicleNameTag: { fontSize: '11px', fontWeight: '600', color: '#ede6d8', backgroundColor: '#1c1c1c', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 },
+    serviceNameText: { fontSize: '12px', color: '#1c1c1c', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
+    triggerTextUpcoming: { fontSize: '11px', color: '#b3251e', fontWeight: '600', flexShrink: 0 },
+    triggerTextPastDue: { fontSize: '11px', color: '#1c1c1c', fontWeight: '600', flexShrink: 0 },
 
     vehicleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '16px', paddingBottom: '10px', width: '100%' },
-    emptyText: { color: '#8b949e', fontSize: '13px', margin: 0 },
+    emptyText: { color: '#6e6962', fontSize: '13px', margin: 0 },
     vehicleCard: {
-        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px',
+        backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px',
         padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', width: '100%', boxSizing: 'border-box',
+        boxShadow: '0 4px 12px rgba(28, 28, 28, 0.04)', width: '100%', boxSizing: 'border-box',
     },
     cardContentClickable: { display: 'flex', gap: '14px', alignItems: 'flex-start', cursor: 'pointer' },
-    vehicleThumb: { width: '56px', height: '56px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid #30363d' },
-    placeholderThumb: { width: '56px', height: '56px', borderRadius: '8px', backgroundColor: '#0d1117', border: '1px solid #21262d', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+    vehicleThumb: { width: '56px', height: '56px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid #d6ccbb' },
+    placeholderThumb: { width: '56px', height: '56px', borderRadius: '8px', backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
     vehicleInfo: { flex: 1, overflow: 'hidden' },
     vehicleHeaderRow: { display: 'flex', alignItems: 'center', marginBottom: '4px' },
-    vehicleCardTitle: { color: '#ffffff', fontSize: '14px', fontWeight: '600', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-    typeBadge: { display: 'inline-block', backgroundColor: '#1f6feb22', color: '#3b82f6', fontSize: '10px', fontWeight: '600', padding: '2px 8px', borderRadius: '4px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' },
-    vehicleDesc: { color: '#8b949e', fontSize: '12px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' },
-    cardActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #21262d', paddingTop: '12px' },
-    editCardBtn: { backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer' },
-    deleteCardBtn: { backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer' },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-    modalBox: { backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)' },
+    vehicleCardTitle: { color: '#1c1c1c', fontSize: '14px', fontWeight: '600', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    typeBadge: { display: 'inline-block', backgroundColor: '#1c1c1c10', color: '#1c1c1c', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' },
+    vehicleDesc: { color: '#6e6962', fontSize: '12px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' },
+    cardActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #ede6d8', paddingTop: '12px' },
+    editCardBtn: { backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer' },
+    deleteCardBtn: { backgroundColor: '#b3251e15', color: '#b3251e', border: '1px solid #d6ccbb', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(28, 28, 28, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+    modalBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2)' },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
-    modalTitle: { color: '#ffffff', fontSize: '15px', fontWeight: '600', margin: 0 },
-    closeBtn: { background: 'none', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer' },
+    modalTitle: { color: '#1c1c1c', fontSize: '15px', fontWeight: '600', margin: 0 },
+    closeBtn: { background: 'none', border: 'none', color: '#6e6962', fontSize: '16px', cursor: 'pointer' },
     form: { display: 'flex', flexDirection: 'column', gap: '10px' },
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
-    label: { color: '#8b949e', fontSize: '11px', fontWeight: '500' },
-    input: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '6px 10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' },
+    label: { color: '#6e6962', fontSize: '11px', fontWeight: '500' },
+    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '6px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box' },
     uploadBoxWrapper: { display: 'flex', gap: '8px', alignItems: 'center' },
-    uploadBox: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box', flex: 1, overflow: 'hidden' },
-    uploadText: { color: '#c9d1d9', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-    removePhotoBtn: { backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', flexShrink: 0 },
-    error: { color: '#f85149', fontSize: '11px' },
+    uploadBox: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box', flex: 1, overflow: 'hidden' },
+    uploadText: { color: '#1c1c1c', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    removePhotoBtn: { backgroundColor: '#b3251e15', color: '#b3251e', border: '1px solid #d6ccbb', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', flexShrink: 0 },
+    error: { color: '#b3251e', fontSize: '11px' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' },
-    cancelBtn: { backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    cancelBtn: { backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    saveBtn: { backgroundColor: '#1c1c1c', color: '#ede6d8', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
 };

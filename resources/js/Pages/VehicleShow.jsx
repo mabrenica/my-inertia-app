@@ -274,12 +274,16 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         <div style={styles.page}>
             <style>{`
                 @keyframes slideUpFade {
-                    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+                    from { opacity: 0; transform: translateY(16px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 @keyframes fadeInOverlay {
                     from { opacity: 0; }
                     to { opacity: 1; }
+                }
+                @keyframes staggerFadeIn {
+                    from { opacity: 0; transform: translateY(12px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 .animated-modal {
                     animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -287,8 +291,44 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                 .animated-overlay {
                     animation: fadeInOverlay 0.2s ease-out forwards;
                 }
+                .page-card-anim {
+                    animation: staggerFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .interactive-card {
+                    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .interactive-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 20px rgba(28, 28, 28, 0.08);
+                    border-color: #b5b0a6;
+                }
+                .hover-table-row {
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .hover-table-row:hover {
+                    background-color: rgba(237, 230, 216, 0.6) !important;
+                }
+                .hover-btn {
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .hover-btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(28, 28, 28, 0.12);
+                }
+                .hover-btn:active {
+                    transform: translateY(1px);
+                }
+                .floating-btn-anim {
+                    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .floating-btn-anim:hover {
+                    transform: scale(1.08) translateY(-2px);
+                    box-shadow: 0 12px 30px rgba(28, 28, 28, 0.4);
+                }
+                .floating-btn-anim:active {
+                    transform: scale(0.95);
+                }
                 input[type="date"]::-webkit-calendar-picker-indicator {
-                    filter: invert(100%) sepia(0%) saturate(7500%) hue-rotate(180deg) brightness(100%) contrast(100%);
                     cursor: pointer;
                     opacity: 0.7;
                     transition: opacity 0.2s;
@@ -312,7 +352,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             { label: 'Main / Home', href: '/home' },
                             { label: `${vehicle.make} ${vehicle.model}` }
                         ]} />
-                        <Link href="/home" style={styles.backIconButton} title="Back to Rides">
+                        <Link href="/home" style={styles.backIconButton} className="hover-btn" title="Back to Rides">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <line x1="19" y1="12" x2="5" y2="12"></line>
                                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -321,8 +361,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     </div>
 
                     <div style={styles.contentBody}>
-                        <div style={styles.profileCard}>
-                            <button onClick={openOdoModal} style={styles.updateOdoBtnTopRight} type="button" title="Update Current ODO">
+                        <div style={styles.profileCard} className="interactive-card page-card-anim">
+                            <button onClick={openOdoModal} style={styles.updateOdoBtnTopRight} className="hover-btn" type="button" title="Update Current ODO">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -345,7 +385,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     </div>
                                 ) : (
                                     <div style={styles.placeholderThumb}>
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
                                             <circle cx="7" cy="17" r="2"></circle>
                                             <circle cx="17" cy="17" r="2"></circle>
@@ -395,7 +435,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             <h2 style={styles.sectionTitle}>Service Schedule Status</h2>
                         </div>
 
-                        <div style={styles.tableContainer}>
+                        <div style={styles.tableContainer} className="page-card-anim">
                             <table style={styles.table}>
                                 <thead>
                                     <tr style={styles.tableHeaderRow}>
@@ -411,7 +451,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         </tr>
                                     ) : (
                                         serviceScheduleStatus.map((item, idx) => (
-                                            <tr key={idx} style={styles.tableBodyRow}>
+                                            <tr key={idx} style={styles.tableBodyRow} className="hover-table-row">
                                                 <td style={styles.td}><span style={styles.serviceBadge}>{item.name}</span></td>
                                                 <td style={styles.td}>
                                                     <div style={styles.cellWithTag}>
@@ -438,7 +478,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             <h2 style={styles.sectionTitle}>Maintenance Logs</h2>
                             
                             <div style={styles.dropdownWrapper} ref={dropdownRef}>
-                                <button type="button" onClick={() => setShowFilterDropdown(!showFilterDropdown)} style={styles.dropdownToggleBtn}>
+                                <button type="button" onClick={() => setShowFilterDropdown(!showFilterDropdown)} style={styles.dropdownToggleBtn} className="hover-btn">
                                     <span>
                                         {selectedServiceFilters.length === 0 ? 'Filter Services' : `Services (${selectedServiceFilters.length})`}
                                     </span>
@@ -467,7 +507,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                 loggedServicesList.map((serviceName, idx) => {
                                                     const isChecked = selectedServiceFilters.includes(serviceName);
                                                     return (
-                                                        <label key={idx} style={styles.dropdownItemLabel}>
+                                                        <label key={idx} style={styles.dropdownItemLabel} className="hover-list-item">
                                                             <input type="checkbox" checked={isChecked} onChange={() => handleFilterCheckboxToggle(serviceName)} style={styles.dropdownCheckbox} />
                                                             {serviceName}
                                                         </label>
@@ -480,7 +520,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             </div>
                         </div>
 
-                        <div style={styles.tableContainer}>
+                        <div style={styles.tableContainer} className="page-card-anim">
                             <table style={styles.table}>
                                 <thead>
                                     <tr style={styles.tableHeaderRow}>
@@ -501,7 +541,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         filteredLogs.map((log) => {
                                             const isEditing = editingLogId === log.id;
                                             return (
-                                                <tr key={log.id} style={styles.tableBodyRow}>
+                                                <tr key={log.id} style={styles.tableBodyRow} className="hover-table-row">
                                                     <td style={styles.td}>
                                                         {isEditing ? (
                                                             <input type="date" value={inlineData.date} onChange={e => setInlineData({ ...inlineData, date: e.target.value })} style={styles.inlineInput} />
@@ -555,19 +595,19 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                         <div style={styles.rowActions}>
                                                             {isEditing ? (
                                                                 <>
-                                                                    <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} title="Save changes" type="button">
+                                                                    <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button">
                                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                                     </button>
-                                                                    <button onClick={cancelEditingRow} style={styles.iconBtnCancel} title="Cancel" type="button">
+                                                                    <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button">
                                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                                                     </button>
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <button onClick={() => startEditingRow(log)} style={styles.iconBtnEdit} title="Edit record" type="button">
+                                                                    <button onClick={() => startEditingRow(log)} style={styles.iconBtnEdit} className="hover-btn" title="Edit record" type="button">
                                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                                                     </button>
-                                                                    <button onClick={() => promptDeleteLog(log)} style={styles.iconBtnDelete} title="Delete record" type="button">
+                                                                    <button onClick={() => promptDeleteLog(log)} style={styles.iconBtnDelete} className="hover-btn" title="Delete record" type="button">
                                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                                                     </button>
                                                                 </>
@@ -583,7 +623,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </div>
                     </div>
 
-                    <button onClick={openCreateModal} style={styles.floatingBtn} title="Add Maintenance Log" type="button">
+                    <button onClick={openCreateModal} style={styles.floatingBtn} className="floating-btn-anim" title="Add Maintenance Log" type="button">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                     </button>
 
@@ -617,8 +657,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         {odoErrors.current_odo && <span style={styles.errorText}>{odoErrors.current_odo}</span>}
                                     </div>
                                     <div style={styles.modalActions}>
-                                        <button type="button" onClick={closeOdoModal} style={styles.cancelBtn}>Cancel</button>
-                                        <button type="submit" style={styles.saveBtn} disabled={odoProcessing}>{odoProcessing ? 'Saving...' : 'Save ODO'}</button>
+                                        <button type="button" onClick={closeOdoModal} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                        <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={odoProcessing}>{odoProcessing ? 'Saving...' : 'Save ODO'}</button>
                                     </div>
                                 </form>
                             </div>
@@ -640,7 +680,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                 <span style={styles.noServiceText}>No services configured in settings.</span>
                                             ) : (
                                                 servicePreferences.map((service, idx) => (
-                                                    <label key={idx} style={styles.checkboxLabel}>
+                                                    <label key={idx} style={styles.checkboxLabel} className="hover-list-item">
                                                         <input type="checkbox" checked={data.services.includes(service.name)} onChange={() => handleServiceToggle(service.name)} style={styles.checkboxInput} />
                                                         {service.name}
                                                     </label>
@@ -692,8 +732,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     </div>
 
                                     <div style={styles.modalActions}>
-                                        <button type="button" onClick={closeModal} style={styles.cancelBtn}>Cancel</button>
-                                        <button type="submit" style={styles.saveBtn} disabled={processing}>{processing ? 'Saving...' : 'Save Log'}</button>
+                                        <button type="button" onClick={closeModal} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                        <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>{processing ? 'Saving...' : 'Save Log'}</button>
                                     </div>
                                 </form>
                             </div>
@@ -707,10 +747,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     <h3 style={styles.modalTitle}>Delete Maintenance Log</h3>
                                     <button onClick={() => setShowDeleteLogModal(false)} style={styles.closeBtn} type="button">✕</button>
                                 </div>
-                                <p style={{ color: '#c9d1d9', fontSize: '13px', margin: '8px 0 16px 0' }}>Are you sure you want to delete this maintenance record? This action cannot be undone.</p>
+                                <p style={{ color: '#6e6962', fontSize: '13px', margin: '8px 0 16px 0' }}>Are you sure you want to delete this maintenance record? This action cannot be undone.</p>
                                 <div style={styles.modalActions}>
-                                    <button type="button" onClick={() => setShowDeleteLogModal(false)} style={styles.cancelBtn}>Cancel</button>
-                                    <button type="button" onClick={confirmDeleteLog} style={styles.deleteCardBtn}>Delete</button>
+                                    <button type="button" onClick={() => setShowDeleteLogModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                    <button type="button" onClick={confirmDeleteLog} style={styles.deleteCardBtn} className="hover-btn">Delete</button>
                                 </div>
                             </div>
                         </div>
@@ -724,128 +764,126 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 const styles = {
     page: {
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
-        backgroundColor: '#12161f', display: 'flex', justifyContent: 'center', alignItems: 'center',
+        backgroundColor: '#ede6d8', display: 'flex', justifyContent: 'center', alignItems: 'center',
         margin: 0, padding: '24px', boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     },
     appWindow: {
         width: '100%', maxWidth: '1280px', height: '100%', maxHeight: '820px',
-        backgroundColor: '#161b22', borderRadius: '16px', display: 'flex', overflow: 'hidden',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)', border: '1px solid #21262d',
+        backgroundColor: '#ffffff', borderRadius: '16px', display: 'flex', overflow: 'hidden',
+        boxShadow: '0 20px 40px rgba(28, 28, 28, 0.1)', border: '1px solid #d6ccbb',
         position: 'relative',
     },
-    mainContent: { flex: 1, backgroundColor: '#0d1117', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
+    mainContent: { flex: 1, backgroundColor: '#ede6d8', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
     topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%', maxWidth: '850px' },
     backIconButton: {
-        backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d',
+        backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb',
         width: '32px', height: '32px', borderRadius: '6px', display: 'flex',
         justifyContent: 'center', alignItems: 'center', textDecoration: 'none',
-        transition: 'background-color 0.15s ease, color 0.15s ease',
     },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '850px', width: '100%', paddingBottom: '60px', margin: '0 auto' },
     
     profileCard: { 
-        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', 
-        padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', display: 'flex', alignItems: 'center', gap: '24px',
+        backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', 
+        padding: '20px', boxShadow: '0 4px 12px rgba(28, 28, 28, 0.04)', display: 'flex', alignItems: 'center', gap: '24px',
         position: 'relative', width: '100%', boxSizing: 'border-box'
     },
     profileLeft: { flexShrink: 0 },
     photoThumbContainer: { 
         width: '120px', height: '90px', borderRadius: '8px', overflow: 'hidden', 
-        backgroundColor: '#0d1117', border: '1px solid #30363d', position: 'relative', cursor: 'pointer',
+        backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', position: 'relative', cursor: 'pointer',
         display: 'flex', justifyContent: 'center', alignItems: 'center'
     },
     vehicleThumb: { width: '100%', height: '100%', objectFit: 'cover' },
     photoOverlay: {
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center',
+        backgroundColor: 'rgba(28, 28, 28, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center',
         opacity: 0, transition: 'opacity 0.2s ease',
     },
-    placeholderThumb: { width: '120px', height: '90px', borderRadius: '8px', backgroundColor: '#0d1117', border: '1px solid #30363d', display: 'flex', justifyContent: 'center', alignItems: 'center' },
+    placeholderThumb: { width: '120px', height: '90px', borderRadius: '8px', backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', display: 'flex', justifyContent: 'center', alignItems: 'center' },
     profileRight: { flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' },
     detailItem: { display: 'flex', alignItems: 'center', fontSize: '13px', gap: '8px' },
-    detailKey: { color: '#8b949e', fontWeight: '500', width: '105px', flexShrink: 0 },
-    detailVal: { color: '#ffffff', fontWeight: '500' },
-    typeBadge: { display: 'inline-block', backgroundColor: '#1f6feb22', color: '#3b82f6', fontSize: '10px', fontWeight: '600', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' },
+    detailKey: { color: '#6e6962', fontWeight: '500', width: '105px', flexShrink: 0 },
+    detailVal: { color: '#1c1c1c', fontWeight: '500' },
+    typeBadge: { display: 'inline-block', backgroundColor: '#1c1c1c10', color: '#1c1c1c', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' },
     updateOdoBtnTopRight: {
         position: 'absolute', top: '16px', right: '16px',
-        backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d',
+        backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb',
         padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.15s ease',
+        display: 'flex', alignItems: 'center', gap: '6px',
     },
-    lastUpdatedText: { color: '#8b949e', fontSize: '11px', fontStyle: 'italic' },
+    lastUpdatedText: { color: '#6e6962', fontSize: '11px', fontStyle: 'italic' },
 
     cellWithTag: { display: 'flex', alignItems: 'center', gap: '10px' },
-    tagUpcoming: { backgroundColor: 'rgba(210, 153, 34, 0.15)', color: '#d29922', border: '1px solid rgba(210, 153, 34, 0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.4px' },
-    tagPastDue: { backgroundColor: 'rgba(248, 81, 73, 0.15)', color: '#f85149', border: '1px solid rgba(248, 81, 73, 0.3)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.4px' },
+    tagUpcoming: { backgroundColor: '#b3251e15', color: '#b3251e', border: '1px solid #b3251e44', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px' },
+    tagPastDue: { backgroundColor: '#1c1c1c15', color: '#1c1c1c', border: '1px solid #1c1c1c44', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px' },
 
-    fullPhotoBox: { backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', padding: '16px', maxWidth: '85vw', maxHeight: '85vh', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 25px 50px rgba(0,0,0,0.8)' },
+    fullPhotoBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '16px', maxWidth: '85vw', maxHeight: '85vh', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 25px 50px rgba(28, 28, 28, 0.3)' },
     fullImage: { maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain' },
-    closePhotoBtn: { position: 'absolute', top: '12px', right: '12px', background: 'rgba(0,0,0,0.6)', border: '1px solid #30363d', color: '#ffffff', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10 },
+    closePhotoBtn: { position: 'absolute', top: '12px', right: '12px', background: 'rgba(28, 28, 28, 0.7)', border: '1px solid #d6ccbb', color: '#ffffff', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10 },
 
     sectionHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', width: '100%' },
-    sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#ffffff', margin: 0 },
+    sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#1c1c1c', margin: 0 },
     dropdownWrapper: { position: 'relative' },
     dropdownToggleBtn: {
-        backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '6px',
-        padding: '7px 14px', color: '#ffffff', fontSize: '12px', fontWeight: '500',
+        backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '6px',
+        padding: '7px 14px', color: '#1c1c1c', fontSize: '12px', fontWeight: '500',
         display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', outline: 'none',
         minWidth: '150px', justifyContent: 'space-between'
     },
     dropdownToggleRight: { display: 'flex', alignItems: 'center', gap: '8px' },
-    clearIconBadge: { backgroundColor: '#f8514933', color: '#f85149', fontSize: '10px', fontWeight: '700', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
-    dropdownMenu: { position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: '220px', backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', zIndex: 50, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-    dropdownHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #21262d', backgroundColor: '#21262d55' },
-    dropdownTitle: { fontSize: '11px', fontWeight: '600', color: '#8b949e', textTransform: 'uppercase' },
-    dropdownClearText: { background: 'none', border: 'none', color: '#f85149', fontSize: '11px', cursor: 'pointer', fontWeight: '600' },
+    clearIconBadge: { backgroundColor: '#b3251e15', color: '#b3251e', fontSize: '10px', fontWeight: '700', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
+    dropdownMenu: { position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: '220px', backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '8px', boxShadow: '0 10px 25px rgba(28, 28, 28, 0.15)', zIndex: 50, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+    dropdownHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #ede6d8', backgroundColor: '#ede6d8' },
+    dropdownTitle: { fontSize: '11px', fontWeight: '600', color: '#6e6962', textTransform: 'uppercase' },
+    dropdownClearText: { background: 'none', border: 'none', color: '#b3251e', fontSize: '11px', cursor: 'pointer', fontWeight: '700' },
     dropdownList: { padding: '6px', display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '180px', overflowY: 'auto' },
-    dropdownItemLabel: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', color: '#c9d1d9', fontSize: '12px', cursor: 'pointer' },
-    dropdownCheckbox: { accentColor: '#1f6feb', width: '13px', height: '13px', cursor: 'pointer' },
-    dropdownEmpty: { padding: '12px', textAlign: 'center', color: '#8b949e', fontSize: '12px', fontStyle: 'italic' },
+    dropdownItemLabel: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', color: '#1c1c1c', fontSize: '12px', cursor: 'pointer' },
+    dropdownCheckbox: { accentColor: '#b3251e', width: '13px', height: '13px', cursor: 'pointer' },
+    dropdownEmpty: { padding: '12px', textAlign: 'center', color: '#6e6962', fontSize: '12px', fontStyle: 'italic' },
 
-    tableContainer: { backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)', width: '100%', boxSizing: 'border-box' },
+    tableContainer: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(28, 28, 28, 0.04)', width: '100%', boxSizing: 'border-box' },
     table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' },
-    tableHeaderRow: { backgroundColor: '#21262d', borderBottom: '1px solid #30363d', color: '#8b949e' },
+    tableHeaderRow: { backgroundColor: '#ede6d8', borderBottom: '1px solid #d6ccbb', color: '#6e6962' },
     th: { padding: '10px 14px', fontWeight: '600', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.5px' },
-    tableBodyRow: { borderBottom: '1px solid #21262d', transition: 'background-color 0.15s' },
-    td: { padding: '12px 14px', color: '#c9d1d9', verticalAlign: 'middle' },
-    emptyTableCell: { padding: '24px', textAlign: 'center', color: '#8b949e', fontStyle: 'italic' },
+    tableBodyRow: { borderBottom: '1px solid #ede6d8' },
+    td: { padding: '12px 14px', color: '#1c1c1c', verticalAlign: 'middle' },
+    emptyTableCell: { padding: '24px', textAlign: 'center', color: '#6e6962', fontStyle: 'italic' },
     serviceBadgeList: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
-    serviceBadge: { backgroundColor: '#1f6feb22', color: '#3b82f6', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '600' },
+    serviceBadge: { backgroundColor: '#1c1c1c10', color: '#1c1c1c', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700' },
     
-    inlineInput: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px', padding: '5px 8px', color: '#ffffff', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
-    inlineSelect: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '4px', padding: '5px 8px', color: '#ffffff', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
+    inlineInput: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '4px', padding: '5px 8px', color: '#1c1c1c', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
+    inlineSelect: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '4px', padding: '5px 8px', color: '#1c1c1c', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
 
     rowActions: { display: 'flex', justifyContent: 'flex-end', gap: '6px', alignItems: 'center' },
-    iconBtnEdit: { backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease' },
-    iconBtnDelete: { backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease' },
-    iconBtnSave: { backgroundColor: '#1f6feb22', color: '#3b82f6', border: '1px solid #30363d', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease' },
-    iconBtnCancel: { backgroundColor: '#21262d', color: '#8b949e', border: '1px solid #30363d', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', transition: 'all 0.15s ease' },
+    iconBtnEdit: { backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
+    iconBtnDelete: { backgroundColor: '#b3251e15', color: '#b3251e', border: '1px solid #d6ccbb', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
+    iconBtnSave: { backgroundColor: '#1c1c1c15', color: '#1c1c1c', border: '1px solid #d6ccbb', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
+    iconBtnCancel: { backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
 
     floatingBtn: {
         position: 'fixed', bottom: '40px', right: '48px', width: '56px', height: '56px',
-        backgroundColor: '#1f6feb', color: '#ffffff', borderRadius: '50%', border: 'none',
+        backgroundColor: '#1c1c1c', color: '#ede6d8', borderRadius: '50%', border: 'none',
         display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer',
-        boxShadow: '0 8px 24px rgba(31, 111, 235, 0.5)', zIndex: 100,
-        transition: 'transform 0.2s ease, background-color 0.2s ease',
+        boxShadow: '0 8px 24px rgba(28, 28, 28, 0.3)', zIndex: 100,
     },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-    modalBox: { backgroundColor: '#161b22', border: '1px solid #30363d', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(28, 28, 28, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
+    modalBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2)', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto' },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    modalTitle: { color: '#ffffff', fontSize: '16px', fontWeight: '600', margin: 0 },
-    closeBtn: { background: 'none', border: 'none', color: '#8b949e', fontSize: '16px', cursor: 'pointer' },
+    modalTitle: { color: '#1c1c1c', fontSize: '16px', fontWeight: '600', margin: 0 },
+    closeBtn: { background: 'none', border: 'none', color: '#6e6962', fontSize: '16px', cursor: 'pointer' },
     form: { display: 'flex', flexDirection: 'column', gap: '12px' },
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
-    label: { color: '#8b949e', fontSize: '11px', fontWeight: '500' },
-    input: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '8px 10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%' },
-    checkboxContainer: { backgroundColor: '#0d1117', border: '1px solid #30363d', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '140px', overflowY: 'auto' },
-    checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', color: '#c9d1d9', fontSize: '12px', cursor: 'pointer' },
-    checkboxInput: { accentColor: '#1f6feb', width: '14px', height: '14px', cursor: 'pointer' },
-    noServiceText: { color: '#8b949e', fontSize: '12px', fontStyle: 'italic', textAlign: 'center' },
+    label: { color: '#6e6962', fontSize: '11px', fontWeight: '500' },
+    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%' },
+    checkboxContainer: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '140px', overflowY: 'auto' },
+    checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', color: '#1c1c1c', fontSize: '12px', cursor: 'pointer' },
+    checkboxInput: { accentColor: '#b3251e', width: '14px', height: '14px', cursor: 'pointer' },
+    noServiceText: { color: '#6e6962', fontSize: '12px', fontStyle: 'italic', textAlign: 'center' },
     currencyWrapper: { position: 'relative', display: 'flex', alignItems: 'center' },
-    currencySymbol: { position: 'absolute', left: '10px', color: '#8b949e', fontSize: '12px', fontWeight: '600' },
-    errorText: { color: '#f85149', fontSize: '11px', marginTop: '2px' },
-    modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #21262d', paddingTop: '14px', marginTop: '4px' },
-    cancelBtn: { backgroundColor: '#21262d', color: '#c9d1d9', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#1f6feb', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    deleteCardBtn: { backgroundColor: '#da363322', color: '#f85149', border: '1px solid #30363d', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    currencySymbol: { position: 'absolute', left: '10px', color: '#6e6962', fontSize: '12px', fontWeight: '600' },
+    errorText: { color: '#b3251e', fontSize: '11px', marginTop: '2px' },
+    modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #ede6d8', paddingTop: '14px', marginTop: '4px' },
+    cancelBtn: { backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    saveBtn: { backgroundColor: '#1c1c1c', color: '#ede6d8', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
+    deleteCardBtn: { backgroundColor: '#b3251e15', color: '#b3251e', border: '1px solid #d6ccbb', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
 };
