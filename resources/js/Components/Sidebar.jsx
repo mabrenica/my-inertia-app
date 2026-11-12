@@ -7,6 +7,24 @@ export default function Sidebar({ activePage }) {
 
     return (
         <div style={styles.sidebar}>
+            <style>{`
+                .sidebar-nav-item {
+                    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .sidebar-nav-item:hover {
+                    background-color: rgba(237, 230, 216, 0.08);
+                    transform: translateX(4px);
+                    color: #ede6d8 !important;
+                }
+                .sidebar-logout-btn {
+                    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .sidebar-logout-btn:hover {
+                    background-color: rgba(179, 37, 30, 0.12);
+                    transform: translateX(4px);
+                }
+            `}</style>
+
             <div>
                 {/* Navigation Links */}
                 <div style={styles.navSection}>
@@ -14,6 +32,7 @@ export default function Sidebar({ activePage }) {
                     
                     <Link 
                         href="/home" 
+                        className="sidebar-nav-item"
                         style={{
                             ...styles.navItem,
                             ...(activePage === 'home' ? styles.navItemActive : {})
@@ -27,6 +46,7 @@ export default function Sidebar({ activePage }) {
 
                     <Link 
                         href="/profile" 
+                        className="sidebar-nav-item"
                         style={{
                             ...styles.navItem,
                             ...(activePage === 'profile' ? styles.navItemActive : {})
@@ -40,6 +60,7 @@ export default function Sidebar({ activePage }) {
 
                     <Link 
                         href="/settings" 
+                        className="sidebar-nav-item"
                         style={{
                             ...styles.navItem,
                             ...(activePage === 'settings' ? styles.navItemActive : {})
@@ -56,7 +77,7 @@ export default function Sidebar({ activePage }) {
 
             {/* Bottom Log out Button */}
             <div style={styles.logoutContainer}>
-                <button onClick={handleLogout} style={styles.logoutButton}>
+                <button onClick={handleLogout} style={styles.logoutButton} className="sidebar-logout-btn">
                     <svg style={styles.navIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
@@ -70,8 +91,8 @@ export default function Sidebar({ activePage }) {
 const styles = {
     sidebar: {
         width: '240px',
-        backgroundColor: '#0d1117',
-        borderRight: '1px solid #21262d',
+        backgroundImage: 'linear-gradient(180deg, #1c1c1c 0%, #141414 100%)',
+        borderRight: '1px solid #2e2e2e',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -87,7 +108,7 @@ const styles = {
     navLabel: {
         fontSize: '11px',
         fontWeight: '600',
-        color: '#484f58',
+        color: '#6e6962',
         textTransform: 'uppercase',
         letterSpacing: '0.5px',
         paddingLeft: '10px',
@@ -99,24 +120,24 @@ const styles = {
         gap: '10px',
         padding: '10px 12px',
         borderRadius: '8px',
-        color: '#8b949e',
+        color: '#b5b0a6',
         fontSize: '13px',
         fontWeight: '500',
         textDecoration: 'none',
-        transition: 'all 0.2s',
     },
     navItemActive: {
-        backgroundColor: '#21262d',
-        color: '#ffffff',
+        backgroundImage: 'linear-gradient(135deg, #2b2b2b 0%, #222222 100%)',
+        color: '#ede6d8',
+        boxShadow: 'inset 2px 0 0 #b3251e',
     },
     navIcon: {
         width: '16px',
         height: '16px',
-        color: '#8b949e',
+        color: '#b5b0a6',
     },
     logoutContainer: {
         paddingTop: '16px',
-        borderTop: '1px solid #21262d',
+        borderTop: '1px solid #2e2e2e',
     },
     logoutButton: {
         display: 'flex',
@@ -127,7 +148,7 @@ const styles = {
         backgroundColor: 'transparent',
         border: 'none',
         borderRadius: '8px',
-        color: '#f85149',
+        color: '#b3251e',
         fontSize: '13px',
         fontWeight: '500',
         cursor: 'pointer',

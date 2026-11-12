@@ -19,20 +19,35 @@ export default function CreateAccount() {
 
     return (
         <div style={styles.page}>
-            {/* Autofill Fix Injection */}
             <style>{`
+                @keyframes cardFadeIn {
+                    from { opacity: 0; transform: translateY(20px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                .animated-card {
+                    animation: cardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .hover-btn {
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .hover-btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(28, 28, 28, 0.15);
+                }
+                .hover-btn:active {
+                    transform: translateY(1px);
+                }
                 input:-webkit-autofill,
                 input:-webkit-autofill:hover,
                 input:-webkit-autofill:focus,
                 input:-webkit-autofill:active {
-                    -webkit-box-shadow: 0 0 0 30px #0d1117 inset !important;
-                    -webkit-text-fill-color: #ffffff !important;
+                    -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+                    -webkit-text-fill-color: #1c1c1c !important;
                     transition: background-color 5000s ease-in-out 0s;
                 }
             `}</style>
 
-            <div style={styles.cardContainer}>
-                {/* Left Side - Form Section */}
+            <div style={styles.cardContainer} className="animated-card">
                 <div style={styles.formSection}>
                     <div style={styles.contentGroup}>
                         <h1 style={styles.title}>Create account</h1>
@@ -41,12 +56,11 @@ export default function CreateAccount() {
                         </p>
 
                         <form onSubmit={handleSubmit} style={styles.form}>
-                            {/* Name Input */}
                             <div style={styles.inputContainer}>
                                 <label style={styles.label}>Full Name</label>
                                 <div style={{
                                     ...styles.inputWrapper,
-                                    borderColor: errors.name ? '#ef4444' : 'transparent'
+                                    borderColor: errors.name ? '#b3251e' : '#d6ccbb'
                                 }}>
                                     <input 
                                         type="text" 
@@ -63,12 +77,11 @@ export default function CreateAccount() {
                                 {errors.name && <span style={styles.errorText}>{errors.name}</span>}
                             </div>
 
-                            {/* Email Input */}
                             <div style={styles.inputContainer}>
                                 <label style={styles.label}>Email</label>
                                 <div style={{
                                     ...styles.inputWrapper,
-                                    borderColor: errors.email ? '#ef4444' : 'transparent'
+                                    borderColor: errors.email ? '#b3251e' : '#d6ccbb'
                                 }}>
                                     <input 
                                         type="email" 
@@ -85,12 +98,11 @@ export default function CreateAccount() {
                                 {errors.email && <span style={styles.errorText}>{errors.email}</span>}
                             </div>
 
-                            {/* Password Input */}
                             <div style={styles.inputContainer}>
                                 <label style={styles.label}>Password</label>
                                 <div style={{
                                     ...styles.inputWrapper,
-                                    borderColor: errors.password ? '#ef4444' : '#1f6feb'
+                                    borderColor: errors.password ? '#b3251e' : '#d6ccbb'
                                 }}>
                                     <input 
                                         type={showPassword ? 'text' : 'password'} 
@@ -117,12 +129,11 @@ export default function CreateAccount() {
                                 {errors.password && <span style={styles.errorText}>{errors.password}</span>}
                             </div>
 
-                            {/* Confirm Password Input */}
                             <div style={styles.inputContainer}>
                                 <label style={styles.label}>Confirm Password</label>
                                 <div style={{
                                     ...styles.inputWrapper,
-                                    borderColor: errors.password_confirmation ? '#ef4444' : 'transparent'
+                                    borderColor: errors.password_confirmation ? '#b3251e' : '#d6ccbb'
                                 }}>
                                     <input 
                                         type={showConfirmPassword ? 'text' : 'password'} 
@@ -149,11 +160,11 @@ export default function CreateAccount() {
                                 {errors.password_confirmation && <span style={styles.errorText}>{errors.password_confirmation}</span>}
                             </div>
 
-                            {/* Submit Button */}
                             <div style={styles.buttonGroup}>
                                 <button 
                                     type="submit" 
                                     disabled={processing}
+                                    className="hover-btn"
                                     style={{
                                         ...styles.primaryButton,
                                         opacity: processing ? 0.7 : 1
@@ -166,12 +177,11 @@ export default function CreateAccount() {
                     </div>
                 </div>
 
-                {/* Right Side - Automotive Background Image with Minimalist Logo Overlay */}
                 <div style={styles.imageSection}>
                     <div style={styles.overlay} />
                     <div style={styles.logoBadge}>
                         <div style={styles.logoIcon}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b3251e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="12" cy="12" r="9"></circle>
                                 <path d="M12 3v9l5.5 5.5"></path>
                             </svg>
@@ -193,7 +203,7 @@ const styles = {
         bottom: 0,
         width: '100vw',
         height: '100vh',
-        backgroundColor: '#12161f',
+        backgroundColor: '#ede6d8',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -207,12 +217,12 @@ const styles = {
         width: '100%',
         maxWidth: '1100px',
         minHeight: '680px',
-        backgroundColor: '#161b22',
+        backgroundColor: '#ffffff',
         borderRadius: '20px',
         display: 'flex',
         overflow: 'hidden',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-        border: '1px solid #21262d',
+        boxShadow: '0 20px 40px rgba(28, 28, 28, 0.1)',
+        border: '1px solid #d6ccbb',
     },
     formSection: {
         flex: '1.1',
@@ -220,7 +230,7 @@ const styles = {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        backgroundColor: '#161b22',
+        backgroundColor: '#ffffff',
         overflowY: 'auto',
         maxHeight: '680px',
     },
@@ -232,19 +242,19 @@ const styles = {
     title: {
         fontSize: '32px',
         fontWeight: '700',
-        color: '#ffffff',
+        color: '#1c1c1c',
         margin: '0 0 8px 0',
         letterSpacing: '-0.5px',
     },
     subtitle: {
-        color: '#8b949e',
+        color: '#6e6962',
         fontSize: '13px',
         margin: '0 0 24px 0',
     },
     link: {
-        color: '#3b82f6',
+        color: '#b3251e',
         textDecoration: 'none',
-        fontWeight: '500',
+        fontWeight: '600',
     },
     form: {
         display: 'flex',
@@ -258,17 +268,17 @@ const styles = {
     },
     label: {
         fontSize: '11px',
-        color: '#8b949e',
+        color: '#6e6962',
         marginLeft: '4px',
         fontWeight: '500',
     },
     inputWrapper: {
         display: 'flex',
         alignItems: 'center',
-        backgroundColor: '#0d1117',
+        backgroundColor: '#ede6d8',
         borderRadius: '8px',
         padding: '9px 14px',
-        border: '1px solid #30363d',
+        border: '1px solid #d6ccbb',
         transition: 'border-color 0.2s ease',
     },
     input: {
@@ -276,27 +286,27 @@ const styles = {
         backgroundColor: 'transparent',
         border: 'none',
         outline: 'none',
-        color: '#ffffff',
+        color: '#1c1c1c',
         fontSize: '13px',
     },
     icon: {
         width: '16px',
         height: '16px',
-        color: '#8b949e',
+        color: '#6e6962',
         marginLeft: '10px',
         flexShrink: 0,
     },
     eyeIcon: {
         width: '16px',
         height: '16px',
-        color: '#8b949e',
+        color: '#6e6962',
         marginLeft: '10px',
         flexShrink: 0,
         cursor: 'pointer',
     },
     errorText: {
         fontSize: '11px',
-        color: '#f85149',
+        color: '#b3251e',
         marginTop: '2px',
         marginLeft: '4px',
     },
@@ -307,14 +317,13 @@ const styles = {
     primaryButton: {
         width: '100%',
         padding: '12px 20px',
-        backgroundColor: '#1f6feb',
-        color: '#ffffff',
+        backgroundColor: '#1c1c1c',
+        color: '#ede6d8',
         border: 'none',
         borderRadius: '8px',
-        fontWeight: '600',
+        fontWeight: '700',
         fontSize: '13px',
         cursor: 'pointer',
-        transition: 'background-color 0.2s',
     },
     imageSection: {
         flex: '1.2',
@@ -333,12 +342,12 @@ const styles = {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(13, 17, 23, 0.2)',
+        backgroundColor: 'rgba(28, 28, 28, 0.35)',
     },
     logoBadge: {
         position: 'relative',
         zIndex: 2,
-        backgroundColor: 'rgba(13, 17, 23, 0.75)',
+        backgroundColor: 'rgba(28, 28, 28, 0.85)',
         backdropFilter: 'blur(8px)',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         padding: '8px 16px',
@@ -346,20 +355,20 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.4)',
+        boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
     },
     logoIcon: {
         width: '28px',
         height: '28px',
-        backgroundColor: '#1f6feb22',
-        border: '1px solid #1f6feb44',
+        backgroundColor: '#b3251e22',
+        border: '1px solid #b3251e44',
         borderRadius: '6px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
     },
     logoText: {
-        color: '#ffffff',
+        color: '#ede6d8',
         fontSize: '14px',
         fontWeight: '600',
         letterSpacing: '-0.2px',

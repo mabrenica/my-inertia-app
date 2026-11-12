@@ -21,15 +21,15 @@ export default function Toast({ message, duration = 2000, onClose }) {
         <>
             <style>{`
                 @keyframes slideDownFade {
-                    from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+                    from { opacity: 0; transform: translateY(-16px) scale(0.96); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 .animated-toast {
-                    animation: slideDownFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                    animation: slideDownFade 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
             `}</style>
             <div style={styles.toast} className="animated-toast">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#238636" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b3251e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
                 <span>{message}</span>
@@ -44,9 +44,9 @@ const styles = {
         top: '24px',
         left: '50%',
         transform: 'translateX(-50%)',
-        backgroundColor: '#161b22',
-        border: '1px solid #238636',
-        color: '#ffffff',
+        backgroundColor: '#1c1c1c',
+        border: '1px solid #b3251e',
+        color: '#ede6d8',
         padding: '10px 16px',
         borderRadius: '8px',
         fontSize: '13px',
@@ -54,7 +54,7 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+        boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
         zIndex: 9999,
     },
 };
