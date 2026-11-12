@@ -1,0 +1,9 @@
+kind: wasmer.io/App.v0
+name: fleetflow
+owner: mabrenica_stormblue
+package: .
+
+capabilities:
+  database:
+    engine: postgres
+app_id: da_KgYIZt9Upk6B

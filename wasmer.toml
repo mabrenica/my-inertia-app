@@ -1,0 +1,19 @@
+[package]
+name = "mabrenica_stormblue/fleetflow"
+version = "0.1.12"
+description = "FleetFlow Laravel Application"
+
+[dependencies]
+"php/php" = "=8.3.4"
+
+[fs]
+"/app/" = "."
+
+[[command]]
+name = "run"
+module = "php/php:php"
+runner = "wasi"
+
+[command.annotations.wasi]
+main-args = ["index.php"]
+preopened-directories = ["."]
