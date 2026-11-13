@@ -357,4 +357,16 @@ class AuthController extends Controller
 
         return back()->with('success', 'Current ODO updated successfully!');
     }
+
+    protected function deleteStoredFile($url)
+    {
+        // Extract the relative path after /fleetflow/ from the public URL
+        $parsedUrl = parse_url($url, PHP_URL_PATH);
+        $prefix = '/storage/v1/object/public/fleetflow/';
+        
+        if (str_starts_with($parsedUrl, $prefix)) {
+            $path = substr($parsedUrl, strlen($prefix));
+            Storage::disk('supabase')->delete($path);
+        }
+    }
 }
