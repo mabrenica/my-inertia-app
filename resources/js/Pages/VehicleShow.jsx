@@ -5,7 +5,11 @@ import Toast from '@/Components/Toast';
 import Breadcrumb from '@/Components/Breadcrumb';
 
 export default function VehicleShow({ vehicle, servicePreferences = [], maintenanceLogs = [] }) {
-    const photoUrl = vehicle.photo ? `/storage/${vehicle.photo}` : null;
+    const photoUrl = vehicle.photo 
+        ? (vehicle.photo.startsWith('http://') || vehicle.photo.startsWith('https://') || vehicle.photo.startsWith('data:') 
+            ? vehicle.photo 
+            : `/storage/${vehicle.photo}`) 
+        : null;
 
     const [showLogModal, setShowLogModal] = useState(false);
     const [showDeleteLogModal, setShowDeleteLogModal] = useState(false);

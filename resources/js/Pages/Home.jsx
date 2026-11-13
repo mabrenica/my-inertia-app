@@ -48,6 +48,14 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    const getVehiclePhotoUrl = (photo) => {
+        if (!photo) return null;
+        if (photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('data:')) {
+            return photo;
+        }
+        return `/storage/${photo}`;
+    };
+
     const todayStr = getPhilippineToday();
     const todayObj = new Date(todayStr);
 
@@ -331,7 +339,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                             onClick={() => router.visit(`/vehicles/${vehicle.id}`)}
                                         >
                                             {vehicle.photo ? (
-                                                <img src={`/storage/${vehicle.photo}`} alt={vehicle.make} style={styles.vehicleThumb} />
+                                                <img src={getVehiclePhotoUrl(vehicle.photo)} alt={vehicle.make} style={styles.vehicleThumb} />
                                             ) : (
                                                 <div style={styles.placeholderThumb}>
                                                     {vehicle.type === 'Car' ? (

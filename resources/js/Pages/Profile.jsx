@@ -72,7 +72,11 @@ export default function Profile({ auth }) {
         });
     };
 
-    const avatarUrl = user.avatar ? `/storage/${user.avatar}` : null;
+    const avatarUrl = user.avatar 
+        ? (user.avatar.startsWith('http://') || user.avatar.startsWith('https://') || user.avatar.startsWith('data:') 
+            ? user.avatar 
+            : `/storage/${user.avatar}`) 
+        : null;
 
     return (
         <div style={styles.page}>

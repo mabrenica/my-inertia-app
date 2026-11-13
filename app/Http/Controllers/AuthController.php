@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use App\Models\Vehicle;
 use App\Models\UserServicePreference;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Models\VehicleMaintenanceLog;
 
@@ -122,7 +123,7 @@ class AuthController extends Controller
         ]));
 
         return back();
-    }
+    }   
 
     public function updateAvatar(Request $request)
     {
@@ -133,9 +134,22 @@ class AuthController extends Controller
         $user = $request->user();
 
         if ($request->hasFile('avatar')) {
-            $file = $request->file('avatar');
-            $base64Image = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
-            $user->update(['avatar' => $base64Image]);
+            // Delete old avatar if it exists and is an S3 path/url
+            if ($user->avatar && !filter_var($user->avatar, FILTER_VALIDATE_URL) === false) {
+                $this->deleteStoredFile($user->avatar);
+            }
+
+            // Store file in the fleetflow bucket under 'avatars'
+            $path = $request->file('avatar')->store('avatars', 'supabase');
+
+            if (!$path) {
+                abort(500, 'File upload failed.');
+            }
+
+            // Generate the public URL matching your required format
+            $url = Storage::disk('supabase')->url($path);
+
+            $user->update(['avatar' => $url]);
         }
 
         return back();
@@ -160,10 +174,12 @@ class AuthController extends Controller
             'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2100'],
         ]);
 
-        $photoData = null;
+        $photoUrl = null;
         if ($request->hasFile('photo')) {
-            $file = $request->file('photo');
-            $photoData = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            $path = $request->file('photo')->store('vehicles', 'supabase');
+            if ($path) {
+                $photoUrl = Storage::disk('supabase')->url($path);
+            }
         }
 
         $request->user()->vehicles()->create([
@@ -172,7 +188,7 @@ class AuthController extends Controller
             'model' => $validated['model'],
             'year' => $validated['year'],
             'description' => $validated['description'] ?? null,
-            'photo' => $photoData,
+            'photo' => $photoUrl,
         ]);
 
         return back()->with('success', 'Vehicle successfully added!');
@@ -194,15 +210,17 @@ class AuthController extends Controller
             'remove_photo' => ['nullable', 'boolean'],
         ]);
 
-        $photoData = $vehicle->photo;
+        $photoUrl = $vehicle->photo;
 
         if ($request->boolean('remove_photo')) {
-            $photoData = null;
+            $photoUrl = null;
         }
 
         if ($request->hasFile('photo')) {
-            $file = $request->file('photo');
-            $photoData = 'data:' . $file->getMimeType() . ';base64,' . base64_encode(file_get_contents($file->getRealPath()));
+            $path = $request->file('photo')->store('vehicles', 'supabase');
+            if ($path) {
+                $photoUrl = Storage::disk('supabase')->url($path);
+            }
         }
 
         $vehicle->update([
@@ -211,7 +229,7 @@ class AuthController extends Controller
             'model' => $validated['model'],
             'year' => $validated['year'],
             'description' => $validated['description'] ?? null,
-            'photo' => $photoData,
+            'photo' => $photoUrl,
         ]);
 
         return back()->with('success', 'Vehicle successfully updated!');
