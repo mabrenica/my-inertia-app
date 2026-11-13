@@ -134,19 +134,16 @@ class AuthController extends Controller
         $user = $request->user();
 
         if ($request->hasFile('avatar')) {
-            // Delete old avatar if it exists and is an S3 path/url
             if ($user->avatar && !filter_var($user->avatar, FILTER_VALIDATE_URL) === false) {
                 $this->deleteStoredFile($user->avatar);
             }
 
-            // Store file in the fleetflow bucket under 'avatars'
             $path = $request->file('avatar')->store('avatars', 'supabase');
 
             if (!$path) {
                 abort(500, 'File upload failed.');
             }
 
-            // Generate the public URL matching your required format
             $url = Storage::disk('supabase')->url($path);
 
             $user->update(['avatar' => $url]);
@@ -194,11 +191,11 @@ class AuthController extends Controller
         return back()->with('success', 'Vehicle successfully added!');
     }
 
-    public function updateVehicle(Request $request, Vehicle $vehicle)
+    public function updateVehicle(Request $request, $id)
     {
-        if ($vehicle->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $vehicle = Vehicle::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
 
         $validated = $request->validate([
             'type' => ['required', 'string', 'in:Car,Motorbike'],
@@ -213,10 +210,17 @@ class AuthController extends Controller
         $photoUrl = $vehicle->photo;
 
         if ($request->boolean('remove_photo')) {
+            if ($vehicle->photo && !filter_var($vehicle->photo, FILTER_VALIDATE_URL) === false) {
+                $this->deleteStoredFile($vehicle->photo);
+            }
             $photoUrl = null;
         }
 
         if ($request->hasFile('photo')) {
+            if ($vehicle->photo && !filter_var($vehicle->photo, FILTER_VALIDATE_URL) === false) {
+                $this->deleteStoredFile($vehicle->photo);
+            }
+
             $path = $request->file('photo')->store('vehicles', 'supabase');
             if ($path) {
                 $photoUrl = Storage::disk('supabase')->url($path);
@@ -235,10 +239,14 @@ class AuthController extends Controller
         return back()->with('success', 'Vehicle successfully updated!');
     }
 
-    public function destroyVehicle(Request $request, Vehicle $vehicle)
+    public function destroyVehicle(Request $request, $id)
     {
-        if ($vehicle->user_id !== $request->user()->id) {
-            abort(403);
+        $vehicle = Vehicle::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        if ($vehicle->photo && !filter_var($vehicle->photo, FILTER_VALIDATE_URL) === false) {
+            $this->deleteStoredFile($vehicle->photo);
         }
 
         $vehicle->delete();
@@ -246,13 +254,13 @@ class AuthController extends Controller
         return back()->with('success', 'Vehicle successfully deleted!');
     }
 
-    public function showVehicle(Vehicle $vehicle)
+    public function showVehicle(Request $request, $id)
     {
-        if ($vehicle->user_id !== auth()->id()) {
-            abort(403);
-        }
+        $vehicle = Vehicle::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
 
-        $preference = UserServicePreference::where('user_id', auth()->id())->first();
+        $preference = UserServicePreference::where('user_id', $request->user()->id)->first();
 
         $services = [];
         if ($preference) {
@@ -272,11 +280,11 @@ class AuthController extends Controller
         ]);
     }
 
-    public function storeMaintenanceLog(Request $request, Vehicle $vehicle)
+    public function storeMaintenanceLog(Request $request, $id)
     {
-        if ($vehicle->user_id !== auth()->id()) {
-            abort(403);
-        }
+        $vehicle = Vehicle::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
 
         $request->validate([
             'services' => 'required|array|min:1',
@@ -304,7 +312,12 @@ class AuthController extends Controller
     {
         $log = VehicleMaintenanceLog::findOrFail($id);
 
-        if ($log->vehicle->user_id !== auth()->id()) {
+        // Directly verify the vehicle belongs to the authenticated user
+        $isOwner = Vehicle::where('id', $log->vehicle_id)
+            ->where('user_id', $request->user()->id)
+            ->exists();
+
+        if (!$isOwner) {
             abort(403);
         }
 
@@ -327,11 +340,16 @@ class AuthController extends Controller
         return redirect()->back()->with('success', 'Maintenance log updated successfully!');
     }
 
-    public function destroyMaintenanceLog($id)
+    public function destroyMaintenanceLog(Request $request, $id)
     {
         $log = VehicleMaintenanceLog::findOrFail($id);
 
-        if ($log->vehicle->user_id !== auth()->id()) {
+        // Directly verify the vehicle belongs to the authenticated user
+        $isOwner = Vehicle::where('id', $log->vehicle_id)
+            ->where('user_id', $request->user()->id)
+            ->exists();
+
+        if (!$isOwner) {
             abort(403);
         }
 
@@ -340,11 +358,11 @@ class AuthController extends Controller
         return redirect()->back()->with('success', 'Maintenance log deleted successfully!');
     }
 
-    public function updateVehicleOdo(Request $request, Vehicle $vehicle)
+    public function updateVehicleOdo(Request $request, $id)
     {
-        if ($vehicle->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $vehicle = Vehicle::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
 
         $validated = $request->validate([
             'current_odo' => ['required', 'string', 'max:50'],
@@ -360,7 +378,6 @@ class AuthController extends Controller
 
     protected function deleteStoredFile($url)
     {
-        // Extract the relative path after /fleetflow/ from the public URL
         $parsedUrl = parse_url($url, PHP_URL_PATH);
         $prefix = '/storage/v1/object/public/fleetflow/';
         

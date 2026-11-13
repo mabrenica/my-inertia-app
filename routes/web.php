@@ -22,7 +22,6 @@ Route::get('/create-account', function () {
 
 Route::post('/create-account', [AuthController::class, 'register']);
 
-// Replace your existing /home route with this:
 Route::get('/home', [AuthController::class, 'home'])->middleware('auth')->name('home');
 
 Route::get('/profile', function () {
@@ -33,12 +32,8 @@ Route::get('/profile', function () {
     ]);
 })->middleware('auth')->name('profile');
 
-// Handle profile text details update
 Route::patch('/profile', [AuthController::class, 'updateProfile'])->middleware('auth');
-
-// Handle profile avatar photo update
 Route::post('/profile/avatar', [AuthController::class, 'updateAvatar'])->middleware('auth');
-
 Route::delete('/profile/avatar', [AuthController::class, 'removeAvatar'])->middleware('auth');
 
 Route::post('/logout', function (Request $request) {
@@ -51,22 +46,21 @@ Route::post('/logout', function (Request $request) {
 
 Route::middleware(['auth'])->group(function () {
     Route::post('/vehicles', [AuthController::class, 'storeVehicle']);
-    Route::post('/vehicles/{vehicle}', [AuthController::class, 'updateVehicle']);
-    Route::put('/vehicles/{vehicle}/odo', [AuthController::class, 'updateVehicleOdo']); // <--- Add this route
-    Route::delete('/vehicles/{vehicle}', [AuthController::class, 'destroyVehicle']); 
+    Route::get('/vehicles/{id}', [AuthController::class, 'showVehicle']);
+    Route::match(['post', 'put', 'patch'], '/vehicles/{id}', [AuthController::class, 'updateVehicle']);
+    Route::post('/vehicles/{id}/maintenance-logs', [AuthController::class, 'storeMaintenanceLog']);
+    Route::put('/vehicles/{id}/odo', [AuthController::class, 'updateVehicleOdo']);
+    Route::delete('/vehicles/{id}', [AuthController::class, 'destroyVehicle']); 
+});
+
+Route::middleware(['auth'])->group(function () {
+    Route::put('/maintenance-logs/{id}', [AuthController::class, 'updateMaintenanceLog']);
+    Route::delete('/maintenance-logs/{id}', [AuthController::class, 'destroyMaintenanceLog']);
 });
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/settings', [SettingsController::class, 'index']);
     Route::post('/settings/services', [SettingsController::class, 'update']);
-});
-
-Route::get('/vehicles/{vehicle}', [AuthController::class, 'showVehicle'])->middleware(['auth']);
-
-Route::middleware(['auth'])->group(function () {
-    Route::post('/vehicles/{vehicle}/maintenance-logs', [AuthController::class, 'storeMaintenanceLog']);
-    Route::put('/maintenance-logs/{id}', [AuthController::class, 'updateMaintenanceLog']);
-    Route::delete('/maintenance-logs/{id}', [AuthController::class, 'destroyMaintenanceLog']);
 });
 
 Route::middleware(['auth'])->group(function () {
