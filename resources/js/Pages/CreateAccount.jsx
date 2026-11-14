@@ -37,18 +37,25 @@ export default function CreateAccount() {
                 .hover-btn:active {
                     transform: translateY(1px);
                 }
-                input:-webkit-autofill,
-                input:-webkit-autofill:hover,
-                input:-webkit-autofill:focus,
-                input:-webkit-autofill:active {
-                    -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
-                    -webkit-text-fill-color: #1c1c1c !important;
-                    transition: background-color 5000s ease-in-out 0s;
+                @media (max-width: 768px) {
+                    .auth-card-container {
+                        flex-direction: column-reverse !important;
+                        max-width: 100% !important;
+                        min-height: auto !important;
+                        border-radius: 12px !important;
+                    }
+                    .auth-image-section {
+                        display: none !important;
+                    }
+                    .auth-form-section {
+                        padding: 24px !important;
+                        max-height: none !important;
+                    }
                 }
             `}</style>
 
-            <div style={styles.cardContainer} className="animated-card">
-                <div style={styles.formSection}>
+            <div style={styles.cardContainer} className="animated-card auth-card-container">
+                <div style={styles.formSection} className="auth-form-section">
                     <div style={styles.contentGroup}>
                         <h1 style={styles.title}>Create account</h1>
                         <p style={styles.subtitle}>
@@ -177,7 +184,7 @@ export default function CreateAccount() {
                     </div>
                 </div>
 
-                <div style={styles.imageSection}>
+                <div style={styles.imageSection} className="auth-image-section">
                     <div style={styles.overlay} />
                     <div style={styles.logoBadge}>
                         <div style={styles.logoIcon}>
@@ -196,19 +203,13 @@ export default function CreateAccount() {
 
 const styles = {
     page: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
         height: '100vh',
+        width: '100vw',
         backgroundColor: '#ede6d8',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        margin: 0,
-        padding: 0,
+        padding: '16px',
         boxSizing: 'border-box',
         fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         overflow: 'hidden',
@@ -233,6 +234,7 @@ const styles = {
         backgroundColor: '#ffffff',
         overflowY: 'auto',
         maxHeight: '680px',
+        boxSizing: 'border-box',
     },
     contentGroup: {
         maxWidth: '420px',
