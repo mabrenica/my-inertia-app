@@ -256,7 +256,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     };
 
     return (
-        <div style={styles.page}>
+        <div style={styles.page} className="page-layout">
             <style>{`
                 @keyframes slideUpFade {
                     from { opacity: 0; transform: translateY(16px) scale(0.98); }
@@ -305,237 +305,249 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                 .hover-btn:active {
                     transform: translateY(1px);
                 }
+                @media (max-width: 768px) {
+                    .page-layout {
+                        flex-direction: column !important;
+                    }
+                    .vehicleGrid {
+                        grid-template-columns: 1fr !important;
+                    }
+                    .dashboardGrid {
+                        grid-template-columns: 1fr !important;
+                    }
+                    .mainContent {
+                        padding: 16px !important;
+                    }
+                }
             `}</style>
 
-            <div style={styles.appWindow}>
-                <Sidebar activePage="home" />
+            <Sidebar activePage="home" />
 
-                <div style={styles.mainContent}>
-                    <Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
+            <div style={styles.mainContent} className="mainContent">
+                <Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 
-                    <Breadcrumb items={[{ label: 'Main', href: '#' }, { label: 'Home' }]} />
+                <Breadcrumb items={[{ label: 'Main', href: '#' }, { label: 'Home' }]} />
 
-                    <div style={styles.contentBody}>
-                        <div style={styles.pageHeaderRow}>
-                            <h1 style={styles.pageTitle}>My Rides</h1>
-                            <button 
-                                onClick={openCreateModal} 
-                                style={styles.addButton}
-                                className="hover-btn"
-                                type="button"
-                            >
-                                + Add Vehicle
-                            </button>
-                        </div>
-
-                        <div style={styles.vehicleGrid}>
-                            {vehicles.length === 0 ? (
-                                <p style={styles.emptyText}>No vehicle records added yet. Click "+ Add Vehicle" to get started.</p>
-                            ) : (
-                                vehicles.map((vehicle) => (
-                                    <div key={vehicle.id} style={styles.vehicleCard} className="interactive-card page-card-anim">
-                                        <div 
-                                            style={styles.cardContentClickable} 
-                                            onClick={() => router.visit(`/vehicles/${vehicle.id}`)}
-                                        >
-                                            {vehicle.photo ? (
-                                                <img src={getVehiclePhotoUrl(vehicle.photo)} alt={vehicle.make} style={styles.vehicleThumb} />
-                                            ) : (
-                                                <div style={styles.placeholderThumb}>
-                                                    {vehicle.type === 'Car' ? (
-                                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
-                                                            <circle cx="7" cy="17" r="2"></circle>
-                                                            <circle cx="17" cy="17" r="2"></circle>
-                                                        </svg>
-                                                    ) : (
-                                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                            <circle cx="5.5" cy="17.5" r="3.5"></circle>
-                                                            <circle cx="18.5" cy="17.5" r="3.5"></circle>
-                                                            <path d="M15 6h4l3 7"></path>
-                                                            <path d="M5.5 14H12l3-6H8.5"></path>
-                                                        </svg>
-                                                    )}
-                                                </div>
-                                            )}
-                                            <div style={styles.vehicleInfo}>
-                                                <div style={styles.vehicleHeaderRow}>
-                                                    <h3 style={styles.vehicleCardTitle}>{vehicle.year} {vehicle.make} {vehicle.model}</h3>
-                                                </div>
-                                                <span style={styles.typeBadge}>{vehicle.type}</span>
-                                                {vehicle.description && <p style={styles.vehicleDesc}>{vehicle.description}</p>}
-                                            </div>
-                                        </div>
-
-                                        <div style={styles.cardActions}>
-                                            <button 
-                                                onClick={() => openEditModal(vehicle)} 
-                                                style={styles.editCardBtn}
-                                                className="hover-btn"
-                                                type="button"
-                                            >
-                                                Edit
-                                            </button>
-                                            <button 
-                                                onClick={() => promptDeleteVehicle(vehicle)} 
-                                                style={styles.deleteCardBtn}
-                                                className="hover-btn"
-                                                type="button"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-
-                        <h2 style={styles.sectionTitle}>Dashboard</h2>
-                        <div style={styles.dashboardGrid}>
-                            <div style={styles.alertCardUpcoming} className="interactive-card page-card-anim">
-                                <div style={styles.alertCardHeader}>
-                                    <div style={styles.headerTitleGroup}>
-                                        <span style={styles.dotUpcoming} />
-                                        <h3 style={styles.alertCardTitleUpcoming}>Upcoming Maintenance</h3>
-                                    </div>
-                                    <span style={styles.badgeUpcoming}>{upcomingAlerts.length}</span>
-                                </div>
-                                <div style={styles.alertList}>
-                                    {upcomingAlerts.length === 0 ? (
-                                        <p style={styles.emptyAlertText}>No upcoming maintenance due in the next 15 days or 1,000 km.</p>
-                                    ) : (
-                                        upcomingAlerts.map((item, idx) => (
-                                            <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow} className="hover-list-item">
-                                                <div style={styles.alertRowLeft}>
-                                                    <span style={styles.vehicleNameTag}>{item.vehicleName}</span>
-                                                    <span style={styles.serviceNameText}>{item.serviceName}</span>
-                                                </div>
-                                                <span style={styles.triggerTextUpcoming}>{item.triggerText}</span>
-                                            </Link>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-
-                            <div style={styles.alertCardPastDue} className="interactive-card page-card-anim">
-                                <div style={styles.alertCardHeader}>
-                                    <div style={styles.headerTitleGroup}>
-                                        <span style={styles.dotPastDue} />
-                                        <h3 style={styles.alertCardTitlePastDue}>Past Due Maintenance</h3>
-                                    </div>
-                                    <span style={styles.badgePastDue}>{pastDueAlerts.length}</span>
-                                </div>
-                                <div style={styles.alertList}>
-                                    {pastDueAlerts.length === 0 ? (
-                                        <p style={styles.emptyAlertText}>No past due maintenance records. All up to date!</p>
-                                    ) : (
-                                        pastDueAlerts.map((item, idx) => (
-                                            <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow} className="hover-list-item">
-                                                <div style={styles.alertRowLeft}>
-                                                    <span style={styles.vehicleNameTag}>{item.vehicleName}</span>
-                                                    <span style={styles.serviceNameText}>{item.serviceName}</span>
-                                                </div>
-                                                <span style={styles.triggerTextPastDue}>{item.triggerText}</span>
-                                            </Link>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
+                <div style={styles.contentBody}>
+                    <div style={styles.pageHeaderRow}>
+                        <h1 style={styles.pageTitle}>My Rides</h1>
+                        <button 
+                            onClick={openCreateModal} 
+                            style={styles.addButton}
+                            className="hover-btn"
+                            type="button"
+                        >
+                            + Add Vehicle
+                        </button>
                     </div>
 
-                    {showModal && (
-                        <div style={styles.modalOverlay} className="animated-overlay">
-                            <div style={styles.modalBox} className="animated-modal">
-                                <div style={styles.modalHeader}>
-                                    <h3 style={styles.modalTitle}>{editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</h3>
-                                    <button onClick={() => setShowModal(false)} style={styles.closeBtn} type="button">✕</button>
-                                </div>
-
-                                <form onSubmit={handleSubmit} style={styles.form}>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Vehicle Type *</label>
-                                        <select value={data.type} onChange={e => setData('type', e.target.value)} style={styles.input}>
-                                            <option value="Car">🚗 Car</option>
-                                            <option value="Motorbike">🏍️ Motorbike</option>
-                                        </select>
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Make *</label>
-                                        <input type="text" placeholder="e.g. Toyota" value={data.make} onChange={e => setData('make', e.target.value)} style={styles.input} />
-                                        {errors.make && <span style={styles.error}>{errors.make}</span>}
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Model *</label>
-                                        <input type="text" placeholder="e.g. Civic" value={data.model} onChange={e => setData('model', e.target.value)} style={styles.input} />
-                                        {errors.model && <span style={styles.error}>{errors.model}</span>}
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Year *</label>
-                                        <input type="text" placeholder="e.g. 2022" value={data.year} onChange={e => setData('year', e.target.value)} style={styles.input} />
-                                        {errors.year && <span style={styles.error}>{errors.error}</span>}
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Description (Optional)</label>
-                                        <textarea placeholder="Additional notes..." value={data.description} onChange={e => setData('description', e.target.value)} style={{ ...styles.input, height: '50px', resize: 'none' }} />
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Photo (Optional - Max 2100 KB)</label>
-                                        <div style={styles.uploadBoxWrapper}>
-                                            <div style={styles.uploadBox} onClick={() => fileInputRef.current?.click()}>
-                                                <span style={styles.uploadText}>
-                                                    {data.photo ? data.photo.name : (editingVehicle?.photo && !removeExistingPhoto) ? 'Current photo attached' : 'Click to upload'}
-                                                </span>
+                    <div style={styles.vehicleGrid} className="vehicleGrid">
+                        {vehicles.length === 0 ? (
+                            <p style={styles.emptyText}>No vehicle records added yet. Click "+ Add Vehicle" to get started.</p>
+                        ) : (
+                            vehicles.map((vehicle) => (
+                                <div key={vehicle.id} style={styles.vehicleCard} className="interactive-card page-card-anim">
+                                    <div 
+                                        style={styles.cardContentClickable} 
+                                        onClick={() => router.visit(`/vehicles/${vehicle.id}`)}
+                                    >
+                                        {vehicle.photo ? (
+                                            <img src={getVehiclePhotoUrl(vehicle.photo)} alt={vehicle.make} style={styles.vehicleThumb} />
+                                        ) : (
+                                            <div style={styles.placeholderThumb}>
+                                                {vehicle.type === 'Car' ? (
+                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
+                                                        <circle cx="7" cy="17" r="2"></circle>
+                                                        <circle cx="17" cy="17" r="2"></circle>
+                                                    </svg>
+                                                ) : (
+                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <circle cx="5.5" cy="17.5" r="3.5"></circle>
+                                                        <circle cx="18.5" cy="17.5" r="3.5"></circle>
+                                                        <path d="M15 6h4l3 7"></path>
+                                                        <path d="M5.5 14H12l3-6H8.5"></path>
+                                                    </svg>
+                                                )}
                                             </div>
-                                            {((data.photo) || (editingVehicle?.photo && !removeExistingPhoto)) && (
-                                                <button 
-                                                    type="button" 
-                                                    onClick={handleRemovePhotoClick} 
-                                                    style={styles.removePhotoBtn}
-                                                    className="hover-btn"
-                                                    title="Remove photo"
-                                                >
-                                                    Remove
-                                                </button>
-                                            )}
+                                        )}
+                                        <div style={styles.vehicleInfo}>
+                                            <div style={styles.vehicleHeaderRow}>
+                                                <h3 style={styles.vehicleCardTitle}>{vehicle.year} {vehicle.make} {vehicle.model}</h3>
+                                            </div>
+                                            <span style={styles.typeBadge}>{vehicle.type}</span>
+                                            {vehicle.description && <p style={styles.vehicleDesc}>{vehicle.description}</p>}
                                         </div>
-                                        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
-                                        {errors.photo && <span style={styles.error}>{errors.photo}</span>}
                                     </div>
 
-                                    <div style={styles.modalActions}>
-                                        <button type="button" onClick={() => setShowModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                        <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>Save</button>
+                                    <div style={styles.cardActions}>
+                                        <button 
+                                            onClick={() => openEditModal(vehicle)} 
+                                            style={styles.editCardBtn}
+                                            className="hover-btn"
+                                            type="button"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button 
+                                            onClick={() => promptDeleteVehicle(vehicle)} 
+                                            style={styles.deleteCardBtn}
+                                            className="hover-btn"
+                                            type="button"
+                                        >
+                                            Delete
+                                        </button>
                                     </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
+                                </div>
+                            ))
+                        )}
+                    </div>
 
-                    {showDeleteModal && (
-                        <div style={styles.modalOverlay} className="animated-overlay">
-                            <div style={styles.modalBox} className="animated-modal">
-                                <div style={styles.modalHeader}>
-                                    <h3 style={styles.modalTitle}>Delete Vehicle</h3>
-                                    <button onClick={() => setShowDeleteModal(false)} style={styles.closeBtn} type="button">✕</button>
+                    <h2 style={styles.sectionTitle}>Dashboard</h2>
+                    <div style={styles.dashboardGrid} className="dashboardGrid">
+                        <div style={styles.alertCardUpcoming} className="interactive-card page-card-anim">
+                            <div style={styles.alertCardHeader}>
+                                <div style={styles.headerTitleGroup}>
+                                    <span style={styles.dotUpcoming} />
+                                    <h3 style={styles.alertCardTitleUpcoming}>Upcoming Maintenance</h3>
                                 </div>
-                                <p style={{ color: '#6e6962', fontSize: '13px', margin: '8px 0 16px 0' }}>
-                                    Are you sure you want to delete <strong style={{ color: '#1c1c1c' }}>{vehicleToDelete?.make} {vehicleToDelete?.model}</strong>? This action cannot be undone.
-                                </p>
-                                <div style={styles.modalActions}>
-                                    <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                    <button type="button" onClick={confirmDeleteVehicle} style={styles.deleteCardBtn} className="hover-btn">Delete</button>
-                                </div>
+                                <span style={styles.badgeUpcoming}>{upcomingAlerts.length}</span>
+                            </div>
+                            <div style={styles.alertList}>
+                                {upcomingAlerts.length === 0 ? (
+                                    <p style={styles.emptyAlertText}>No upcoming maintenance due in the next 15 days or 1,000 km.</p>
+                                ) : (
+                                    upcomingAlerts.map((item, idx) => (
+                                        <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow} className="hover-list-item">
+                                            <div style={styles.alertRowLeft}>
+                                                <span style={styles.vehicleNameTag}>{item.vehicleName}</span>
+                                                <span style={styles.serviceNameText}>{item.serviceName}</span>
+                                            </div>
+                                            <span style={styles.triggerTextUpcoming}>{item.triggerText}</span>
+                                        </Link>
+                                    ))
+                                )}
                             </div>
                         </div>
-                    )}
+
+                        <div style={styles.alertCardPastDue} className="interactive-card page-card-anim">
+                            <div style={styles.alertCardHeader}>
+                                <div style={styles.headerTitleGroup}>
+                                    <span style={styles.dotPastDue} />
+                                    <h3 style={styles.alertCardTitlePastDue}>Past Due Maintenance</h3>
+                                </div>
+                                <span style={styles.badgePastDue}>{pastDueAlerts.length}</span>
+                            </div>
+                            <div style={styles.alertList}>
+                                {pastDueAlerts.length === 0 ? (
+                                    <p style={styles.emptyAlertText}>No past due maintenance records. All up to date!</p>
+                                ) : (
+                                    pastDueAlerts.map((item, idx) => (
+                                        <Link key={idx} href={`/vehicles/${item.vehicleId}`} style={styles.alertRow} className="hover-list-item">
+                                            <div style={styles.alertRowLeft}>
+                                                <span style={styles.vehicleNameTag}>{item.vehicleName}</span>
+                                                <span style={styles.serviceNameText}>{item.serviceName}</span>
+                                            </div>
+                                            <span style={styles.triggerTextPastDue}>{item.triggerText}</span>
+                                        </Link>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
+
+                {showModal && (
+                    <div style={styles.modalOverlay} className="animated-overlay">
+                        <div style={styles.modalBox} className="animated-modal">
+                            <div style={styles.modalHeader}>
+                                <h3 style={styles.modalTitle}>{editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</h3>
+                                <button onClick={() => setShowModal(false)} style={styles.closeBtn} type="button">✕</button>
+                            </div>
+
+                            <form onSubmit={handleSubmit} style={styles.form}>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Vehicle Type *</label>
+                                    <select value={data.type} onChange={e => setData('type', e.target.value)} style={styles.input}>
+                                        <option value="Car">🚗 Car</option>
+                                        <option value="Motorbike">🏍️ Motorbike</option>
+                                    </select>
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Make *</label>
+                                    <input type="text" placeholder="e.g. Toyota" value={data.make} onChange={e => setData('make', e.target.value)} style={styles.input} />
+                                    {errors.make && <span style={styles.error}>{errors.make}</span>}
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Model *</label>
+                                    <input type="text" placeholder="e.g. Civic" value={data.model} onChange={e => setData('model', e.target.value)} style={styles.input} />
+                                    {errors.model && <span style={styles.error}>{errors.model}</span>}
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Year *</label>
+                                    <input type="text" placeholder="e.g. 2022" value={data.year} onChange={e => setData('year', e.target.value)} style={styles.input} />
+                                    {errors.year && <span style={styles.error}>{errors.error}</span>}
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Description (Optional)</label>
+                                    <textarea placeholder="Additional notes..." value={data.description} onChange={e => setData('description', e.target.value)} style={{ ...styles.input, height: '50px', resize: 'none' }} />
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Photo (Optional - Max 2100 KB)</label>
+                                    <div style={styles.uploadBoxWrapper}>
+                                        <div style={styles.uploadBox} onClick={() => fileInputRef.current?.click()}>
+                                            <span style={styles.uploadText}>
+                                                {data.photo ? data.photo.name : (editingVehicle?.photo && !removeExistingPhoto) ? 'Current photo attached' : 'Click to upload'}
+                                            </span>
+                                        </div>
+                                        {((data.photo) || (editingVehicle?.photo && !removeExistingPhoto)) && (
+                                            <button 
+                                                type="button" 
+                                                onClick={handleRemovePhotoClick} 
+                                                style={styles.removePhotoBtn}
+                                                className="hover-btn"
+                                                title="Remove photo"
+                                            >
+                                                Remove
+                                            </button>
+                                        )}
+                                    </div>
+                                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
+                                    {errors.photo && <span style={styles.error}>{errors.photo}</span>}
+                                </div>
+
+                                <div style={styles.modalActions}>
+                                    <button type="button" onClick={() => setShowModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>Save</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {showDeleteModal && (
+                    <div style={styles.modalOverlay} className="animated-overlay">
+                        <div style={styles.modalBox} className="animated-modal">
+                            <div style={styles.modalHeader}>
+                                <h3 style={styles.modalTitle}>Delete Vehicle</h3>
+                                <button onClick={() => setShowDeleteModal(false)} style={styles.closeBtn} type="button">✕</button>
+                            </div>
+                            <p style={{ color: '#6e6962', fontSize: '13px', margin: '8px 0 16px 0' }}>
+                                Are you sure you want to delete <strong style={{ color: '#1c1c1c' }}>{vehicleToDelete?.make} {vehicleToDelete?.model}</strong>? This action cannot be undone.
+                            </p>
+                            <div style={styles.modalActions}>
+                                <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                <button type="button" onClick={confirmDeleteVehicle} style={styles.deleteCardBtn} className="hover-btn">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -543,16 +555,12 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
 
 const styles = {
     page: {
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
-        backgroundColor: '#ede6d8', display: 'flex', justifyContent: 'center', alignItems: 'center',
-        margin: 0, padding: '24px', boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        height: '100vh', width: '100vw',
+        backgroundColor: '#ede6d8', display: 'flex', flexDirection: 'row',
+        margin: 0, padding: 0, boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        overflow: 'hidden',
     },
-    appWindow: {
-        width: '100%', maxWidth: '1280px', height: '100%', maxHeight: '820px',
-        backgroundColor: '#ffffff', borderRadius: '16px', display: 'flex', overflow: 'hidden',
-        boxShadow: '0 20px 40px rgba(28, 28, 28, 0.1)', border: '1px solid #d6ccbb',
-    },
-    mainContent: { flex: 1, backgroundColor: '#ede6d8', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
+    mainContent: { flex: 1, backgroundColor: '#ede6d8', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '900px', width: '100%', paddingBottom: '30px', margin: '0 auto' },
     pageHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
     addButton: { backgroundColor: '#1c1c1c', color: '#ede6d8', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
@@ -589,7 +597,7 @@ const styles = {
     triggerTextUpcoming: { fontSize: '11px', color: '#b3251e', fontWeight: '600', flexShrink: 0 },
     triggerTextPastDue: { fontSize: '11px', color: '#1c1c1c', fontWeight: '600', flexShrink: 0 },
 
-    vehicleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '16px', paddingBottom: '10px', width: '100%' },
+    vehicleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '16px', paddingBottom: '10px', width: '100%' },
     emptyText: { color: '#6e6962', fontSize: '13px', margin: 0 },
     vehicleCard: {
         backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px',
@@ -607,15 +615,15 @@ const styles = {
     cardActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #ede6d8', paddingTop: '12px' },
     editCardBtn: { backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer' },
     deleteCardBtn: { backgroundColor: '#b3251e15', color: '#b3251e', border: '1px solid #d6ccbb', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer' },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(28, 28, 28, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-    modalBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2)' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(28, 28, 28, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
+    modalBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2)', boxSizing: 'border-box' },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
     modalTitle: { color: '#1c1c1c', fontSize: '15px', fontWeight: '600', margin: 0 },
     closeBtn: { background: 'none', border: 'none', color: '#6e6962', fontSize: '16px', cursor: 'pointer' },
     form: { display: 'flex', flexDirection: 'column', gap: '10px' },
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
     label: { color: '#6e6962', fontSize: '11px', fontWeight: '500' },
-    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '6px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box' },
+    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '6px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%' },
     uploadBoxWrapper: { display: 'flex', gap: '8px', alignItems: 'center' },
     uploadBox: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box', flex: 1, overflow: 'hidden' },
     uploadText: { color: '#1c1c1c', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },

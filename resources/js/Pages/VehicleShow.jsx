@@ -275,7 +275,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     });
 
     return (
-        <div style={styles.page}>
+        <div style={styles.page} className="page-layout">
             <style>{`
                 @keyframes slideUpFade {
                     from { opacity: 0; transform: translateY(16px) scale(0.98); }
@@ -343,423 +343,439 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                 input[type="date"]::-webkit-inner-spin-button {
                     display: none;
                 }
+                @media (max-width: 768px) {
+                    .page-layout {
+                        flex-direction: column !important;
+                    }
+                    .mainContent {
+                        padding: 16px !important;
+                    }
+                    .tableContainer {
+                        overflow-x: auto;
+                    }
+                    table {
+                        min-width: 600px;
+                    }
+                    .profileCard {
+                        flex-direction: column !important;
+                        align-items: flex-start !important;
+                    }
+                }
             `}</style>
 
-            <div style={styles.appWindow}>
-                <Sidebar activePage="home" />
+            <Sidebar activePage="home" />
 
-                <div style={styles.mainContent}>
-                    <Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
+            <div style={styles.mainContent} className="mainContent">
+                <Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 
-                    <div style={styles.topBar}>
-                        <Breadcrumb items={[
-                            { label: 'Main / Home', href: '/home' },
-                            { label: `${vehicle.make} ${vehicle.model}` }
-                        ]} />
-                        <Link href="/home" style={styles.backIconButton} className="hover-btn" title="Back to Rides">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="19" y1="12" x2="5" y2="12"></line>
-                                <polyline points="12 19 5 12 12 5"></polyline>
+                <div style={styles.topBar}>
+                    <Breadcrumb items={[
+                        { label: 'Main / Home', href: '/home' },
+                        { label: `${vehicle.make} ${vehicle.model}` }
+                    ]} />
+                    <Link href="/home" style={styles.backIconButton} className="hover-btn" title="Back to Rides">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                    </Link>
+                </div>
+
+                <div style={styles.contentBody}>
+                    <div style={styles.profileCard} className="interactive-card page-card-anim profileCard">
+                        <button onClick={openOdoModal} style={styles.updateOdoBtnTopRight} className="hover-btn" type="button" title="Update Current ODO">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                             </svg>
-                        </Link>
-                    </div>
+                            Update ODO
+                        </button>
 
-                    <div style={styles.contentBody}>
-                        <div style={styles.profileCard} className="interactive-card page-card-anim">
-                            <button onClick={openOdoModal} style={styles.updateOdoBtnTopRight} className="hover-btn" type="button" title="Update Current ODO">
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                                Update ODO
-                            </button>
-
-                            <div style={styles.profileLeft}>
-                                {photoUrl ? (
-                                    <div style={styles.photoThumbContainer} onClick={() => setShowPhotoModal(true)} title="Click to view full size">
-                                        <img src={photoUrl} alt={vehicle.make} style={styles.vehicleThumb} />
-                                        <div style={styles.photoOverlay}>
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <circle cx="11" cy="11" r="8"></circle>
-                                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                                <line x1="11" y1="8" x2="11" y2="14"></line>
-                                                <line x1="8" y1="11" x2="14" y2="11"></line>
-                                            </svg>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div style={styles.placeholderThumb}>
-                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
-                                            <circle cx="7" cy="17" r="2"></circle>
-                                            <circle cx="17" cy="17" r="2"></circle>
+                        <div style={styles.profileLeft}>
+                            {photoUrl ? (
+                                <div style={styles.photoThumbContainer} onClick={() => setShowPhotoModal(true)} title="Click to view full size">
+                                    <img src={photoUrl} alt={vehicle.make} style={styles.vehicleThumb} />
+                                    <div style={styles.photoOverlay}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                            <line x1="11" y1="8" x2="11" y2="14"></line>
+                                            <line x1="8" y1="11" x2="14" y2="11"></line>
                                         </svg>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            ) : (
+                                <div style={styles.placeholderThumb}>
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
+                                        <circle cx="7" cy="17" r="2"></circle>
+                                        <circle cx="17" cy="17" r="2"></circle>
+                                    </svg>
+                                </div>
+                            )}
+                        </div>
 
-                            <div style={styles.profileRight}>
-                                <div style={styles.detailItem}>
-                                    <span style={styles.detailKey}>Type:</span>
-                                    <span style={styles.typeBadge}>{vehicle.type}</span>
-                                </div>
-                                <div style={styles.detailItem}>
-                                    <span style={styles.detailKey}>Make:</span>
-                                    <span style={styles.detailVal}>{vehicle.make}</span>
-                                </div>
-                                <div style={styles.detailItem}>
-                                    <span style={styles.detailKey}>Model:</span>
-                                    <span style={styles.detailVal}>{vehicle.model}</span>
-                                </div>
-                                <div style={styles.detailItem}>
-                                    <span style={styles.detailKey}>Year:</span>
-                                    <span style={styles.detailVal}>{vehicle.year}</span>
-                                </div>
-                                <div style={styles.detailItem}>
-                                    <span style={styles.detailKey}>Current ODO:</span>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                        <span style={styles.detailVal}>
-                                            {vehicle.current_odo ? `${Number(vehicle.current_odo).toLocaleString()} km` : '—'}
+                        <div style={styles.profileRight}>
+                            <div style={styles.detailItem}>
+                                <span style={styles.detailKey}>Type:</span>
+                                <span style={styles.typeBadge}>{vehicle.type}</span>
+                            </div>
+                            <div style={styles.detailItem}>
+                                <span style={styles.detailKey}>Make:</span>
+                                <span style={styles.detailVal}>{vehicle.make}</span>
+                            </div>
+                            <div style={styles.detailItem}>
+                                <span style={styles.detailKey}>Model:</span>
+                                <span style={styles.detailVal}>{vehicle.model}</span>
+                            </div>
+                            <div style={styles.detailItem}>
+                                <span style={styles.detailKey}>Year:</span>
+                                <span style={styles.detailVal}>{vehicle.year}</span>
+                            </div>
+                            <div style={styles.detailItem}>
+                                <span style={styles.detailKey}>Current ODO:</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span style={styles.detailVal}>
+                                        {vehicle.current_odo ? `${Number(vehicle.current_odo).toLocaleString()} km` : '—'}
+                                    </span>
+                                    {vehicle.odo_updated_at && (
+                                        <span style={styles.lastUpdatedText}>
+                                            (Updated: {formatTimestampToReadable(vehicle.odo_updated_at)})
                                         </span>
-                                        {vehicle.odo_updated_at && (
-                                            <span style={styles.lastUpdatedText}>
-                                                (Updated: {formatTimestampToReadable(vehicle.odo_updated_at)})
-                                            </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div style={styles.detailItem}>
+                                <span style={styles.detailKey}>Description:</span>
+                                <span style={styles.detailVal}>{vehicle.description || '—'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={styles.sectionHeaderRow}>
+                        <h2 style={styles.sectionTitle}>Service Schedule Status</h2>
+                    </div>
+
+                    <div style={styles.tableContainer} className="page-card-anim tableContainer">
+                        <table style={styles.table}>
+                            <thead>
+                                <tr style={styles.tableHeaderRow}>
+                                    <th style={styles.th}>List of Services</th>
+                                    <th style={styles.th}>Next Service Schedule (Date)</th>
+                                    <th style={styles.th}>Next Service Schedule (ODO)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {serviceScheduleStatus.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="3" style={styles.emptyTableCell}>No services configured in settings.</td>
+                                    </tr>
+                                ) : (
+                                    serviceScheduleStatus.map((item, idx) => (
+                                        <tr key={idx} style={styles.tableBodyRow} className="hover-table-row">
+                                            <td style={styles.td}><span style={styles.serviceBadge}>{item.name}</span></td>
+                                            <td style={styles.td}>
+                                                <div style={styles.cellWithTag}>
+                                                    <span>{item.nextDate}</span>
+                                                    {item.dateTag === 'past_due' && <span style={styles.tagPastDue}>Past Due</span>}
+                                                    {item.dateTag === 'upcoming' && <span style={styles.tagUpcoming}>Upcoming</span>}
+                                                </div>
+                                            </td>
+                                            <td style={styles.td}>
+                                                <div style={styles.cellWithTag}>
+                                                    <span>{item.nextOdo}</span>
+                                                    {item.odoTag === 'past_due' && <span style={styles.tagPastDue}>Past Due</span>}
+                                                    {item.odoTag === 'upcoming' && <span style={styles.tagUpcoming}>Upcoming</span>}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style={styles.sectionHeaderRow}>
+                        <h2 style={styles.sectionTitle}>Maintenance Logs</h2>
+                        
+                        <div style={styles.dropdownWrapper} ref={dropdownRef}>
+                            <button type="button" onClick={() => setShowFilterDropdown(!showFilterDropdown)} style={styles.dropdownToggleBtn} className="hover-btn">
+                                <span>
+                                    {selectedServiceFilters.length === 0 ? 'Filter Services' : `Services (${selectedServiceFilters.length})`}
+                                </span>
+                                <div style={styles.dropdownToggleRight}>
+                                    {selectedServiceFilters.length > 0 && (
+                                        <span onClick={clearFilters} style={styles.clearIconBadge} title="Clear filters">✕</span>
+                                    )}
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </div>
+                            </button>
+
+                            {showFilterDropdown && (
+                                <div style={styles.dropdownMenu}>
+                                    <div style={styles.dropdownHeader}>
+                                        <span style={styles.dropdownTitle}>Filter by Service</span>
+                                        {selectedServiceFilters.length > 0 && (
+                                            <button type="button" onClick={clearFilters} style={styles.dropdownClearText}>Clear All</button>
+                                        )}
+                                    </div>
+                                    <div style={styles.dropdownList}>
+                                        {loggedServicesList.length === 0 ? (
+                                            <span style={styles.dropdownEmpty}>No logged services available.</span>
+                                        ) : (
+                                            loggedServicesList.map((serviceName, idx) => {
+                                                const isChecked = selectedServiceFilters.includes(serviceName);
+                                                return (
+                                                    <label key={idx} style={styles.dropdownItemLabel} className="hover-list-item">
+                                                        <input type="checkbox" checked={isChecked} onChange={() => handleFilterCheckboxToggle(serviceName)} style={styles.dropdownCheckbox} />
+                                                        {serviceName}
+                                                    </label>
+                                                );
+                                            })
                                         )}
                                     </div>
                                 </div>
-                                <div style={styles.detailItem}>
-                                    <span style={styles.detailKey}>Description:</span>
-                                    <span style={styles.detailVal}>{vehicle.description || '—'}</span>
-                                </div>
-                            </div>
+                            )}
                         </div>
+                    </div>
 
-                        <div style={styles.sectionHeaderRow}>
-                            <h2 style={styles.sectionTitle}>Service Schedule Status</h2>
-                        </div>
-
-                        <div style={styles.tableContainer} className="page-card-anim">
-                            <table style={styles.table}>
-                                <thead>
-                                    <tr style={styles.tableHeaderRow}>
-                                        <th style={styles.th}>List of Services</th>
-                                        <th style={styles.th}>Next Service Schedule (Date)</th>
-                                        <th style={styles.th}>Next Service Schedule (ODO)</th>
+                    <div style={styles.tableContainer} className="page-card-anim tableContainer">
+                        <table style={styles.table}>
+                            <thead>
+                                <tr style={styles.tableHeaderRow}>
+                                    <th style={styles.th}>Date</th>
+                                    <th style={styles.th}>Service</th>
+                                    <th style={styles.th}>ODO</th>
+                                    <th style={styles.th}>Cost</th>
+                                    <th style={styles.th}>Notes</th>
+                                    <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredLogs.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="6" style={styles.emptyTableCell}>No maintenance records found.</td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {serviceScheduleStatus.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="3" style={styles.emptyTableCell}>No services configured in settings.</td>
-                                        </tr>
-                                    ) : (
-                                        serviceScheduleStatus.map((item, idx) => (
-                                            <tr key={idx} style={styles.tableBodyRow} className="hover-table-row">
-                                                <td style={styles.td}><span style={styles.serviceBadge}>{item.name}</span></td>
+                                ) : (
+                                    filteredLogs.map((log) => {
+                                        const isEditing = editingLogId === log.id;
+                                        return (
+                                            <tr key={log.id} style={styles.tableBodyRow} className="hover-table-row">
                                                 <td style={styles.td}>
-                                                    <div style={styles.cellWithTag}>
-                                                        <span>{item.nextDate}</span>
-                                                        {item.dateTag === 'past_due' && <span style={styles.tagPastDue}>Past Due</span>}
-                                                        {item.dateTag === 'upcoming' && <span style={styles.tagUpcoming}>Upcoming</span>}
-                                                    </div>
+                                                    {isEditing ? (
+                                                        <input type="date" value={inlineData.date} onChange={e => setInlineData({ ...inlineData, date: e.target.value })} style={styles.inlineInput} />
+                                                    ) : (
+                                                        formatDateToReadable(log.date)
+                                                    )}
                                                 </td>
                                                 <td style={styles.td}>
-                                                    <div style={styles.cellWithTag}>
-                                                        <span>{item.nextOdo}</span>
-                                                        {item.odoTag === 'past_due' && <span style={styles.tagPastDue}>Past Due</span>}
-                                                        {item.odoTag === 'upcoming' && <span style={styles.tagUpcoming}>Upcoming</span>}
+                                                    {isEditing ? (
+                                                        <select value={inlineData.services} onChange={e => setInlineData({ ...inlineData, services: e.target.value })} style={styles.inlineSelect}>
+                                                            {servicePreferences.map((srv, i) => (
+                                                                <option key={i} value={srv.name}>{srv.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    ) : (
+                                                        <div style={styles.serviceBadgeList}>
+                                                            {log.services && log.services.map((srv, i) => (
+                                                                <span key={i} style={styles.serviceBadge}>{srv}</span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td style={styles.td}>
+                                                    {isEditing ? (
+                                                        <input type="text" value={inlineData.odo} onChange={e => {
+                                                            const val = e.target.value;
+                                                            if (/^\d*$/.test(val)) setInlineData({ ...inlineData, odo: val });
+                                                        }} style={styles.inlineInput} />
+                                                    ) : (
+                                                        log.odo
+                                                    )}
+                                                </td>
+                                                <td style={styles.td}>
+                                                    {isEditing ? (
+                                                        <input type="text" value={inlineData.cost} onChange={e => {
+                                                            const val = e.target.value;
+                                                            if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
+                                                        }} style={styles.inlineInput} />
+                                                    ) : (
+                                                        log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
+                                                    )}
+                                                </td>
+                                                <td style={styles.td}>
+                                                    {isEditing ? (
+                                                        <input type="text" value={inlineData.notes} onChange={e => setInlineData({ ...inlineData, notes: e.target.value })} style={styles.inlineInput} />
+                                                    ) : (
+                                                        log.notes || '—'
+                                                    )}
+                                                </td>
+                                                <td style={{ ...styles.td, textAlign: 'right' }}>
+                                                    <div style={styles.rowActions}>
+                                                        {isEditing ? (
+                                                            <>
+                                                                <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button">
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                </button>
+                                                                <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button">
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <button onClick={() => startEditingRow(log)} style={styles.iconBtnEdit} className="hover-btn" title="Edit record" type="button">
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                                </button>
+                                                                <button onClick={() => promptDeleteLog(log)} style={styles.iconBtnDelete} className="hover-btn" title="Delete record" type="button">
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div style={styles.sectionHeaderRow}>
-                            <h2 style={styles.sectionTitle}>Maintenance Logs</h2>
-                            
-                            <div style={styles.dropdownWrapper} ref={dropdownRef}>
-                                <button type="button" onClick={() => setShowFilterDropdown(!showFilterDropdown)} style={styles.dropdownToggleBtn} className="hover-btn">
-                                    <span>
-                                        {selectedServiceFilters.length === 0 ? 'Filter Services' : `Services (${selectedServiceFilters.length})`}
-                                    </span>
-                                    <div style={styles.dropdownToggleRight}>
-                                        {selectedServiceFilters.length > 0 && (
-                                            <span onClick={clearFilters} style={styles.clearIconBadge} title="Clear filters">✕</span>
-                                        )}
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <polyline points="6 9 12 15 18 9"></polyline>
-                                        </svg>
-                                    </div>
-                                </button>
-
-                                {showFilterDropdown && (
-                                    <div style={styles.dropdownMenu}>
-                                        <div style={styles.dropdownHeader}>
-                                            <span style={styles.dropdownTitle}>Filter by Service</span>
-                                            {selectedServiceFilters.length > 0 && (
-                                                <button type="button" onClick={clearFilters} style={styles.dropdownClearText}>Clear All</button>
-                                            )}
-                                        </div>
-                                        <div style={styles.dropdownList}>
-                                            {loggedServicesList.length === 0 ? (
-                                                <span style={styles.dropdownEmpty}>No logged services available.</span>
-                                            ) : (
-                                                loggedServicesList.map((serviceName, idx) => {
-                                                    const isChecked = selectedServiceFilters.includes(serviceName);
-                                                    return (
-                                                        <label key={idx} style={styles.dropdownItemLabel} className="hover-list-item">
-                                                            <input type="checkbox" checked={isChecked} onChange={() => handleFilterCheckboxToggle(serviceName)} style={styles.dropdownCheckbox} />
-                                                            {serviceName}
-                                                        </label>
-                                                    );
-                                                })
-                                            )}
-                                        </div>
-                                    </div>
+                                        );
+                                    })
                                 )}
-                            </div>
-                        </div>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-                        <div style={styles.tableContainer} className="page-card-anim">
-                            <table style={styles.table}>
-                                <thead>
-                                    <tr style={styles.tableHeaderRow}>
-                                        <th style={styles.th}>Date</th>
-                                        <th style={styles.th}>Service</th>
-                                        <th style={styles.th}>ODO</th>
-                                        <th style={styles.th}>Cost</th>
-                                        <th style={styles.th}>Notes</th>
-                                        <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredLogs.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="6" style={styles.emptyTableCell}>No maintenance records found.</td>
-                                        </tr>
-                                    ) : (
-                                        filteredLogs.map((log) => {
-                                            const isEditing = editingLogId === log.id;
-                                            return (
-                                                <tr key={log.id} style={styles.tableBodyRow} className="hover-table-row">
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <input type="date" value={inlineData.date} onChange={e => setInlineData({ ...inlineData, date: e.target.value })} style={styles.inlineInput} />
-                                                        ) : (
-                                                            formatDateToReadable(log.date)
-                                                        )}
-                                                    </td>
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <select value={inlineData.services} onChange={e => setInlineData({ ...inlineData, services: e.target.value })} style={styles.inlineSelect}>
-                                                                {servicePreferences.map((srv, i) => (
-                                                                    <option key={i} value={srv.name}>{srv.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        ) : (
-                                                            <div style={styles.serviceBadgeList}>
-                                                                {log.services && log.services.map((srv, i) => (
-                                                                    <span key={i} style={styles.serviceBadge}>{srv}</span>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <input type="text" value={inlineData.odo} onChange={e => {
-                                                                const val = e.target.value;
-                                                                if (/^\d*$/.test(val)) setInlineData({ ...inlineData, odo: val });
-                                                            }} style={styles.inlineInput} />
-                                                        ) : (
-                                                            log.odo
-                                                        )}
-                                                    </td>
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <input type="text" value={inlineData.cost} onChange={e => {
-                                                                const val = e.target.value;
-                                                                if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
-                                                            }} style={styles.inlineInput} />
-                                                        ) : (
-                                                            log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
-                                                        )}
-                                                    </td>
-                                                    <td style={styles.td}>
-                                                        {isEditing ? (
-                                                            <input type="text" value={inlineData.notes} onChange={e => setInlineData({ ...inlineData, notes: e.target.value })} style={styles.inlineInput} />
-                                                        ) : (
-                                                            log.notes || '—'
-                                                        )}
-                                                    </td>
-                                                    <td style={{ ...styles.td, textAlign: 'right' }}>
-                                                        <div style={styles.rowActions}>
-                                                            {isEditing ? (
-                                                                <>
-                                                                    <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button">
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                                    </button>
-                                                                    <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button">
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                                                    </button>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <button onClick={() => startEditingRow(log)} style={styles.iconBtnEdit} className="hover-btn" title="Edit record" type="button">
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                                                    </button>
-                                                                    <button onClick={() => promptDeleteLog(log)} style={styles.iconBtnDelete} className="hover-btn" title="Delete record" type="button">
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
+                <button onClick={openCreateModal} style={styles.floatingBtn} className="floating-btn-anim" title="Add Maintenance Log" type="button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+
+                {showPhotoModal && photoUrl && (
+                    <div style={styles.modalOverlay} className="animated-overlay" onClick={() => setShowPhotoModal(false)}>
+                        <div style={styles.fullPhotoBox} className="animated-modal" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => setShowPhotoModal(false)} style={styles.closePhotoBtn} type="button">✕</button>
+                            <img src={photoUrl} alt={vehicle.make} style={styles.fullImage} />
                         </div>
                     </div>
+                )}
 
-                    <button onClick={openCreateModal} style={styles.floatingBtn} className="floating-btn-anim" title="Add Maintenance Log" type="button">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    </button>
-
-                    {showPhotoModal && photoUrl && (
-                        <div style={styles.modalOverlay} className="animated-overlay" onClick={() => setShowPhotoModal(false)}>
-                            <div style={styles.fullPhotoBox} className="animated-modal" onClick={e => e.stopPropagation()}>
-                                <button onClick={() => setShowPhotoModal(false)} style={styles.closePhotoBtn} type="button">✕</button>
-                                <img src={photoUrl} alt={vehicle.make} style={styles.fullImage} />
+                {showOdoModal && (
+                    <div style={styles.modalOverlay} className="animated-overlay">
+                        <div style={styles.modalBox} className="animated-modal">
+                            <div style={styles.modalHeader}>
+                                <h3 style={styles.modalTitle}>Update Current ODO</h3>
+                                <button onClick={closeOdoModal} style={styles.closeBtn} type="button">✕</button>
                             </div>
-                        </div>
-                    )}
-
-                    {showOdoModal && (
-                        <div style={styles.modalOverlay} className="animated-overlay">
-                            <div style={styles.modalBox} className="animated-modal">
-                                <div style={styles.modalHeader}>
-                                    <h3 style={styles.modalTitle}>Update Current ODO</h3>
-                                    <button onClick={closeOdoModal} style={styles.closeBtn} type="button">✕</button>
+                            <form onSubmit={handleUpdateOdo} style={styles.form}>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Current Odometer (km/miles) *</label>
+                                    <input 
+                                        type="text" placeholder="e.g. 15500" value={odoData.current_odo}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            if (/^\d*$/.test(val)) setOdoData('current_odo', val);
+                                        }}
+                                        style={styles.input} required autoFocus
+                                    />
+                                    {odoErrors.current_odo && <span style={styles.errorText}>{odoErrors.current_odo}</span>}
                                 </div>
-                                <form onSubmit={handleUpdateOdo} style={styles.form}>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Current Odometer (km/miles) *</label>
-                                        <input 
-                                            type="text" placeholder="e.g. 15500" value={odoData.current_odo}
-                                            onChange={e => {
-                                                const val = e.target.value;
-                                                if (/^\d*$/.test(val)) setOdoData('current_odo', val);
-                                            }}
-                                            style={styles.input} required autoFocus
-                                        />
-                                        {odoErrors.current_odo && <span style={styles.errorText}>{odoErrors.current_odo}</span>}
-                                    </div>
-                                    <div style={styles.modalActions}>
-                                        <button type="button" onClick={closeOdoModal} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                        <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={odoProcessing}>{odoProcessing ? 'Saving...' : 'Save ODO'}</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
-                    {showLogModal && (
-                        <div style={styles.modalOverlay} className="animated-overlay">
-                            <div style={styles.modalBox} className="animated-modal">
-                                <div style={styles.modalHeader}>
-                                    <h3 style={styles.modalTitle}>Add Maintenance Log</h3>
-                                    <button onClick={closeModal} style={styles.closeBtn} type="button">✕</button>
-                                </div>
-                                <form onSubmit={handleSubmitLog} style={styles.form}>
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Services Done * (Select one or more)</label>
-                                        <div style={styles.checkboxContainer}>
-                                            {servicePreferences.length === 0 ? (
-                                                <span style={styles.noServiceText}>No services configured in settings.</span>
-                                            ) : (
-                                                servicePreferences.map((service, idx) => (
-                                                    <label key={idx} style={styles.checkboxLabel} className="hover-list-item">
-                                                        <input type="checkbox" checked={data.services.includes(service.name)} onChange={() => handleServiceToggle(service.name)} style={styles.checkboxInput} />
-                                                        {service.name}
-                                                    </label>
-                                                ))
-                                            )}
-                                        </div>
-                                        {errors.services && <span style={styles.errorText}>{errors.services}</span>}
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Odometer (ODO) (miles/km) *</label>
-                                        <input 
-                                            type="text" placeholder="e.g. 45000" value={data.odo}
-                                            onChange={e => {
-                                                const val = e.target.value;
-                                                if (/^\d*$/.test(val)) setData('odo', val);
-                                            }}
-                                            style={styles.input} required
-                                        />
-                                        {errors.odo && <span style={styles.errorText}>{errors.odo}</span>}
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Date *</label>
-                                        <input type="date" value={data.date} onChange={e => setData('date', e.target.value)} style={styles.input} required />
-                                        {errors.date && <span style={styles.errorText}>{errors.date}</span>}
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Cost (PHP)</label>
-                                        <div style={styles.currencyWrapper}>
-                                            <span style={styles.currencySymbol}>₱</span>
-                                            <input 
-                                                type="text" placeholder="0.00" value={data.cost}
-                                                onChange={e => {
-                                                    const val = e.target.value;
-                                                    if (/^\d*\.?\d*$/.test(val)) setData('cost', val);
-                                                }}
-                                                style={{ ...styles.input, paddingLeft: '26px' }}
-                                            />
-                                        </div>
-                                        {errors.cost && <span style={styles.errorText}>{errors.cost}</span>}
-                                    </div>
-
-                                    <div style={styles.inputGroup}>
-                                        <label style={styles.label}>Notes (Optional)</label>
-                                        <textarea placeholder="Mechanic notes, workshop details..." value={data.notes} onChange={e => setData('notes', e.target.value)} style={{ ...styles.input, height: '60px', resize: 'none' }} />
-                                        {errors.notes && <span style={styles.errorText}>{errors.notes}</span>}
-                                    </div>
-
-                                    <div style={styles.modalActions}>
-                                        <button type="button" onClick={closeModal} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                        <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>{processing ? 'Saving...' : 'Save Log'}</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-
-                    {showDeleteLogModal && (
-                        <div style={styles.modalOverlay} className="animated-overlay">
-                            <div style={styles.modalBox} className="animated-modal">
-                                <div style={styles.modalHeader}>
-                                    <h3 style={styles.modalTitle}>Delete Maintenance Log</h3>
-                                    <button onClick={() => setShowDeleteLogModal(false)} style={styles.closeBtn} type="button">✕</button>
-                                </div>
-                                <p style={{ color: '#6e6962', fontSize: '13px', margin: '8px 0 16px 0' }}>Are you sure you want to delete this maintenance record? This action cannot be undone.</p>
                                 <div style={styles.modalActions}>
-                                    <button type="button" onClick={() => setShowDeleteLogModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                    <button type="button" onClick={confirmDeleteLog} style={styles.deleteCardBtn} className="hover-btn">Delete</button>
+                                    <button type="button" onClick={closeOdoModal} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={odoProcessing}>{odoProcessing ? 'Saving...' : 'Save ODO'}</button>
                                 </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {showLogModal && (
+                    <div style={styles.modalOverlay} className="animated-overlay">
+                        <div style={styles.modalBox} className="animated-modal">
+                            <div style={styles.modalHeader}>
+                                <h3 style={styles.modalTitle}>Add Maintenance Log</h3>
+                                <button onClick={closeModal} style={styles.closeBtn} type="button">✕</button>
+                            </div>
+                            <form onSubmit={handleSubmitLog} style={styles.form}>
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Services Done * (Select one or more)</label>
+                                    <div style={styles.checkboxContainer}>
+                                        {servicePreferences.length === 0 ? (
+                                            <span style={styles.noServiceText}>No services configured in settings.</span>
+                                        ) : (
+                                            servicePreferences.map((service, idx) => (
+                                                <label key={idx} style={styles.checkboxLabel} className="hover-list-item">
+                                                    <input type="checkbox" checked={data.services.includes(service.name)} onChange={() => handleServiceToggle(service.name)} style={styles.checkboxInput} />
+                                                    {service.name}
+                                                </label>
+                                            ))
+                                        )}
+                                    </div>
+                                    {errors.services && <span style={styles.errorText}>{errors.services}</span>}
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Odometer (ODO) (miles/km) *</label>
+                                    <input 
+                                        type="text" placeholder="e.g. 45000" value={data.odo}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            if (/^\d*$/.test(val)) setData('odo', val);
+                                        }}
+                                        style={styles.input} required
+                                    />
+                                    {errors.odo && <span style={styles.errorText}>{errors.odo}</span>}
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Date *</label>
+                                    <input type="date" value={data.date} onChange={e => setData('date', e.target.value)} style={styles.input} required />
+                                    {errors.date && <span style={styles.errorText}>{errors.date}</span>}
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Cost (PHP)</label>
+                                    <div style={styles.currencyWrapper}>
+                                        <span style={styles.currencySymbol}>₱</span>
+                                        <input 
+                                            type="text" placeholder="0.00" value={data.cost}
+                                            onChange={e => {
+                                                const val = e.target.value;
+                                                if (/^\d*\.?\d*$/.test(val)) setData('cost', val);
+                                            }}
+                                            style={{ ...styles.input, paddingLeft: '26px' }}
+                                        />
+                                    </div>
+                                    {errors.cost && <span style={styles.errorText}>{errors.cost}</span>}
+                                </div>
+
+                                <div style={styles.inputGroup}>
+                                    <label style={styles.label}>Notes (Optional)</label>
+                                    <textarea placeholder="Mechanic notes, workshop details..." value={data.notes} onChange={e => setData('notes', e.target.value)} style={{ ...styles.input, height: '60px', resize: 'none' }} />
+                                    {errors.notes && <span style={styles.errorText}>{errors.notes}</span>}
+                                </div>
+
+                                <div style={styles.modalActions}>
+                                    <button type="button" onClick={closeModal} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>{processing ? 'Saving...' : 'Save Log'}</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {showDeleteLogModal && (
+                    <div style={styles.modalOverlay} className="animated-overlay">
+                        <div style={styles.modalBox} className="animated-modal">
+                            <div style={styles.modalHeader}>
+                                <h3 style={styles.modalTitle}>Delete Maintenance Log</h3>
+                                <button onClick={() => setShowDeleteLogModal(false)} style={styles.closeBtn} type="button">✕</button>
+                            </div>
+                            <p style={{ color: '#6e6962', fontSize: '13px', margin: '8px 0 16px 0' }}>Are you sure you want to delete this maintenance record? This action cannot be undone.</p>
+                            <div style={styles.modalActions}>
+                                <button type="button" onClick={() => setShowDeleteLogModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                <button type="button" onClick={confirmDeleteLog} style={styles.deleteCardBtn} className="hover-btn">Delete</button>
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -767,17 +783,12 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
 const styles = {
     page: {
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100vh',
-        backgroundColor: '#ede6d8', display: 'flex', justifyContent: 'center', alignItems: 'center',
-        margin: 0, padding: '24px', boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        height: '100vh', width: '100vw',
+        backgroundColor: '#ede6d8', display: 'flex', flexDirection: 'row',
+        margin: 0, padding: 0, boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        overflow: 'hidden',
     },
-    appWindow: {
-        width: '100%', maxWidth: '1280px', height: '100%', maxHeight: '820px',
-        backgroundColor: '#ffffff', borderRadius: '16px', display: 'flex', overflow: 'hidden',
-        boxShadow: '0 20px 40px rgba(28, 28, 28, 0.1)', border: '1px solid #d6ccbb',
-        position: 'relative',
-    },
-    mainContent: { flex: 1, backgroundColor: '#ede6d8', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center' },
+    mainContent: { flex: 1, backgroundColor: '#ede6d8', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
     topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%', maxWidth: '850px' },
     backIconButton: {
         backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb',
@@ -805,7 +816,7 @@ const styles = {
     },
     placeholderThumb: { width: '120px', height: '90px', borderRadius: '8px', backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', display: 'flex', justifyContent: 'center', alignItems: 'center' },
     profileRight: { flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' },
-    detailItem: { display: 'flex', alignItems: 'center', fontSize: '13px', gap: '8px' },
+    detailItem: { display: 'flex', alignItems: 'center', fontSize: '13px', gap: '8px', flexWrap: 'wrap' },
     detailKey: { color: '#6e6962', fontWeight: '500', width: '105px', flexShrink: 0 },
     detailVal: { color: '#1c1c1c', fontWeight: '500' },
     typeBadge: { display: 'inline-block', backgroundColor: '#1c1c1c10', color: '#1c1c1c', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' },
@@ -817,7 +828,7 @@ const styles = {
     },
     lastUpdatedText: { color: '#6e6962', fontSize: '11px', fontStyle: 'italic' },
 
-    cellWithTag: { display: 'flex', alignItems: 'center', gap: '10px' },
+    cellWithTag: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' },
     tagUpcoming: { backgroundColor: '#b3251e15', color: '#b3251e', border: '1px solid #b3251e44', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px' },
     tagPastDue: { backgroundColor: '#1c1c1c15', color: '#1c1c1c', border: '1px solid #1c1c1c44', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px' },
 
@@ -825,7 +836,7 @@ const styles = {
     fullImage: { maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain' },
     closePhotoBtn: { position: 'absolute', top: '12px', right: '12px', background: 'rgba(28, 28, 28, 0.7)', border: '1px solid #d6ccbb', color: '#ffffff', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10 },
 
-    sectionHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', width: '100%' },
+    sectionHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', width: '100%', flexWrap: 'wrap', gap: '8px' },
     sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#1c1c1c', margin: 0 },
     dropdownWrapper: { position: 'relative' },
     dropdownToggleBtn: {
@@ -865,13 +876,13 @@ const styles = {
     iconBtnCancel: { backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
 
     floatingBtn: {
-        position: 'fixed', bottom: '40px', right: '48px', width: '56px', height: '56px',
+        position: 'fixed', bottom: '32px', right: '32px', width: '56px', height: '56px',
         backgroundColor: '#1c1c1c', color: '#ede6d8', borderRadius: '50%', border: 'none',
         display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer',
         boxShadow: '0 8px 24px rgba(28, 28, 28, 0.3)', zIndex: 100,
     },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(28, 28, 28, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 },
-    modalBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2)', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(28, 28, 28, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
+    modalBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2)', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     modalTitle: { color: '#1c1c1c', fontSize: '16px', fontWeight: '600', margin: 0 },
     closeBtn: { background: 'none', border: 'none', color: '#6e6962', fontSize: '16px', cursor: 'pointer' },
