@@ -4,6 +4,140 @@ import Sidebar from '@/Components/Sidebar';
 import Toast from '@/Components/Toast';
 import Breadcrumb from '@/Components/Breadcrumb';
 
+function MinimalTypeIcon({ type, size = 16 }) {
+    if (type === 'Car') {
+        return (
+            <svg
+                width={size}
+                height={size}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#1c1c1c"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ flexShrink: 0 }}
+            >
+                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
+                <circle cx="7" cy="17" r="2"></circle>
+                <circle cx="17" cy="17" r="2"></circle>
+            </svg>
+        );
+    }
+
+    return (
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#1c1c1c"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0 }}
+        >
+            <circle cx="5.5" cy="17.5" r="3.5"></circle>
+            <circle cx="18.5" cy="17.5" r="3.5"></circle>
+            <path d="M15 6h4l3 7"></path>
+            <path d="M5.5 14H12l3-6H8.5"></path>
+        </svg>
+    );
+}
+
+function MobileVehicleTypeDropdown({ value, options = ['Car', 'Motorbike'], onChange }) {
+    const [open, setOpen] = useState(false);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleOutside = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutside);
+        document.addEventListener('touchstart', handleOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleOutside);
+            document.removeEventListener('touchstart', handleOutside);
+        };
+    }, []);
+
+    return (
+        <div ref={containerRef} className={`home-mobile-type-select ${open ? 'is-open' : ''}`}>
+            <button
+                type="button"
+                className={`home-mobile-type-trigger ${open ? 'is-focused' : ''}`}
+                onClick={() => setOpen((prev) => !prev)}
+                aria-expanded={open}
+            >
+                <span className="home-mobile-type-value">
+                    <MinimalTypeIcon type={value} size={16} />
+                    <span>{value || 'Select type'}</span>
+                </span>
+                <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                        flexShrink: 0,
+                    }}
+                >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+
+            {open && (
+                <div className="home-mobile-type-popover" role="listbox">
+                    {options.map((opt) => {
+                        const isSelected = value === opt;
+                        return (
+                            <button
+                                key={opt}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                className={`home-mobile-type-option ${isSelected ? 'is-selected' : ''}`}
+                                onClick={() => {
+                                    onChange(opt);
+                                    setOpen(false);
+                                }}
+                            >
+                                <span className="home-mobile-type-option-left">
+                                    <MinimalTypeIcon type={opt} size={16} />
+                                    <span>{opt}</span>
+                                </span>
+                                {isSelected && (
+                                    <svg
+                                        className="home-mobile-type-check"
+                                        width="15"
+                                        height="15"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function Home({ vehicles = [], servicePreferences = {} }) {
     const { flash } = usePage().props;
 
@@ -256,23 +390,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     };
 
     const renderVehicleTypeIcon = (type, size = 22) => {
-        if (type === 'Car') {
-            return (
-                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
-                    <circle cx="7" cy="17" r="2"></circle>
-                    <circle cx="17" cy="17" r="2"></circle>
-                </svg>
-            );
-        }
-        return (
-            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="5.5" cy="17.5" r="3.5"></circle>
-                <circle cx="18.5" cy="17.5" r="3.5"></circle>
-                <path d="M15 6h4l3 7"></path>
-                <path d="M5.5 14H12l3-6H8.5"></path>
-            </svg>
-        );
+        return <MinimalTypeIcon type={type} size={size} />;
     };
 
     const hasExistingPhoto = Boolean(editingVehicle?.photo && !removeExistingPhoto);
@@ -328,7 +446,8 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                     transform: translateY(1px);
                 }
                 .mobile-ride-meta,
-                .mobile-alert-card-list {
+                .mobile-alert-card-list,
+                .home-mobile-type-select {
                     display: none;
                 }
                 @media (max-width: 768px) {
@@ -343,6 +462,112 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                     }
                     .mainContent {
                         padding: 16px 16px 92px 16px !important;
+                    }
+                    .desktop-only-type-select {
+                        display: none !important;
+                    }
+                    .home-mobile-type-select {
+                        position: relative;
+                        display: block;
+                        width: 100%;
+                    }
+                    .home-mobile-type-trigger {
+                        width: 100%;
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 10px;
+                        padding: 10px 12px;
+                        color: #1c1c1c;
+                        font-size: 13px;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 8px;
+                        cursor: pointer;
+                        box-sizing: border-box;
+                        box-shadow: 0 0 0 3px transparent;
+                        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+                        text-align: left;
+                    }
+                    .home-mobile-type-trigger.is-focused {
+                        border-color: #1c1c1c;
+                        box-shadow: 0 0 0 3px rgba(28, 28, 28, 0.12);
+                    }
+                    .home-mobile-type-value {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .home-mobile-type-popover {
+                        position: absolute;
+                        top: calc(100% + 6px);
+                        left: 0;
+                        right: 0;
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 12px;
+                        padding: 8px 6px 8px 8px;
+                        box-shadow: 0 12px 28px rgba(28, 28, 28, 0.14);
+                        z-index: 80;
+                        max-height: 220px;
+                        overflow-y: auto;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        box-sizing: border-box;
+                    }
+                    .home-mobile-type-popover::-webkit-scrollbar {
+                        width: 5px;
+                    }
+                    .home-mobile-type-popover::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .home-mobile-type-popover::-webkit-scrollbar-thumb {
+                        background-color: #d6ccbb;
+                        border-radius: 999px;
+                    }
+                    .home-mobile-type-option {
+                        width: 100%;
+                        background: transparent;
+                        border: none;
+                        border-radius: 8px;
+                        padding: 9px 10px;
+                        color: #1c1c1c;
+                        font-size: 13px;
+                        font-weight: 400;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        cursor: pointer;
+                        text-align: left;
+                        box-sizing: border-box;
+                        transition: background-color 0.15s ease, color 0.15s ease;
+                    }
+                    .home-mobile-type-option:hover {
+                        background-color: #ede6d8;
+                    }
+                    .home-mobile-type-option.is-selected {
+                        background-color: #ede6d8;
+                        color: #1c1c1c;
+                        font-weight: 600;
+                    }
+                    .home-mobile-type-option-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        flex: 1;
+                    }
+                    .home-mobile-type-check {
+                        color: #1c1c1c;
+                        flex-shrink: 0;
                     }
                     .desktop-ride-content {
                         display: none !important;
@@ -699,10 +924,17 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                             <form onSubmit={handleSubmit} style={styles.form}>
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Vehicle Type *</label>
-                                    <select value={data.type} onChange={e => setData('type', e.target.value)} style={styles.input}>
-                                        <option value="Car">🚗 Car</option>
-                                        <option value="Motorbike">🏍️ Motorbike</option>
-                                    </select>
+                                    <div className="desktop-only-type-select">
+                                        <select value={data.type} onChange={e => setData('type', e.target.value)} style={styles.input}>
+                                            <option value="Car">Car</option>
+                                            <option value="Motorbike">Motorbike</option>
+                                        </select>
+                                    </div>
+                                    <MobileVehicleTypeDropdown
+                                        value={data.type}
+                                        options={['Car', 'Motorbike']}
+                                        onChange={(val) => setData('type', val)}
+                                    />
                                 </div>
 
                                 <div style={styles.inputGroup}>

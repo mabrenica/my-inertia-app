@@ -4,6 +4,130 @@ import Sidebar from '@/Components/Sidebar';
 import Toast from '@/Components/Toast';
 import Breadcrumb from '@/Components/Breadcrumb';
 
+function MobileDropdown({
+    value,
+    options = [],
+    placeholder = 'Select option',
+    multiple = false,
+    onChange,
+}) {
+    const [open, setOpen] = useState(false);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleOutsideClick = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutsideClick);
+        document.addEventListener('touchstart', handleOutsideClick);
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+            document.removeEventListener('touchstart', handleOutsideClick);
+        };
+    }, []);
+
+    const selectedValues = multiple
+        ? (Array.isArray(value) ? value : [])
+        : [];
+
+    const displayLabel = multiple
+        ? (selectedValues.length === 0
+            ? placeholder
+            : selectedValues.length === 1
+                ? selectedValues[0]
+                : `${selectedValues.length} selected`)
+        : (value || placeholder);
+
+    const handleSelectOption = (optValue) => {
+        if (multiple) {
+            const exists = selectedValues.includes(optValue);
+            const next = exists
+                ? selectedValues.filter((item) => item !== optValue)
+                : [...selectedValues, optValue];
+            onChange(next);
+        } else {
+            onChange(optValue);
+            setOpen(false);
+        }
+    };
+
+    return (
+        <div ref={containerRef} className={`settings-mobile-dropdown ${open ? 'is-open' : ''}`}>
+            <button
+                type="button"
+                className={`settings-mobile-dropdown-trigger ${open ? 'is-focused' : ''}`}
+                onClick={() => setOpen((prev) => !prev)}
+                aria-expanded={open}
+            >
+                <span className="settings-mobile-dropdown-value">{displayLabel}</span>
+                <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                        flexShrink: 0,
+                    }}
+                >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+
+            {open && (
+                <div className="settings-mobile-popover" role="listbox" aria-multiselectable={multiple}>
+                    {options.length === 0 ? (
+                        <div className="settings-mobile-empty">No options available.</div>
+                    ) : (
+                        options.map((opt, idx) => {
+                            const optValue = typeof opt === 'string' ? opt : opt.value;
+                            const optLabel = typeof opt === 'string' ? opt : opt.label;
+                            const isSelected = multiple
+                                ? selectedValues.includes(optValue)
+                                : value === optValue;
+
+                            return (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={isSelected}
+                                    className={`settings-mobile-option ${isSelected ? 'is-selected' : ''}`}
+                                    onClick={() => handleSelectOption(optValue)}
+                                >
+                                    <span className="settings-mobile-option-label">{optLabel}</span>
+                                    {isSelected && (
+                                        <svg
+                                            className="settings-mobile-check"
+                                            width="15"
+                                            height="15"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2.4"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    )}
+                                </button>
+                            );
+                        })
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function Settings({ carServices: initialCarServices = [], motoServices: initialMotoServices = [] }) {
     const { flash } = usePage().props;
 
@@ -274,7 +398,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     opacity: 1;
                 }
                 .mobile-service-card-list,
-                .mobile-modal-card-list {
+                .mobile-modal-card-list,
+                .settings-mobile-dropdown {
                     display: none;
                 }
                 @media (max-width: 768px) {
@@ -291,6 +416,110 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         transform: none;
                         width: 220px;
                         max-width: calc(100vw - 72px);
+                    }
+                    .settings-mobile-dropdown {
+                        position: relative;
+                        display: block;
+                        width: 100%;
+                    }
+                    .settings-mobile-dropdown-trigger {
+                        width: 100%;
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 10px;
+                        padding: 10px 12px;
+                        color: #1c1c1c;
+                        font-size: 13px;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 8px;
+                        cursor: pointer;
+                        box-sizing: border-box;
+                        box-shadow: 0 0 0 3px transparent;
+                        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+                        text-align: left;
+                    }
+                    .settings-mobile-dropdown-trigger.is-focused {
+                        border-color: #1c1c1c;
+                        box-shadow: 0 0 0 3px rgba(28, 28, 28, 0.12);
+                    }
+                    .settings-mobile-dropdown-value {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .settings-mobile-popover {
+                        position: absolute;
+                        top: calc(100% + 6px);
+                        left: 0;
+                        right: 0;
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 12px;
+                        padding: 8px 6px 8px 8px;
+                        box-shadow: 0 12px 28px rgba(28, 28, 28, 0.14);
+                        z-index: 80;
+                        max-height: 220px;
+                        overflow-y: auto;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        box-sizing: border-box;
+                    }
+                    .settings-mobile-popover::-webkit-scrollbar {
+                        width: 5px;
+                    }
+                    .settings-mobile-popover::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .settings-mobile-popover::-webkit-scrollbar-thumb {
+                        background-color: #d6ccbb;
+                        border-radius: 999px;
+                    }
+                    .settings-mobile-option {
+                        width: 100%;
+                        background: transparent;
+                        border: none;
+                        border-radius: 8px;
+                        padding: 9px 10px;
+                        color: #1c1c1c;
+                        font-size: 13px;
+                        font-weight: 400;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        cursor: pointer;
+                        text-align: left;
+                        box-sizing: border-box;
+                        transition: background-color 0.15s ease, color 0.15s ease;
+                    }
+                    .settings-mobile-option:hover {
+                        background-color: #ede6d8;
+                    }
+                    .settings-mobile-option.is-selected {
+                        background-color: #ede6d8;
+                        color: #1c1c1c;
+                        font-weight: 600;
+                    }
+                    .settings-mobile-option-label {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        flex: 1;
+                    }
+                    .settings-mobile-check {
+                        color: #1c1c1c;
+                        flex-shrink: 0;
+                    }
+                    .settings-mobile-empty {
+                        padding: 12px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #6e6962;
+                        font-style: italic;
                     }
                     .desktop-service-list,
                     .desktop-modal-list,

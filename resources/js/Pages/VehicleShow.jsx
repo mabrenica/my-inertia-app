@@ -4,6 +4,132 @@ import Sidebar from '@/Components/Sidebar';
 import Toast from '@/Components/Toast';
 import Breadcrumb from '@/Components/Breadcrumb';
 
+function MobileSelectDropdown({
+    value,
+    options,
+    placeholder = 'Select option',
+    multiple = false,
+    onChange,
+}) {
+    const [open, setOpen] = useState(false);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleOutside = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutside);
+        document.addEventListener('touchstart', handleOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleOutside);
+            document.removeEventListener('touchstart', handleOutside);
+        };
+    }, []);
+
+    const selectedValues = multiple
+        ? (Array.isArray(value) ? value : [])
+        : [];
+
+    const triggerLabel = multiple
+        ? (selectedValues.length === 0
+            ? placeholder
+            : selectedValues.length === 1
+                ? selectedValues[0]
+                : `${selectedValues.length} services selected`)
+        : (value || placeholder);
+
+    const handleOptionClick = (optValue) => {
+        if (multiple) {
+            const exists = selectedValues.includes(optValue);
+            const updated = exists
+                ? selectedValues.filter((item) => item !== optValue)
+                : [...selectedValues, optValue];
+            onChange(updated);
+        } else {
+            onChange(optValue);
+            setOpen(false);
+        }
+    };
+
+    return (
+        <div ref={containerRef} className={`ref-mobile-select ${open ? 'is-open' : ''}`}>
+            <button
+                type="button"
+                className={`ref-mobile-select-trigger ${open ? 'is-focused' : ''}`}
+                onClick={() => setOpen((prev) => !prev)}
+                aria-expanded={open}
+            >
+                <span className="ref-mobile-select-value">
+                    {triggerLabel}
+                </span>
+                <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                        flexShrink: 0,
+                    }}
+                >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+
+            {open && (
+                <div className="ref-mobile-popover" role="listbox" aria-multiselectable={multiple}>
+                    {options.length === 0 ? (
+                        <div className="ref-mobile-empty">No services configured in settings.</div>
+                    ) : (
+                        options.map((opt, idx) => {
+                            const optValue = typeof opt === 'string' ? opt : opt.value;
+                            const optLabel = typeof opt === 'string' ? opt : opt.label;
+                            const isSelected = multiple
+                                ? selectedValues.includes(optValue)
+                                : value === optValue;
+
+                            return (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    role="option"
+                                    aria-selected={isSelected}
+                                    className={`ref-mobile-option ${isSelected ? 'is-selected' : ''}`}
+                                    onClick={() => handleOptionClick(optValue)}
+                                >
+                                    <span className="ref-mobile-option-label">{optLabel}</span>
+                                    {isSelected && (
+                                        <svg
+                                            className="ref-mobile-check"
+                                            width="15"
+                                            height="15"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2.4"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    )}
+                                </button>
+                            );
+                        })
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function VehicleShow({ vehicle, servicePreferences = [], maintenanceLogs = [] }) {
     const photoUrl = vehicle.photo
         ? (vehicle.photo.startsWith('http://') || vehicle.photo.startsWith('https://') || vehicle.photo.startsWith('data:')
@@ -65,7 +191,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('touchstart', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('touchstart', handleClickOutside);
+        };
     }, []);
 
     const getPhilippineToday = () => {
@@ -289,6 +419,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         ? formatTimestampToReadable(vehicle.odo_updated_at)
         : null;
 
+    const serviceOptions = servicePreferences.map((srv) => srv.name);
+
     return (
         <div style={styles.page} className="page-layout">
             <style>{`
@@ -359,7 +491,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     display: none;
                 }
                 .mobile-showcase-meta,
-                .mobile-card-list {
+                .mobile-card-list,
+                .ref-mobile-select {
                     display: none;
                 }
                 @media (max-width: 768px) {
@@ -371,6 +504,171 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     }
                     .tableContainer {
                         display: none !important;
+                    }
+                    .desktop-only-select,
+                    .desktop-only-services {
+                        display: none !important;
+                    }
+                    .ref-mobile-select {
+                        position: relative;
+                        display: block;
+                        width: 100%;
+                    }
+                    .ref-mobile-select-trigger {
+                        width: 100%;
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 10px;
+                        padding: 10px 12px;
+                        color: #1c1c1c;
+                        font-size: 13px;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 8px;
+                        cursor: pointer;
+                        box-sizing: border-box;
+                        box-shadow: 0 0 0 3px transparent;
+                        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+                        text-align: left;
+                    }
+                    .ref-mobile-select-trigger.is-focused {
+                        border-color: #1c1c1c;
+                        box-shadow: 0 0 0 3px rgba(28, 28, 28, 0.12);
+                    }
+                    .ref-mobile-select-value {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .ref-mobile-popover {
+                        position: absolute;
+                        top: calc(100% + 6px);
+                        left: 0;
+                        right: 0;
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 12px;
+                        padding: 8px 6px 8px 8px;
+                        box-shadow: 0 12px 28px rgba(28, 28, 28, 0.14);
+                        z-index: 80;
+                        max-height: 220px;
+                        overflow-y: auto;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        box-sizing: border-box;
+                    }
+                    .ref-mobile-popover::-webkit-scrollbar {
+                        width: 5px;
+                    }
+                    .ref-mobile-popover::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .ref-mobile-popover::-webkit-scrollbar-thumb {
+                        background-color: #d6ccbb;
+                        border-radius: 999px;
+                    }
+                    .ref-mobile-option {
+                        width: 100%;
+                        background: transparent;
+                        border: none;
+                        border-radius: 8px;
+                        padding: 9px 10px;
+                        color: #1c1c1c;
+                        font-size: 13px;
+                        font-weight: 400;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        cursor: pointer;
+                        text-align: left;
+                        box-sizing: border-box;
+                        transition: background-color 0.15s ease, color 0.15s ease;
+                    }
+                    .ref-mobile-option:hover {
+                        background-color: #ede6d8;
+                    }
+                    .ref-mobile-option.is-selected {
+                        background-color: #ede6d8;
+                        color: #1c1c1c;
+                        font-weight: 600;
+                    }
+                    .ref-mobile-option-label {
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        flex: 1;
+                    }
+                    .ref-mobile-check {
+                        color: #1c1c1c;
+                        flex-shrink: 0;
+                    }
+                    .ref-mobile-empty {
+                        padding: 12px;
+                        text-align: center;
+                        font-size: 12px;
+                        color: #6e6962;
+                        font-style: italic;
+                    }
+                    /* Multi-select Filter Dropdown on Mobile */
+                    .mobile-filter-toggle {
+                        background-color: #ffffff !important;
+                        border-radius: 10px !important;
+                        padding: 9px 12px !important;
+                        min-width: 156px !important;
+                        box-shadow: 0 0 0 3px transparent;
+                        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+                    }
+                    .mobile-filter-toggle.is-open {
+                        border-color: #1c1c1c !important;
+                        box-shadow: 0 0 0 3px rgba(28, 28, 28, 0.12) !important;
+                    }
+                    .mobile-filter-menu {
+                        width: 240px !important;
+                        border-radius: 12px !important;
+                        padding: 6px 4px 6px 6px !important;
+                        box-shadow: 0 12px 28px rgba(28, 28, 28, 0.14) !important;
+                    }
+                    .mobile-filter-list {
+                        max-height: 210px !important;
+                        overflow-y: auto !important;
+                        padding: 2px !important;
+                        gap: 4px !important;
+                    }
+                    .mobile-filter-list::-webkit-scrollbar {
+                        width: 5px;
+                    }
+                    .mobile-filter-list::-webkit-scrollbar-thumb {
+                        background-color: #d6ccbb;
+                        border-radius: 999px;
+                    }
+                    .mobile-filter-option {
+                        width: 100%;
+                        background: transparent;
+                        border: none;
+                        border-radius: 8px !important;
+                        padding: 9px 10px !important;
+                        color: #1c1c1c;
+                        font-size: 13px !important;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        cursor: pointer;
+                        text-align: left;
+                        box-sizing: border-box;
+                        transition: background-color 0.15s ease;
+                    }
+                    .mobile-filter-option:hover {
+                        background-color: #ede6d8 !important;
+                        transform: none !important;
+                    }
+                    .mobile-filter-option.is-selected {
+                        background-color: #ede6d8 !important;
+                        font-weight: 600;
                     }
                     .mobile-card-list {
                         display: flex;
@@ -749,7 +1047,12 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         <h2 style={styles.sectionTitle}>Maintenance Logs</h2>
 
                         <div style={styles.dropdownWrapper} ref={dropdownRef}>
-                            <button type="button" onClick={() => setShowFilterDropdown(!showFilterDropdown)} style={styles.dropdownToggleBtn} className="hover-btn">
+                            <button
+                                type="button"
+                                onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                                style={styles.dropdownToggleBtn}
+                                className={`hover-btn mobile-filter-toggle ${showFilterDropdown ? 'is-open' : ''}`}
+                            >
                                 <span>
                                     {selectedServiceFilters.length === 0 ? 'Filter Services' : `Services (${selectedServiceFilters.length})`}
                                 </span>
@@ -757,31 +1060,63 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     {selectedServiceFilters.length > 0 && (
                                         <span onClick={clearFilters} style={styles.clearIconBadge} title="Clear filters">✕</span>
                                     )}
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                        width="12"
+                                        height="12"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        style={{
+                                            transform: showFilterDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                                            transition: 'transform 0.2s ease',
+                                        }}
+                                    >
                                         <polyline points="6 9 12 15 18 9"></polyline>
                                     </svg>
                                 </div>
                             </button>
 
                             {showFilterDropdown && (
-                                <div style={styles.dropdownMenu}>
+                                <div style={styles.dropdownMenu} className="mobile-filter-menu">
                                     <div style={styles.dropdownHeader}>
                                         <span style={styles.dropdownTitle}>Filter by Service</span>
                                         {selectedServiceFilters.length > 0 && (
                                             <button type="button" onClick={clearFilters} style={styles.dropdownClearText}>Clear All</button>
                                         )}
                                     </div>
-                                    <div style={styles.dropdownList}>
+                                    <div style={styles.dropdownList} className="mobile-filter-list">
                                         {loggedServicesList.length === 0 ? (
                                             <span style={styles.dropdownEmpty}>No logged services available.</span>
                                         ) : (
                                             loggedServicesList.map((serviceName, idx) => {
                                                 const isChecked = selectedServiceFilters.includes(serviceName);
                                                 return (
-                                                    <label key={idx} style={styles.dropdownItemLabel} className="hover-list-item">
-                                                        <input type="checkbox" checked={isChecked} onChange={() => handleFilterCheckboxToggle(serviceName)} style={styles.dropdownCheckbox} />
-                                                        {serviceName}
-                                                    </label>
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        onClick={() => handleFilterCheckboxToggle(serviceName)}
+                                                        className={`mobile-filter-option ${isChecked ? 'is-selected' : ''}`}
+                                                    >
+                                                        <span className="ref-mobile-option-label">{serviceName}</span>
+                                                        {isChecked && (
+                                                            <svg
+                                                                className="ref-mobile-check"
+                                                                width="15"
+                                                                height="15"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2.4"
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                            >
+                                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                                            </svg>
+                                                        )}
+                                                    </button>
                                                 );
                                             })
                                         )}
@@ -922,15 +1257,23 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                 </div>
                                                 <div className="mobile-edit-field">
                                                     <span className="mobile-edit-label">Service</span>
-                                                    <select
+                                                    <div className="desktop-only-select">
+                                                        <select
+                                                            value={inlineData.services}
+                                                            onChange={e => setInlineData({ ...inlineData, services: e.target.value })}
+                                                            style={styles.inlineSelect}
+                                                        >
+                                                            {servicePreferences.map((srv, i) => (
+                                                                <option key={i} value={srv.name}>{srv.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <MobileSelectDropdown
                                                         value={inlineData.services}
-                                                        onChange={e => setInlineData({ ...inlineData, services: e.target.value })}
-                                                        style={styles.inlineSelect}
-                                                    >
-                                                        {servicePreferences.map((srv, i) => (
-                                                            <option key={i} value={srv.name}>{srv.name}</option>
-                                                        ))}
-                                                    </select>
+                                                        options={serviceOptions}
+                                                        placeholder="Select service"
+                                                        onChange={(val) => setInlineData({ ...inlineData, services: val })}
+                                                    />
                                                 </div>
                                                 <div className="mobile-edit-field">
                                                     <span className="mobile-edit-label">ODO</span>
@@ -1061,7 +1404,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             <form onSubmit={handleSubmitLog} style={styles.form}>
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Services Done * (Select one or more)</label>
-                                    <div style={styles.checkboxContainer}>
+                                    <div style={styles.checkboxContainer} className="desktop-only-services">
                                         {servicePreferences.length === 0 ? (
                                             <span style={styles.noServiceText}>No services configured in settings.</span>
                                         ) : (
@@ -1073,6 +1416,13 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             ))
                                         )}
                                     </div>
+                                    <MobileSelectDropdown
+                                        value={data.services}
+                                        options={serviceOptions}
+                                        placeholder="Select services"
+                                        multiple={true}
+                                        onChange={(updatedServices) => setData('services', updatedServices)}
+                                    />
                                     {errors.services && <span style={styles.errorText}>{errors.services}</span>}
                                 </div>
 
