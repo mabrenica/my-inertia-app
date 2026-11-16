@@ -11,7 +11,7 @@
 
         <!-- Scripts -->
         @viteReactRefresh
-        @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
+        @vite('resources/js/app.jsx')
         @inertiaHead
     </head>
     <body style="height: 100%; margin: 0; padding: 0; background-color: #ede6d8; overflow: hidden;">
