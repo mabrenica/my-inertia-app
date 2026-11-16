@@ -33,12 +33,14 @@ export default function Breadcrumb({ items = [] }) {
                     border: 1px solid #d6ccbb;
                     width: 30px;
                     height: 30px;
+                    padding: 0;
                     border-radius: 6px;
                     cursor: pointer;
                     text-decoration: none;
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                     box-shadow: 0 2px 6px rgba(28, 28, 28, 0.04);
                     flex-shrink: 0;
+                    box-sizing: border-box;
                 }
                 .breadcrumb-back-btn:hover {
                     background-color: #ede6d8;
@@ -96,6 +98,7 @@ const styles = {
         alignItems: 'center',
         gap: '12px',
         width: '100%',
+        minHeight: '30px',
         marginBottom: '12px',
     },
     backBtn: {
@@ -106,9 +109,9 @@ const styles = {
     container: {
         display: 'flex',
         alignItems: 'center',
-        alignSelf: 'flex-start',
         gap: '6px',
         fontSize: '12px',
+        lineHeight: '1',
         color: '#6e6962',
         margin: 0,
     },
@@ -116,21 +119,26 @@ const styles = {
         display: 'inline-flex',
         alignItems: 'center',
         gap: '6px',
+        lineHeight: '1',
     },
     link: {
         color: '#6e6962',
         textDecoration: 'none',
         fontWeight: '500',
+        lineHeight: '1',
     },
     label: {
         color: '#6e6962',
         fontWeight: '500',
+        lineHeight: '1',
     },
     active: {
         color: '#1c1c1c',
         fontWeight: '600',
+        lineHeight: '1',
     },
     separator: {
         color: '#a39b8e',
+        lineHeight: '1',
     },
 };
