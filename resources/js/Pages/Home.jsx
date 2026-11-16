@@ -4,13 +4,151 @@ import Sidebar from '@/Components/Sidebar';
 import Toast from '@/Components/Toast';
 import Breadcrumb from '@/Components/Breadcrumb';
 
+function MinimalTypeIcon({ type, size = 16 }) {
+    if (type === 'Car') {
+        return (
+            <svg
+                width={size}
+                height={size}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#1c1c1c"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ flexShrink: 0 }}
+            >
+                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
+                <circle cx="7" cy="17" r="2"></circle>
+                <circle cx="17" cy="17" r="2"></circle>
+            </svg>
+        );
+    }
+
+    return (
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#1c1c1c"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ flexShrink: 0 }}
+        >
+            <circle cx="5.5" cy="17.5" r="3.5"></circle>
+            <circle cx="18.5" cy="17.5" r="3.5"></circle>
+            <path d="M15 6h4l3 7"></path>
+            <path d="M5.5 14H12l3-6H8.5"></path>
+        </svg>
+    );
+}
+
+function MobileVehicleTypeDropdown({ value, options = ['Car', 'Motorbike'], onChange, isInvalid = false, shakeKey = 0 }) {
+    const [open, setOpen] = useState(false);
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleOutside = (e) => {
+            if (containerRef.current && !containerRef.current.contains(e.target)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleOutside);
+        document.addEventListener('touchstart', handleOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleOutside);
+            document.removeEventListener('touchstart', handleOutside);
+        };
+    }, []);
+
+    return (
+        <div ref={containerRef} className={`home-mobile-type-select ${open ? 'is-open' : ''}`}>
+            <button
+                key={isInvalid ? `mobile-type-${shakeKey}` : 'mobile-type'}
+                type="button"
+                className={`home-mobile-type-trigger ${open ? 'is-focused' : ''} ${isInvalid ? 'shake-invalid' : ''}`}
+                style={isInvalid ? { borderColor: '#b3251e' } : undefined}
+                onClick={() => setOpen((prev) => !prev)}
+                aria-expanded={open}
+            >
+                <span className="home-mobile-type-value">
+                    <MinimalTypeIcon type={value} size={16} />
+                    <span>{value || 'Select type'}</span>
+                </span>
+                <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{
+                        transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s ease',
+                        flexShrink: 0,
+                    }}
+                >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+
+            {open && (
+                <div className="home-mobile-type-popover" role="listbox">
+                    {options.map((opt) => {
+                        const isSelected = value === opt;
+                        return (
+                            <button
+                                key={opt}
+                                type="button"
+                                role="option"
+                                aria-selected={isSelected}
+                                className={`home-mobile-type-option ${isSelected ? 'is-selected' : ''}`}
+                                onClick={() => {
+                                    onChange(opt);
+                                    setOpen(false);
+                                }}
+                            >
+                                <span className="home-mobile-type-option-left">
+                                    <MinimalTypeIcon type={opt} size={16} />
+                                    <span>{opt}</span>
+                                </span>
+                                {isSelected && (
+                                    <svg
+                                        className="home-mobile-type-check"
+                                        width="15"
+                                        height="15"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function Home({ vehicles = [], servicePreferences = {} }) {
     const { flash } = usePage().props;
 
     const [showModal, setShowModal] = useState(false);
     const [editingVehicle, setEditingVehicle] = useState(null);
     const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
-    
+    const [emptyRequiredFields, setEmptyRequiredFields] = useState({});
+    const [shakeKey, setShakeKey] = useState(0);
+
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [vehicleToDelete, setVehicleToDelete] = useState(null);
 
@@ -32,6 +170,15 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         description: '',
         photo: null,
     });
+
+    const clearRequiredError = (field) => {
+        setEmptyRequiredFields((prev) => {
+            if (!prev[field]) return prev;
+            const next = { ...prev };
+            delete next[field];
+            return next;
+        });
+    };
 
     const getPhilippineToday = () => {
         const options = { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -63,8 +210,8 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     const pastDueAlerts = [];
 
     vehicles.forEach(vehicle => {
-        const currentOdoNum = vehicle.current_odo !== null && vehicle.current_odo !== undefined && vehicle.current_odo !== '' 
-            ? Number(vehicle.current_odo) 
+        const currentOdoNum = vehicle.current_odo !== null && vehicle.current_odo !== undefined && vehicle.current_odo !== ''
+            ? Number(vehicle.current_odo)
             : null;
 
         const isCar = (vehicle.type || '').toLowerCase() === 'car';
@@ -151,6 +298,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     const openCreateModal = () => {
         setEditingVehicle(null);
         setRemoveExistingPhoto(false);
+        setEmptyRequiredFields({});
         clearErrors();
         setData({
             type: 'Car',
@@ -166,6 +314,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     const openEditModal = (vehicle) => {
         setEditingVehicle(vehicle);
         setRemoveExistingPhoto(false);
+        setEmptyRequiredFields({});
         clearErrors();
         setData({
             type: vehicle.type || 'Car',
@@ -221,6 +370,18 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         e.preventDefault();
         clearErrors('photo');
 
+        const missing = {};
+        if (!String(data.type || '').trim()) missing.type = true;
+        if (!String(data.make || '').trim()) missing.make = true;
+        if (!String(data.model || '').trim()) missing.model = true;
+        if (!String(data.year || '').trim()) missing.year = true;
+
+        setEmptyRequiredFields(missing);
+        if (Object.keys(missing).length > 0) {
+            setShakeKey((k) => k + 1);
+            return;
+        }
+
         if (data.photo) {
             const maxSizeInBytes = 2100 * 1024;
             if (data.photo.size > maxSizeInBytes) {
@@ -255,6 +416,12 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         }
     };
 
+    const renderVehicleTypeIcon = (type, size = 22) => {
+        return <MinimalTypeIcon type={type} size={size} />;
+    };
+
+    const hasExistingPhoto = Boolean(editingVehicle?.photo && !removeExistingPhoto);
+
     return (
         <div style={styles.page} className="page-layout">
             <style>{`
@@ -270,6 +437,13 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                     from { opacity: 0; transform: translateY(12px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
+                @keyframes fieldShake {
+                    0%, 100% { transform: translateX(0); }
+                    20% { transform: translateX(-5px); }
+                    40% { transform: translateX(5px); }
+                    60% { transform: translateX(-4px); }
+                    80% { transform: translateX(4px); }
+                }
                 .animated-modal {
                     animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
@@ -278,6 +452,9 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                 }
                 .page-card-anim {
                     animation: staggerFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .shake-invalid {
+                    animation: fieldShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
                 }
                 .interactive-card {
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -305,6 +482,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                 .hover-btn:active {
                     transform: translateY(1px);
                 }
+                .mobile-ride-meta,
+                .mobile-alert-card-list,
+                .home-mobile-type-select {
+                    display: none;
+                }
                 @media (max-width: 768px) {
                     .page-layout {
                         flex-direction: column !important;
@@ -316,7 +498,240 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         grid-template-columns: 1fr !important;
                     }
                     .mainContent {
-                        padding: 16px !important;
+                        padding: 16px 16px 92px 16px !important;
+                    }
+                    .desktop-only-type-select {
+                        display: none !important;
+                    }
+                    .home-mobile-type-select {
+                        position: relative;
+                        display: block;
+                        width: 100%;
+                    }
+                    .home-mobile-type-trigger {
+                        width: 100%;
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 10px;
+                        padding: 10px 12px;
+                        color: #1c1c1c;
+                        font-size: 13px;
+                        font-weight: 500;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 8px;
+                        cursor: pointer;
+                        box-sizing: border-box;
+                        box-shadow: 0 0 0 3px transparent;
+                        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+                        text-align: left;
+                    }
+                    .home-mobile-type-trigger.is-focused {
+                        border-color: #1c1c1c;
+                        box-shadow: 0 0 0 3px rgba(28, 28, 28, 0.12);
+                    }
+                    .home-mobile-type-value {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                    }
+                    .home-mobile-type-popover {
+                        position: absolute;
+                        top: calc(100% + 6px);
+                        left: 0;
+                        right: 0;
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 12px;
+                        padding: 8px 6px 8px 8px;
+                        box-shadow: 0 12px 28px rgba(28, 28, 28, 0.14);
+                        z-index: 80;
+                        max-height: 220px;
+                        overflow-y: auto;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        box-sizing: border-box;
+                    }
+                    .home-mobile-type-popover::-webkit-scrollbar {
+                        width: 5px;
+                    }
+                    .home-mobile-type-popover::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .home-mobile-type-popover::-webkit-scrollbar-thumb {
+                        background-color: #d6ccbb;
+                        border-radius: 999px;
+                    }
+                    .home-mobile-type-option {
+                        width: 100%;
+                        background: transparent;
+                        border: none;
+                        border-radius: 8px;
+                        padding: 9px 10px;
+                        color: #1c1c1c;
+                        font-size: 13px;
+                        font-weight: 400;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        cursor: pointer;
+                        text-align: left;
+                        box-sizing: border-box;
+                        transition: background-color 0.15s ease, color 0.15s ease;
+                    }
+                    .home-mobile-type-option:hover {
+                        background-color: #ede6d8;
+                    }
+                    .home-mobile-type-option.is-selected {
+                        background-color: #ede6d8;
+                        color: #1c1c1c;
+                        font-weight: 600;
+                    }
+                    .home-mobile-type-option-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        white-space: nowrap;
+                        flex: 1;
+                    }
+                    .home-mobile-type-check {
+                        color: #1c1c1c;
+                        flex-shrink: 0;
+                    }
+                    .desktop-ride-content {
+                        display: none !important;
+                    }
+                    .mobile-ride-meta {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                        cursor: pointer;
+                    }
+                    .mobile-ride-banner {
+                        width: 100%;
+                        height: 165px;
+                        border-radius: 10px;
+                        object-fit: cover;
+                        border: 1px solid #d6ccbb;
+                        display: block;
+                    }
+                    .mobile-ride-placeholder-banner {
+                        width: 100%;
+                        height: 130px;
+                        border-radius: 10px;
+                        background-color: #ede6d8;
+                        border: 1px solid #d6ccbb;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-sizing: border-box;
+                    }
+                    .mobile-ride-header {
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: space-between;
+                        gap: 10px;
+                    }
+                    .mobile-ride-title {
+                        font-size: 15px;
+                        font-weight: 700;
+                        color: #1c1c1c;
+                        margin: 0;
+                        line-height: 1.25;
+                    }
+                    .mobile-ride-rows {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 6px;
+                        padding-top: 8px;
+                        border-top: 1px solid #ede6d8;
+                    }
+                    .mobile-ride-row {
+                        display: flex;
+                        align-items: baseline;
+                        justify-content: space-between;
+                        gap: 12px;
+                        font-size: 12px;
+                    }
+                    .mobile-ride-label {
+                        color: #6e6962;
+                        font-weight: 500;
+                        flex-shrink: 0;
+                    }
+                    .mobile-ride-val {
+                        color: #1c1c1c;
+                        font-weight: 600;
+                        text-align: right;
+                        overflow-wrap: anywhere;
+                    }
+                    .desktop-alert-list {
+                        display: none !important;
+                    }
+                    .mobile-alert-card-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                    }
+                    .mobile-alert-card {
+                        background-color: #ede6d8;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 10px;
+                        padding: 12px;
+                        text-decoration: none;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                        box-sizing: border-box;
+                    }
+                    .mobile-alert-card-top {
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: space-between;
+                        gap: 8px;
+                    }
+                    .mobile-alert-service-title {
+                        font-size: 13px;
+                        font-weight: 700;
+                        color: #1c1c1c;
+                        margin: 0;
+                        line-height: 1.3;
+                    }
+                    .mobile-alert-rows {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                        padding-top: 6px;
+                        border-top: 1px solid #d6ccbb;
+                    }
+                    .mobile-alert-row {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                        font-size: 12px;
+                    }
+                    .mobile-alert-label {
+                        color: #6e6962;
+                        font-weight: 500;
+                    }
+                    .mobile-alert-val {
+                        color: #1c1c1c;
+                        font-weight: 600;
+                        text-align: right;
+                    }
+                    .modalBox {
+                        padding: 18px !important;
+                        border-radius: 14px !important;
+                        max-height: 88vh !important;
+                        overflow-y: auto !important;
                     }
                 }
             `}</style>
@@ -324,15 +739,15 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
             <Sidebar activePage="home" />
 
             <div style={styles.mainContent} className="mainContent">
-                <Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
+                <Toast message={toastMessage} duration={1000} onClose={() => setToastMessage(null)} />
 
                 <Breadcrumb items={[{ label: 'Main', href: '#' }, { label: 'Home' }]} />
 
                 <div style={styles.contentBody}>
                     <div style={styles.pageHeaderRow}>
                         <h1 style={styles.pageTitle}>My Rides</h1>
-                        <button 
-                            onClick={openCreateModal} 
+                        <button
+                            onClick={openCreateModal}
                             style={styles.addButton}
                             className="hover-btn"
                             type="button"
@@ -345,61 +760,81 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         {vehicles.length === 0 ? (
                             <p style={styles.emptyText}>No vehicle records added yet. Click "+ Add Vehicle" to get started.</p>
                         ) : (
-                            vehicles.map((vehicle) => (
-                                <div key={vehicle.id} style={styles.vehicleCard} className="interactive-card page-card-anim">
-                                    <div 
-                                        style={styles.cardContentClickable} 
-                                        onClick={() => router.visit(`/vehicles/${vehicle.id}`)}
-                                    >
-                                        {vehicle.photo ? (
-                                            <img src={getVehiclePhotoUrl(vehicle.photo)} alt={vehicle.make} style={styles.vehicleThumb} />
-                                        ) : (
-                                            <div style={styles.placeholderThumb}>
-                                                {vehicle.type === 'Car' ? (
-                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
-                                                        <circle cx="7" cy="17" r="2"></circle>
-                                                        <circle cx="17" cy="17" r="2"></circle>
-                                                    </svg>
-                                                ) : (
-                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <circle cx="5.5" cy="17.5" r="3.5"></circle>
-                                                        <circle cx="18.5" cy="17.5" r="3.5"></circle>
-                                                        <path d="M15 6h4l3 7"></path>
-                                                        <path d="M5.5 14H12l3-6H8.5"></path>
-                                                    </svg>
-                                                )}
+                            vehicles.map((vehicle) => {
+                                const photoUrl = getVehiclePhotoUrl(vehicle.photo);
+                                return (
+                                    <div key={vehicle.id} style={styles.vehicleCard} className="interactive-card page-card-anim">
+                                        <div
+                                            style={styles.cardContentClickable}
+                                            className="desktop-ride-content"
+                                            onClick={() => router.visit(`/vehicles/${vehicle.id}`)}
+                                        >
+                                            {photoUrl ? (
+                                                <img src={photoUrl} alt={vehicle.make} style={styles.vehicleThumb} />
+                                            ) : (
+                                                <div style={styles.placeholderThumb}>
+                                                    {renderVehicleTypeIcon(vehicle.type, 22)}
+                                                </div>
+                                            )}
+                                            <div style={styles.vehicleInfo}>
+                                                <div style={styles.vehicleHeaderRow}>
+                                                    <h3 style={styles.vehicleCardTitle}>{vehicle.year} {vehicle.make} {vehicle.model}</h3>
+                                                </div>
+                                                <span style={styles.typeBadge}>{vehicle.type}</span>
+                                                {vehicle.description && <p style={styles.vehicleDesc}>{vehicle.description}</p>}
                                             </div>
-                                        )}
-                                        <div style={styles.vehicleInfo}>
-                                            <div style={styles.vehicleHeaderRow}>
-                                                <h3 style={styles.vehicleCardTitle}>{vehicle.year} {vehicle.make} {vehicle.model}</h3>
+                                        </div>
+
+                                        <div
+                                            className="mobile-ride-meta"
+                                            onClick={() => router.visit(`/vehicles/${vehicle.id}`)}
+                                        >
+                                            {photoUrl ? (
+                                                <img src={photoUrl} alt={vehicle.make} className="mobile-ride-banner" />
+                                            ) : (
+                                                <div className="mobile-ride-placeholder-banner">
+                                                    {renderVehicleTypeIcon(vehicle.type, 30)}
+                                                </div>
+                                            )}
+
+                                            <div className="mobile-ride-header">
+                                                <h3 className="mobile-ride-title">{vehicle.make} {vehicle.model}</h3>
+                                                <span style={{ ...styles.typeBadge, marginBottom: 0, flexShrink: 0 }}>{vehicle.type}</span>
                                             </div>
-                                            <span style={styles.typeBadge}>{vehicle.type}</span>
-                                            {vehicle.description && <p style={styles.vehicleDesc}>{vehicle.description}</p>}
+
+                                            <div className="mobile-ride-rows">
+                                                <div className="mobile-ride-row">
+                                                    <span className="mobile-ride-label">Year</span>
+                                                    <span className="mobile-ride-val">{vehicle.year || '—'}</span>
+                                                </div>
+                                                <div className="mobile-ride-row">
+                                                    <span className="mobile-ride-label">Description</span>
+                                                    <span className="mobile-ride-val">{vehicle.description || '—'}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={styles.cardActions}>
+                                            <button
+                                                onClick={() => openEditModal(vehicle)}
+                                                style={styles.editCardBtn}
+                                                className="hover-btn"
+                                                type="button"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => promptDeleteVehicle(vehicle)}
+                                                style={styles.deleteCardBtn}
+                                                className="hover-btn"
+                                                type="button"
+                                            >
+                                                Delete
+                                            </button>
                                         </div>
                                     </div>
-
-                                    <div style={styles.cardActions}>
-                                        <button 
-                                            onClick={() => openEditModal(vehicle)} 
-                                            style={styles.editCardBtn}
-                                            className="hover-btn"
-                                            type="button"
-                                        >
-                                            Edit
-                                        </button>
-                                        <button 
-                                            onClick={() => promptDeleteVehicle(vehicle)} 
-                                            style={styles.deleteCardBtn}
-                                            className="hover-btn"
-                                            type="button"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
 
@@ -413,7 +848,8 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 </div>
                                 <span style={styles.badgeUpcoming}>{upcomingAlerts.length}</span>
                             </div>
-                            <div style={styles.alertList}>
+
+                            <div style={styles.alertList} className="desktop-alert-list">
                                 {upcomingAlerts.length === 0 ? (
                                     <p style={styles.emptyAlertText}>No upcoming maintenance due in the next 15 days or 1,000 km.</p>
                                 ) : (
@@ -428,6 +864,31 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                     ))
                                 )}
                             </div>
+
+                            <div className="mobile-alert-card-list">
+                                {upcomingAlerts.length === 0 ? (
+                                    <p style={styles.emptyAlertText}>No upcoming maintenance due in the next 15 days or 1,000 km.</p>
+                                ) : (
+                                    upcomingAlerts.map((item, idx) => (
+                                        <Link key={idx} href={`/vehicles/${item.vehicleId}`} className="mobile-alert-card">
+                                            <div className="mobile-alert-card-top">
+                                                <h4 className="mobile-alert-service-title">{item.serviceName}</h4>
+                                                <span style={styles.badgeUpcoming}>Upcoming</span>
+                                            </div>
+                                            <div className="mobile-alert-rows">
+                                                <div className="mobile-alert-row">
+                                                    <span className="mobile-alert-label">Vehicle</span>
+                                                    <span className="mobile-alert-val">{item.vehicleName}</span>
+                                                </div>
+                                                <div className="mobile-alert-row">
+                                                    <span className="mobile-alert-label">Schedule</span>
+                                                    <span style={styles.triggerTextUpcoming}>{item.triggerText}</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                )}
+                            </div>
                         </div>
 
                         <div style={styles.alertCardPastDue} className="interactive-card page-card-anim">
@@ -438,7 +899,8 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 </div>
                                 <span style={styles.badgePastDue}>{pastDueAlerts.length}</span>
                             </div>
-                            <div style={styles.alertList}>
+
+                            <div style={styles.alertList} className="desktop-alert-list">
                                 {pastDueAlerts.length === 0 ? (
                                     <p style={styles.emptyAlertText}>No past due maintenance records. All up to date!</p>
                                 ) : (
@@ -453,44 +915,134 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                     ))
                                 )}
                             </div>
+
+                            <div className="mobile-alert-card-list">
+                                {pastDueAlerts.length === 0 ? (
+                                    <p style={styles.emptyAlertText}>No past due maintenance records. All up to date!</p>
+                                ) : (
+                                    pastDueAlerts.map((item, idx) => (
+                                        <Link key={idx} href={`/vehicles/${item.vehicleId}`} className="mobile-alert-card">
+                                            <div className="mobile-alert-card-top">
+                                                <h4 className="mobile-alert-service-title">{item.serviceName}</h4>
+                                                <span style={styles.badgePastDue}>Past Due</span>
+                                            </div>
+                                            <div className="mobile-alert-rows">
+                                                <div className="mobile-alert-row">
+                                                    <span className="mobile-alert-label">Vehicle</span>
+                                                    <span className="mobile-alert-val">{item.vehicleName}</span>
+                                                </div>
+                                                <div className="mobile-alert-row">
+                                                    <span className="mobile-alert-label">Schedule</span>
+                                                    <span style={styles.triggerTextPastDue}>{item.triggerText}</span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
-
                 </div>
 
                 {showModal && (
                     <div style={styles.modalOverlay} className="animated-overlay">
-                        <div style={styles.modalBox} className="animated-modal">
+                        <div style={styles.modalBox} className="animated-modal modalBox">
                             <div style={styles.modalHeader}>
                                 <h3 style={styles.modalTitle}>{editingVehicle ? 'Edit Vehicle' : 'Add Vehicle'}</h3>
                                 <button onClick={() => setShowModal(false)} style={styles.closeBtn} type="button">✕</button>
                             </div>
 
-                            <form onSubmit={handleSubmit} style={styles.form}>
+                            <form onSubmit={handleSubmit} style={styles.form} noValidate>
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Vehicle Type *</label>
-                                    <select value={data.type} onChange={e => setData('type', e.target.value)} style={styles.input}>
-                                        <option value="Car">🚗 Car</option>
-                                        <option value="Motorbike">🏍️ Motorbike</option>
-                                    </select>
+                                    <div className="desktop-only-type-select">
+                                        <select
+                                            key={emptyRequiredFields.type ? `type-${shakeKey}` : 'type'}
+                                            className={emptyRequiredFields.type ? 'shake-invalid' : ''}
+                                            value={data.type}
+                                            onChange={e => {
+                                                setData('type', e.target.value);
+                                                if (e.target.value.trim()) clearRequiredError('type');
+                                            }}
+                                            style={{
+                                                ...styles.input,
+                                                borderColor: emptyRequiredFields.type ? '#b3251e' : '#d6ccbb',
+                                            }}
+                                        >
+                                            <option value="Car">Car</option>
+                                            <option value="Motorbike">Motorbike</option>
+                                        </select>
+                                    </div>
+                                    <MobileVehicleTypeDropdown
+                                        value={data.type}
+                                        options={['Car', 'Motorbike']}
+                                        isInvalid={Boolean(emptyRequiredFields.type)}
+                                        shakeKey={shakeKey}
+                                        onChange={(val) => {
+                                            setData('type', val);
+                                            if (String(val || '').trim()) clearRequiredError('type');
+                                        }}
+                                    />
                                 </div>
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Make *</label>
-                                    <input type="text" placeholder="e.g. Toyota" value={data.make} onChange={e => setData('make', e.target.value)} style={styles.input} />
+                                    <input
+                                        key={emptyRequiredFields.make ? `make-${shakeKey}` : 'make'}
+                                        className={emptyRequiredFields.make ? 'shake-invalid' : ''}
+                                        type="text"
+                                        placeholder="e.g. Toyota"
+                                        value={data.make}
+                                        onChange={e => {
+                                            setData('make', e.target.value);
+                                            if (e.target.value.trim()) clearRequiredError('make');
+                                        }}
+                                        style={{
+                                            ...styles.input,
+                                            borderColor: emptyRequiredFields.make ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                    />
                                     {errors.make && <span style={styles.error}>{errors.make}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Model *</label>
-                                    <input type="text" placeholder="e.g. Civic" value={data.model} onChange={e => setData('model', e.target.value)} style={styles.input} />
+                                    <input
+                                        key={emptyRequiredFields.model ? `model-${shakeKey}` : 'model'}
+                                        className={emptyRequiredFields.model ? 'shake-invalid' : ''}
+                                        type="text"
+                                        placeholder="e.g. Civic"
+                                        value={data.model}
+                                        onChange={e => {
+                                            setData('model', e.target.value);
+                                            if (e.target.value.trim()) clearRequiredError('model');
+                                        }}
+                                        style={{
+                                            ...styles.input,
+                                            borderColor: emptyRequiredFields.model ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                    />
                                     {errors.model && <span style={styles.error}>{errors.model}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Year *</label>
-                                    <input type="text" placeholder="e.g. 2022" value={data.year} onChange={e => setData('year', e.target.value)} style={styles.input} />
-                                    {errors.year && <span style={styles.error}>{errors.error}</span>}
+                                    <input
+                                        key={emptyRequiredFields.year ? `year-${shakeKey}` : 'year'}
+                                        className={emptyRequiredFields.year ? 'shake-invalid' : ''}
+                                        type="text"
+                                        placeholder="e.g. 2022"
+                                        value={data.year}
+                                        onChange={e => {
+                                            setData('year', e.target.value);
+                                            if (e.target.value.trim()) clearRequiredError('year');
+                                        }}
+                                        style={{
+                                            ...styles.input,
+                                            borderColor: emptyRequiredFields.year ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                    />
+                                    {errors.year && <span style={styles.error}>{errors.year}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
@@ -502,14 +1054,24 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                     <label style={styles.label}>Photo (Optional - Max 2100 KB)</label>
                                     <div style={styles.uploadBoxWrapper}>
                                         <div style={styles.uploadBox} onClick={() => fileInputRef.current?.click()}>
-                                            <span style={styles.uploadText}>
-                                                {data.photo ? data.photo.name : (editingVehicle?.photo && !removeExistingPhoto) ? 'Current photo attached' : 'Click to upload'}
-                                            </span>
+                                            {data.photo ? (
+                                                <span style={styles.uploadText}>{data.photo.name}</span>
+                                            ) : hasExistingPhoto ? (
+                                                <span style={styles.uploadIconOnly} aria-label="Uploaded photo" title="Uploaded photo">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                                    </svg>
+                                                </span>
+                                            ) : (
+                                                <span style={styles.uploadText}>Click to upload</span>
+                                            )}
                                         </div>
-                                        {((data.photo) || (editingVehicle?.photo && !removeExistingPhoto)) && (
-                                            <button 
-                                                type="button" 
-                                                onClick={handleRemovePhotoClick} 
+                                        {((data.photo) || hasExistingPhoto) && (
+                                            <button
+                                                type="button"
+                                                onClick={handleRemovePhotoClick}
                                                 style={styles.removePhotoBtn}
                                                 className="hover-btn"
                                                 title="Remove photo"
@@ -533,7 +1095,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
 
                 {showDeleteModal && (
                     <div style={styles.modalOverlay} className="animated-overlay">
-                        <div style={styles.modalBox} className="animated-modal">
+                        <div style={styles.modalBox} className="animated-modal modalBox">
                             <div style={styles.modalHeader}>
                                 <h3 style={styles.modalTitle}>Delete Vehicle</h3>
                                 <button onClick={() => setShowDeleteModal(false)} style={styles.closeBtn} type="button">✕</button>
@@ -566,7 +1128,7 @@ const styles = {
     addButton: { backgroundColor: '#1c1c1c', color: '#ede6d8', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
     pageTitle: { fontSize: '26px', fontWeight: '700', color: '#1c1c1c', letterSpacing: '-0.5px', margin: 0 },
     sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#1c1c1c', margin: '4px 0 0 0' },
-    
+
     dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', width: '100%' },
     alertCardUpcoming: {
         backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px',
@@ -578,12 +1140,12 @@ const styles = {
     },
     alertCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     headerTitleGroup: { display: 'flex', alignItems: 'center', gap: '8px' },
-    dotUpcoming: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#b3251e' },
-    dotPastDue: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#1c1c1c' },
+    dotUpcoming: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#eab308' },
+    dotPastDue: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#dc2626' },
     alertCardTitleUpcoming: { fontSize: '14px', fontWeight: '600', color: '#1c1c1c', margin: 0 },
     alertCardTitlePastDue: { fontSize: '14px', fontWeight: '600', color: '#1c1c1c', margin: 0 },
-    badgeUpcoming: { backgroundColor: '#b3251e15', color: '#b3251e', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' },
-    badgePastDue: { backgroundColor: '#1c1c1c15', color: '#1c1c1c', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px' },
+    badgeUpcoming: { backgroundColor: '#eab30824', color: '#854d0e', border: '1px solid #eab30866', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', flexShrink: 0 },
+    badgePastDue: { backgroundColor: '#dc262618', color: '#dc2626', border: '1px solid #dc262644', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', flexShrink: 0 },
     alertList: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '150px', overflowY: 'auto' },
     emptyAlertText: { fontSize: '12px', color: '#6e6962', fontStyle: 'italic', margin: 0, padding: '8px 0' },
     alertRow: {
@@ -594,8 +1156,8 @@ const styles = {
     alertRowLeft: { display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' },
     vehicleNameTag: { fontSize: '11px', fontWeight: '600', color: '#ede6d8', backgroundColor: '#1c1c1c', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 },
     serviceNameText: { fontSize: '12px', color: '#1c1c1c', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
-    triggerTextUpcoming: { fontSize: '11px', color: '#b3251e', fontWeight: '600', flexShrink: 0 },
-    triggerTextPastDue: { fontSize: '11px', color: '#1c1c1c', fontWeight: '600', flexShrink: 0 },
+    triggerTextUpcoming: { fontSize: '11px', color: '#854d0e', backgroundColor: '#eab30824', border: '1px solid #eab30866', padding: '2px 7px', borderRadius: '4px', fontWeight: '700', flexShrink: 0 },
+    triggerTextPastDue: { fontSize: '11px', color: '#dc2626', backgroundColor: '#dc262618', border: '1px solid #dc262644', padding: '2px 7px', borderRadius: '4px', fontWeight: '700', flexShrink: 0 },
 
     vehicleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '16px', paddingBottom: '10px', width: '100%' },
     emptyText: { color: '#6e6962', fontSize: '13px', margin: 0 },
@@ -623,10 +1185,11 @@ const styles = {
     form: { display: 'flex', flexDirection: 'column', gap: '10px' },
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
     label: { color: '#6e6962', fontSize: '11px', fontWeight: '500' },
-    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '6px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%' },
+    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '6px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%', transition: 'border-color 0.2s ease' },
     uploadBoxWrapper: { display: 'flex', gap: '8px', alignItems: 'center' },
-    uploadBox: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box', flex: 1, overflow: 'hidden' },
-    uploadText: { color: '#1c1c1c', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    uploadBox: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box', flex: 1, overflow: 'hidden', minHeight: '32px' },
+    uploadText: { color: '#1c1c1c', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'left' },
+    uploadIconOnly: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 },
     removePhotoBtn: { backgroundColor: '#b3251e15', color: '#b3251e', border: '1px solid #d6ccbb', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', flexShrink: 0 },
     error: { color: '#b3251e', fontSize: '11px' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' },

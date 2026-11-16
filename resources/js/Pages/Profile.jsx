@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useForm, router } from '@inertiajs/react';
 import Sidebar from '@/Components/Sidebar';
 import Breadcrumb from '@/Components/Breadcrumb';
+import Toast from '@/Components/Toast';
 
 export default function Profile({ auth }) {
     const user = auth?.user || {};
@@ -10,6 +11,7 @@ export default function Profile({ auth }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [avatarError, setAvatarError] = useState('');
+    const [toastMessage, setToastMessage] = useState(null);
     const fileInputRef = useRef(null);
 
     const { data, setData, patch, processing, errors, reset } = useForm({
@@ -29,7 +31,10 @@ export default function Profile({ auth }) {
     const handleSave = (e) => {
         e.preventDefault();
         patch('/profile', {
-            onSuccess: () => setIsEditing(false),
+            onSuccess: () => {
+                setIsEditing(false);
+                setToastMessage('Profile updated successfully!');
+            },
         });
     };
 
@@ -58,7 +63,10 @@ export default function Profile({ auth }) {
 
             router.post('/profile/avatar', formData, {
                 forceFormData: true,
-                onSuccess: () => setIsHovered(false),
+                onSuccess: () => {
+                    setIsHovered(false);
+                    setToastMessage('Profile picture updated!');
+                },
             });
         }
     };
@@ -68,14 +76,15 @@ export default function Profile({ auth }) {
             onSuccess: () => {
                 setShowDeleteModal(false);
                 setIsHovered(false);
+                setToastMessage('Profile picture removed.');
             },
         });
     };
 
-    const avatarUrl = user.avatar 
-        ? (user.avatar.startsWith('http://') || user.avatar.startsWith('https://') || user.avatar.startsWith('data:') 
-            ? user.avatar 
-            : `/storage/${user.avatar}`) 
+    const avatarUrl = user.avatar
+        ? (user.avatar.startsWith('http://') || user.avatar.startsWith('https://') || user.avatar.startsWith('data:')
+            ? user.avatar
+            : `/storage/${user.avatar}`)
         : null;
 
     return (
@@ -112,7 +121,7 @@ export default function Profile({ auth }) {
                         flex-direction: column !important;
                     }
                     .mainContent {
-                        padding: 16px !important;
+                        padding: 16px 16px 92px 16px !important;
                     }
                 }
             `}</style>
@@ -120,11 +129,13 @@ export default function Profile({ auth }) {
             <Sidebar activePage="profile" />
 
             <div style={styles.mainContent} className="mainContent">
+                <Toast message={toastMessage} duration={1000} onClose={() => setToastMessage(null)} />
+
                 <Breadcrumb items={[{ label: 'Main', href: '/home' }, { label: 'My Profile' }]} />
 
                 <div style={styles.contentBody}>
                     <div style={styles.profileHeader} className="animated-card">
-                        <div 
+                        <div
                             style={styles.avatarContainer}
                             onMouseEnter={() => setIsHovered(true)}
                             onMouseLeave={() => setIsHovered(false)}

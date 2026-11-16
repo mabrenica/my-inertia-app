@@ -3,15 +3,39 @@ import { useForm, Link } from '@inertiajs/react';
 
 export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
+    const [emptyRequiredFields, setEmptyRequiredFields] = useState({});
+    const [shakeKey, setShakeKey] = useState(0);
+
     const { data, setData, post, processing, errors } = useForm({
         email: '',
         password: '',
     });
 
+    const clearRequiredError = (field) => {
+        setEmptyRequiredFields((prev) => {
+            if (!prev[field]) return prev;
+            const next = { ...prev };
+            delete next[field];
+            return next;
+        });
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
+        const missing = {};
+        if (!data.email.trim()) missing.email = true;
+        if (!data.password.trim()) missing.password = true;
+
+        setEmptyRequiredFields(missing);
+        if (Object.keys(missing).length > 0) {
+            setShakeKey((k) => k + 1);
+            return;
+        }
+
         post('/login');
     };
+
+    const isFieldInvalid = (field) => Boolean(emptyRequiredFields[field] || errors[field]);
 
     return (
         <div style={styles.page}>
@@ -20,8 +44,18 @@ export default function Login() {
                     from { opacity: 0; transform: translateY(20px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
+                @keyframes fieldShake {
+                    0%, 100% { transform: translateX(0); }
+                    20% { transform: translateX(-5px); }
+                    40% { transform: translateX(5px); }
+                    60% { transform: translateX(-4px); }
+                    80% { transform: translateX(4px); }
+                }
                 .animated-card {
                     animation: cardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .shake-invalid {
+                    animation: fieldShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
                 }
                 .hover-btn {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -57,20 +91,26 @@ export default function Login() {
                             Don't have an account? <Link href="/create-account" style={styles.link}>Create an account</Link>
                         </p>
 
-                        <form onSubmit={handleSubmit} style={styles.form}>
+                        <form onSubmit={handleSubmit} style={styles.form} noValidate>
                             <div style={styles.inputContainer}>
                                 <label style={styles.label}>Email</label>
-                                <div style={{
-                                    ...styles.inputWrapper,
-                                    borderColor: errors.email ? '#b3251e' : '#d6ccbb'
-                                }}>
-                                    <input 
-                                        type="email" 
+                                <div
+                                    key={emptyRequiredFields.email ? `email-${shakeKey}` : 'email'}
+                                    className={emptyRequiredFields.email ? 'shake-invalid' : ''}
+                                    style={{
+                                        ...styles.inputWrapper,
+                                        borderColor: isFieldInvalid('email') ? '#b3251e' : '#d6ccbb'
+                                    }}
+                                >
+                                    <input
+                                        type="email"
                                         value={data.email}
-                                        onChange={e => setData('email', e.target.value)}
+                                        onChange={e => {
+                                            setData('email', e.target.value);
+                                            if (e.target.value.trim()) clearRequiredError('email');
+                                        }}
                                         placeholder="name@example.com"
                                         style={styles.input}
-                                        required
                                     />
                                     <svg style={styles.icon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -81,23 +121,29 @@ export default function Login() {
 
                             <div style={styles.inputContainer}>
                                 <label style={styles.label}>Password</label>
-                                <div style={{
-                                    ...styles.inputWrapper,
-                                    borderColor: errors.password ? '#b3251e' : '#d6ccbb'
-                                }}>
-                                    <input 
-                                        type={showPassword ? 'text' : 'password'} 
+                                <div
+                                    key={emptyRequiredFields.password ? `password-${shakeKey}` : 'password'}
+                                    className={emptyRequiredFields.password ? 'shake-invalid' : ''}
+                                    style={{
+                                        ...styles.inputWrapper,
+                                        borderColor: isFieldInvalid('password') ? '#b3251e' : '#d6ccbb'
+                                    }}
+                                >
+                                    <input
+                                        type={showPassword ? 'text' : 'password'}
                                         value={data.password}
-                                        onChange={e => setData('password', e.target.value)}
+                                        onChange={e => {
+                                            setData('password', e.target.value);
+                                            if (e.target.value.trim()) clearRequiredError('password');
+                                        }}
                                         placeholder="••••••••"
                                         style={styles.input}
-                                        required
                                     />
-                                    <svg 
+                                    <svg
                                         onClick={() => setShowPassword(!showPassword)}
-                                        style={styles.eyeIcon} 
-                                        fill="none" 
-                                        viewBox="0 0 24 24" 
+                                        style={styles.eyeIcon}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
                                         stroke="currentColor"
                                     >
                                         {showPassword ? (
@@ -111,8 +157,8 @@ export default function Login() {
                             </div>
 
                             <div style={styles.buttonGroup}>
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     disabled={processing}
                                     className="hover-btn"
                                     style={{

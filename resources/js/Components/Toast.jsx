@@ -1,60 +1,73 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
-export default function Toast({ message, duration = 2000, onClose }) {
-    const [visible, setVisible] = useState(true);
-
+export default function Toast({ message, duration = 1000, onClose }) {
     useEffect(() => {
         if (!message) return;
-        setVisible(true);
-
         const timer = setTimeout(() => {
-            setVisible(false);
             if (onClose) onClose();
         }, duration);
-
         return () => clearTimeout(timer);
     }, [message, duration, onClose]);
 
-    if (!message || !visible) return null;
+    if (!message) return null;
 
     return (
         <>
             <style>{`
-                @keyframes slideDownFade {
-                    from { opacity: 0; transform: translateY(-16px) scale(0.96); }
-                    to { opacity: 1; transform: translateY(0) scale(1); }
+                @keyframes toastSlideDown {
+                    from { opacity: 0; transform: translate(-50%, -14px) scale(0.96); }
+                    to { opacity: 1; transform: translate(-50%, 0) scale(1); }
                 }
-                .animated-toast {
-                    animation: slideDownFade 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                .fleetflow-toast {
+                    position: fixed;
+                    top: 24px;
+                    left: 50%;
+                    transform: translate(-50%, 0);
+                    z-index: 1200;
+                    background-color: #1c1c1c;
+                    color: #ede6d8;
+                    border: 1px solid #2e2e2e;
+                    border-left: 3px solid #b3251e;
+                    border-radius: 10px;
+                    padding: 12px 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    text-align: center;
+                    gap: 10px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    box-shadow: 0 12px 28px rgba(28, 28, 28, 0.22);
+                    width: max-content;
+                    max-width: calc(100vw - 48px);
+                    box-sizing: border-box;
+                    animation: toastSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                @media (max-width: 768px) {
+                    .fleetflow-toast {
+                        top: 16px;
+                        max-width: calc(100vw - 32px);
+                    }
                 }
             `}</style>
-            <div style={styles.toast} className="animated-toast">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b3251e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
+
+            <div role="status" aria-live="polite" className="fleetflow-toast">
+                <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#b3251e"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ flexShrink: 0 }}
+                >
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
                 <span>{message}</span>
             </div>
         </>
     );
 }
-
-const styles = {
-    toast: {
-        position: 'fixed',
-        top: '24px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        backgroundColor: '#1c1c1c',
-        border: '1px solid #b3251e',
-        color: '#ede6d8',
-        padding: '10px 16px',
-        borderRadius: '8px',
-        fontSize: '13px',
-        fontWeight: '500',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
-        zIndex: 9999,
-    },
-};
