@@ -147,6 +147,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
         interval_days: '',
         interval_odo: '',
     });
+    const [emptyNameError, setEmptyNameError] = useState(false);
+    const [shakeKey, setShakeKey] = useState(0);
 
     useEffect(() => {
         const handleOutsideClick = (e) => {
@@ -188,6 +190,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
     const openModal = (type, e) => {
         if (e) e.stopPropagation();
         setTooltipOpen(false);
+        setEmptyNameError(false);
         setActiveModal(type);
         const currentList = type === 'car' ? carServices : motoServices;
         setTempServices(currentList.map(item => ({
@@ -200,6 +203,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
     const closeModal = () => {
         setTooltipOpen(false);
+        setEmptyNameError(false);
         setActiveModal(null);
         setTempServices([]);
         setNewItem({ name: '', interval_days: '', interval_odo: '' });
@@ -207,8 +211,13 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
     const handleAddItem = (e) => {
         e.preventDefault();
-        if (!newItem.name.trim()) return;
+        if (!newItem.name.trim()) {
+            setEmptyNameError(true);
+            setShakeKey((k) => k + 1);
+            return;
+        }
 
+        setEmptyNameError(false);
         setTempServices([
             ...tempServices,
             {
@@ -261,7 +270,6 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
         return (
             <>
-                {/* Desktop List View */}
                 <div style={styles.verticalList} className="desktop-service-list">
                     {list.map((item) => (
                         <div key={item.id} style={styles.verticalItem} className="hover-list-item">
@@ -274,7 +282,6 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     ))}
                 </div>
 
-                {/* Mobile Card View */}
                 <div className="mobile-service-card-list">
                     {list.map((item) => (
                         <div key={item.id} className="mobile-service-card">
@@ -325,6 +332,13 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     from { opacity: 0; transform: translateY(12px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
+                @keyframes fieldShake {
+                    0%, 100% { transform: translateX(0); }
+                    20% { transform: translateX(-5px); }
+                    40% { transform: translateX(5px); }
+                    60% { transform: translateX(-4px); }
+                    80% { transform: translateX(4px); }
+                }
                 .animated-modal {
                     animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
@@ -333,6 +347,9 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 }
                 .page-card-anim {
                     animation: staggerFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .shake-invalid {
+                    animation: fieldShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
                 }
                 .interactive-card {
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -751,14 +768,23 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 <button onClick={closeModal} style={styles.closeBtn} type="button">✕</button>
                             </div>
 
-                            <form onSubmit={handleAddItem} style={styles.addItemForm}>
+                            <form onSubmit={handleAddItem} style={styles.addItemForm} noValidate>
                                 <div style={styles.formRow} className="formRow">
                                     <input
-                                        type="text" value={newItem.name}
-                                        onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                                        key={emptyNameError ? `svc-name-${shakeKey}` : 'svc-name'}
+                                        type="text"
+                                        value={newItem.name}
+                                        onChange={(e) => {
+                                            setNewItem({ ...newItem, name: e.target.value });
+                                            if (e.target.value.trim()) setEmptyNameError(false);
+                                        }}
                                         placeholder="Service name (e.g. Oil Change)"
-                                        style={{ ...styles.modalInput, flex: 2 }}
-                                        className="modalInput"
+                                        style={{
+                                            ...styles.modalInput,
+                                            flex: 2,
+                                            borderColor: emptyNameError ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                        className={`modalInput ${emptyNameError ? 'shake-invalid' : ''}`}
                                     />
                                     <input
                                         type="text" value={newItem.interval_days}
@@ -791,7 +817,6 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 <span style={{ width: '28px' }}></span>
                             </div>
 
-                            {/* Desktop Modal List */}
                             <div style={styles.modalListContainer} className="desktop-modal-list">
                                 {tempServices.length === 0 ? (
                                     <p style={styles.modalEmptyText}>No items added yet. You can save to clear the list.</p>
@@ -833,7 +858,6 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 )}
                             </div>
 
-                            {/* Mobile Modal Card List */}
                             <div className="mobile-modal-card-list">
                                 {tempServices.length === 0 ? (
                                     <p style={styles.modalEmptyText}>No items added yet. You can save to clear the list.</p>
@@ -952,7 +976,7 @@ const styles = {
     closeBtn: { background: 'none', border: 'none', color: '#6e6962', fontSize: '16px', cursor: 'pointer' },
     addItemForm: { display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' },
     formRow: { display: 'flex', gap: '8px', width: '100%', alignItems: 'center', boxSizing: 'border-box', flexWrap: 'wrap' },
-    modalInput: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', minWidth: '100px' },
+    modalInput: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', minWidth: '100px', transition: 'border-color 0.2s ease' },
     modalAddBtn: { backgroundColor: '#1c1c1c', color: '#ede6d8', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 },
     modalListHeader: { display: 'flex', gap: '8px', padding: '0 8px', color: '#6e6962', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', boxSizing: 'border-box' },
     modalListContainer: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '260px', overflowY: 'auto', paddingRight: '4px', boxSizing: 'border-box' },

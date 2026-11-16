@@ -10,6 +10,8 @@ function MobileSelectDropdown({
     placeholder = 'Select option',
     multiple = false,
     onChange,
+    isInvalid = false,
+    shakeKey = 0,
 }) {
     const [open, setOpen] = useState(false);
     const containerRef = useRef(null);
@@ -56,8 +58,10 @@ function MobileSelectDropdown({
     return (
         <div ref={containerRef} className={`ref-mobile-select ${open ? 'is-open' : ''}`}>
             <button
+                key={isInvalid ? `mobile-sel-${shakeKey}` : 'mobile-sel'}
                 type="button"
-                className={`ref-mobile-select-trigger ${open ? 'is-focused' : ''}`}
+                className={`ref-mobile-select-trigger ${open ? 'is-focused' : ''} ${isInvalid ? 'shake-invalid' : ''}`}
+                style={isInvalid ? { borderColor: '#b3251e' } : undefined}
                 onClick={() => setOpen((prev) => !prev)}
                 aria-expanded={open}
             >
@@ -149,10 +153,35 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         cost: '',
         notes: '',
     });
+    const [inlineEmptyFields, setInlineEmptyFields] = useState({});
 
     const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [showOdoModal, setShowOdoModal] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
+
+    const [odoEmptyError, setOdoEmptyError] = useState(false);
+    const [logEmptyFields, setLogEmptyFields] = useState({});
+    const [shakeKey, setShakeKey] = useState(0);
+
+    const triggerShake = () => setShakeKey((k) => k + 1);
+
+    const clearLogEmptyError = (field) => {
+        setLogEmptyFields((prev) => {
+            if (!prev[field]) return prev;
+            const next = { ...prev };
+            delete next[field];
+            return next;
+        });
+    };
+
+    const clearInlineEmptyError = (field) => {
+        setInlineEmptyFields((prev) => {
+            if (!prev[field]) return prev;
+            const next = { ...prev };
+            delete next[field];
+            return next;
+        });
+    };
 
     const { data: odoData, setData: setOdoData, put: putOdo, processing: odoProcessing, errors: odoErrors, reset: resetOdo, clearErrors: clearOdoErrors } = useForm({
         current_odo: vehicle.current_odo || '',
@@ -160,17 +189,25 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const openOdoModal = () => {
         clearOdoErrors();
+        setOdoEmptyError(false);
         setOdoData('current_odo', vehicle.current_odo || '');
         setShowOdoModal(true);
     };
 
     const closeOdoModal = () => {
         setShowOdoModal(false);
+        setOdoEmptyError(false);
         resetOdo();
     };
 
     const handleUpdateOdo = (e) => {
         e.preventDefault();
+        if (!String(odoData.current_odo ?? '').trim()) {
+            setOdoEmptyError(true);
+            triggerShake();
+            return;
+        }
+        setOdoEmptyError(false);
         putOdo(`/vehicles/${vehicle.id}/odo`, {
             preserveScroll: true,
             onSuccess: () => {
@@ -214,6 +251,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const openCreateModal = () => {
         clearErrors();
+        setLogEmptyFields({});
         setData({
             services: [],
             odo: '',
@@ -226,10 +264,12 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const closeModal = () => {
         setShowLogModal(false);
+        setLogEmptyFields({});
         reset();
     };
 
     const startEditingRow = (log) => {
+        setInlineEmptyFields({});
         setEditingLogId(log.id);
         const currentService = (log.services && log.services.length > 0) ? log.services[0] : (servicePreferences[0]?.name || '');
         setInlineData({
@@ -242,10 +282,22 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     };
 
     const cancelEditingRow = () => {
+        setInlineEmptyFields({});
         setEditingLogId(null);
     };
 
     const saveEditingRow = (logId) => {
+        const missing = {};
+        if (!String(inlineData.date || '').trim()) missing.date = true;
+        if (!String(inlineData.services || '').trim()) missing.services = true;
+        if (!String(inlineData.odo ?? '').trim()) missing.odo = true;
+
+        setInlineEmptyFields(missing);
+        if (Object.keys(missing).length > 0) {
+            triggerShake();
+            return;
+        }
+
         router.put(`/maintenance-logs/${logId}`, {
             services: [inlineData.services],
             odo: inlineData.odo,
@@ -255,6 +307,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         }, {
             preserveScroll: true,
             onSuccess: () => {
+                setInlineEmptyFields({});
                 setEditingLogId(null);
                 setToastMessage('Maintenance log updated successfully!');
             },
@@ -280,15 +333,28 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     };
 
     const handleServiceToggle = (serviceName) => {
-        if (data.services.includes(serviceName)) {
-            setData('services', data.services.filter(s => s !== serviceName));
-        } else {
-            setData('services', [...data.services, serviceName]);
+        const nextServices = data.services.includes(serviceName)
+            ? data.services.filter(s => s !== serviceName)
+            : [...data.services, serviceName];
+        setData('services', nextServices);
+        if (nextServices.length > 0) {
+            clearLogEmptyError('services');
         }
     };
 
     const handleSubmitLog = (e) => {
         e.preventDefault();
+        const missing = {};
+        if (!Array.isArray(data.services) || data.services.length === 0) missing.services = true;
+        if (!String(data.odo ?? '').trim()) missing.odo = true;
+        if (!String(data.date || '').trim()) missing.date = true;
+
+        setLogEmptyFields(missing);
+        if (Object.keys(missing).length > 0) {
+            triggerShake();
+            return;
+        }
+
         post(`/vehicles/${vehicle.id}/maintenance-logs`, {
             preserveScroll: true,
             onSuccess: () => {
@@ -436,6 +502,13 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     from { opacity: 0; transform: translateY(12px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
+                @keyframes fieldShake {
+                    0%, 100% { transform: translateX(0); }
+                    20% { transform: translateX(-5px); }
+                    40% { transform: translateX(5px); }
+                    60% { transform: translateX(-4px); }
+                    80% { transform: translateX(4px); }
+                }
                 .animated-modal {
                     animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
@@ -444,6 +517,9 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                 }
                 .page-card-anim {
                     animation: staggerFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .shake-invalid {
+                    animation: fieldShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
                 }
                 .interactive-card {
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1150,14 +1226,39 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             <tr key={log.id} style={styles.tableBodyRow} className="hover-table-row">
                                                 <td style={styles.td}>
                                                     {isEditing ? (
-                                                        <input type="date" value={inlineData.date} onChange={e => setInlineData({ ...inlineData, date: e.target.value })} style={styles.inlineInput} />
+                                                        <input
+                                                            key={inlineEmptyFields.date ? `tbl-date-${log.id}-${shakeKey}` : `tbl-date-${log.id}`}
+                                                            type="date"
+                                                            value={inlineData.date}
+                                                            onChange={e => {
+                                                                setInlineData({ ...inlineData, date: e.target.value });
+                                                                if (e.target.value.trim()) clearInlineEmptyError('date');
+                                                            }}
+                                                            className={inlineEmptyFields.date ? 'shake-invalid' : ''}
+                                                            style={{
+                                                                ...styles.inlineInput,
+                                                                borderColor: inlineEmptyFields.date ? '#b3251e' : '#d6ccbb',
+                                                            }}
+                                                        />
                                                     ) : (
                                                         formatDateToReadable(log.date)
                                                     )}
                                                 </td>
                                                 <td style={styles.td}>
                                                     {isEditing ? (
-                                                        <select value={inlineData.services} onChange={e => setInlineData({ ...inlineData, services: e.target.value })} style={styles.inlineSelect}>
+                                                        <select
+                                                            key={inlineEmptyFields.services ? `tbl-svc-${log.id}-${shakeKey}` : `tbl-svc-${log.id}`}
+                                                            value={inlineData.services}
+                                                            onChange={e => {
+                                                                setInlineData({ ...inlineData, services: e.target.value });
+                                                                if (e.target.value.trim()) clearInlineEmptyError('services');
+                                                            }}
+                                                            className={inlineEmptyFields.services ? 'shake-invalid' : ''}
+                                                            style={{
+                                                                ...styles.inlineSelect,
+                                                                borderColor: inlineEmptyFields.services ? '#b3251e' : '#d6ccbb',
+                                                            }}
+                                                        >
                                                             {servicePreferences.map((srv, i) => (
                                                                 <option key={i} value={srv.name}>{srv.name}</option>
                                                             ))}
@@ -1172,10 +1273,23 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                 </td>
                                                 <td style={styles.td}>
                                                     {isEditing ? (
-                                                        <input type="text" value={inlineData.odo} onChange={e => {
-                                                            const val = e.target.value;
-                                                            if (/^\d*$/.test(val)) setInlineData({ ...inlineData, odo: val });
-                                                        }} style={styles.inlineInput} />
+                                                        <input
+                                                            key={inlineEmptyFields.odo ? `tbl-odo-${log.id}-${shakeKey}` : `tbl-odo-${log.id}`}
+                                                            type="text"
+                                                            value={inlineData.odo}
+                                                            onChange={e => {
+                                                                const val = e.target.value;
+                                                                if (/^\d*$/.test(val)) {
+                                                                    setInlineData({ ...inlineData, odo: val });
+                                                                    if (val.trim()) clearInlineEmptyError('odo');
+                                                                }
+                                                            }}
+                                                            className={inlineEmptyFields.odo ? 'shake-invalid' : ''}
+                                                            style={{
+                                                                ...styles.inlineInput,
+                                                                borderColor: inlineEmptyFields.odo ? '#b3251e' : '#d6ccbb',
+                                                            }}
+                                                        />
                                                     ) : (
                                                         log.odo
                                                     )}
@@ -1249,10 +1363,18 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                 <div className="mobile-edit-field">
                                                     <span className="mobile-edit-label">Date</span>
                                                     <input
+                                                        key={inlineEmptyFields.date ? `mob-date-${log.id}-${shakeKey}` : `mob-date-${log.id}`}
                                                         type="date"
                                                         value={inlineData.date}
-                                                        onChange={e => setInlineData({ ...inlineData, date: e.target.value })}
-                                                        style={styles.inlineInput}
+                                                        onChange={e => {
+                                                            setInlineData({ ...inlineData, date: e.target.value });
+                                                            if (e.target.value.trim()) clearInlineEmptyError('date');
+                                                        }}
+                                                        className={inlineEmptyFields.date ? 'shake-invalid' : ''}
+                                                        style={{
+                                                            ...styles.inlineInput,
+                                                            borderColor: inlineEmptyFields.date ? '#b3251e' : '#d6ccbb',
+                                                        }}
                                                     />
                                                 </div>
                                                 <div className="mobile-edit-field">
@@ -1260,8 +1382,14 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                     <div className="desktop-only-select">
                                                         <select
                                                             value={inlineData.services}
-                                                            onChange={e => setInlineData({ ...inlineData, services: e.target.value })}
-                                                            style={styles.inlineSelect}
+                                                            onChange={e => {
+                                                                setInlineData({ ...inlineData, services: e.target.value });
+                                                                if (e.target.value.trim()) clearInlineEmptyError('services');
+                                                            }}
+                                                            style={{
+                                                                ...styles.inlineSelect,
+                                                                borderColor: inlineEmptyFields.services ? '#b3251e' : '#d6ccbb',
+                                                            }}
                                                         >
                                                             {servicePreferences.map((srv, i) => (
                                                                 <option key={i} value={srv.name}>{srv.name}</option>
@@ -1272,19 +1400,32 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                         value={inlineData.services}
                                                         options={serviceOptions}
                                                         placeholder="Select service"
-                                                        onChange={(val) => setInlineData({ ...inlineData, services: val })}
+                                                        isInvalid={Boolean(inlineEmptyFields.services)}
+                                                        shakeKey={shakeKey}
+                                                        onChange={(val) => {
+                                                            setInlineData({ ...inlineData, services: val });
+                                                            if (String(val || '').trim()) clearInlineEmptyError('services');
+                                                        }}
                                                     />
                                                 </div>
                                                 <div className="mobile-edit-field">
                                                     <span className="mobile-edit-label">ODO</span>
                                                     <input
+                                                        key={inlineEmptyFields.odo ? `mob-odo-${log.id}-${shakeKey}` : `mob-odo-${log.id}`}
                                                         type="text"
                                                         value={inlineData.odo}
                                                         onChange={e => {
                                                             const val = e.target.value;
-                                                            if (/^\d*$/.test(val)) setInlineData({ ...inlineData, odo: val });
+                                                            if (/^\d*$/.test(val)) {
+                                                                setInlineData({ ...inlineData, odo: val });
+                                                                if (val.trim()) clearInlineEmptyError('odo');
+                                                            }
                                                         }}
-                                                        style={styles.inlineInput}
+                                                        className={inlineEmptyFields.odo ? 'shake-invalid' : ''}
+                                                        style={{
+                                                            ...styles.inlineInput,
+                                                            borderColor: inlineEmptyFields.odo ? '#b3251e' : '#d6ccbb',
+                                                        }}
                                                     />
                                                 </div>
                                                 <div className="mobile-edit-field">
@@ -1372,16 +1513,27 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 <h3 style={styles.modalTitle}>Update Current ODO</h3>
                                 <button onClick={closeOdoModal} style={styles.closeBtn} type="button">✕</button>
                             </div>
-                            <form onSubmit={handleUpdateOdo} style={styles.form}>
+                            <form onSubmit={handleUpdateOdo} style={styles.form} noValidate>
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Current Odometer (km/miles) *</label>
                                     <input
-                                        type="text" placeholder="e.g. 15500" value={odoData.current_odo}
+                                        key={odoEmptyError ? `odo-${shakeKey}` : 'odo'}
+                                        type="text"
+                                        placeholder="e.g. 15500"
+                                        value={odoData.current_odo}
                                         onChange={e => {
                                             const val = e.target.value;
-                                            if (/^\d*$/.test(val)) setOdoData('current_odo', val);
+                                            if (/^\d*$/.test(val)) {
+                                                setOdoData('current_odo', val);
+                                                if (val.trim()) setOdoEmptyError(false);
+                                            }
                                         }}
-                                        style={styles.input} required autoFocus
+                                        className={odoEmptyError ? 'shake-invalid' : ''}
+                                        style={{
+                                            ...styles.input,
+                                            borderColor: odoEmptyError ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                        autoFocus
                                     />
                                     {odoErrors.current_odo && <span style={styles.errorText}>{odoErrors.current_odo}</span>}
                                 </div>
@@ -1401,10 +1553,17 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 <h3 style={styles.modalTitle}>Add Maintenance Log</h3>
                                 <button onClick={closeModal} style={styles.closeBtn} type="button">✕</button>
                             </div>
-                            <form onSubmit={handleSubmitLog} style={styles.form}>
+                            <form onSubmit={handleSubmitLog} style={styles.form} noValidate>
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Services Done * (Select one or more)</label>
-                                    <div style={styles.checkboxContainer} className="desktop-only-services">
+                                    <div
+                                        key={logEmptyFields.services ? `log-svc-${shakeKey}` : 'log-svc'}
+                                        style={{
+                                            ...styles.checkboxContainer,
+                                            borderColor: logEmptyFields.services ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                        className={`desktop-only-services ${logEmptyFields.services ? 'shake-invalid' : ''}`}
+                                    >
                                         {servicePreferences.length === 0 ? (
                                             <span style={styles.noServiceText}>No services configured in settings.</span>
                                         ) : (
@@ -1421,7 +1580,12 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         options={serviceOptions}
                                         placeholder="Select services"
                                         multiple={true}
-                                        onChange={(updatedServices) => setData('services', updatedServices)}
+                                        isInvalid={Boolean(logEmptyFields.services)}
+                                        shakeKey={shakeKey}
+                                        onChange={(updatedServices) => {
+                                            setData('services', updatedServices);
+                                            if (updatedServices.length > 0) clearLogEmptyError('services');
+                                        }}
                                     />
                                     {errors.services && <span style={styles.errorText}>{errors.services}</span>}
                                 </div>
@@ -1429,19 +1593,42 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Odometer (ODO) (miles/km) *</label>
                                     <input
-                                        type="text" placeholder="e.g. 45000" value={data.odo}
+                                        key={logEmptyFields.odo ? `log-odo-${shakeKey}` : 'log-odo'}
+                                        type="text"
+                                        placeholder="e.g. 45000"
+                                        value={data.odo}
                                         onChange={e => {
                                             const val = e.target.value;
-                                            if (/^\d*$/.test(val)) setData('odo', val);
+                                            if (/^\d*$/.test(val)) {
+                                                setData('odo', val);
+                                                if (val.trim()) clearLogEmptyError('odo');
+                                            }
                                         }}
-                                        style={styles.input} required
+                                        className={logEmptyFields.odo ? 'shake-invalid' : ''}
+                                        style={{
+                                            ...styles.input,
+                                            borderColor: logEmptyFields.odo ? '#b3251e' : '#d6ccbb',
+                                        }}
                                     />
                                     {errors.odo && <span style={styles.errorText}>{errors.odo}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Date *</label>
-                                    <input type="date" value={data.date} onChange={e => setData('date', e.target.value)} style={styles.input} required />
+                                    <input
+                                        key={logEmptyFields.date ? `log-date-${shakeKey}` : 'log-date'}
+                                        type="date"
+                                        value={data.date}
+                                        onChange={e => {
+                                            setData('date', e.target.value);
+                                            if (e.target.value.trim()) clearLogEmptyError('date');
+                                        }}
+                                        className={logEmptyFields.date ? 'shake-invalid' : ''}
+                                        style={{
+                                            ...styles.input,
+                                            borderColor: logEmptyFields.date ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                    />
                                     {errors.date && <span style={styles.errorText}>{errors.date}</span>}
                                 </div>
 
@@ -1581,8 +1768,8 @@ const styles = {
     serviceBadgeList: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
     serviceBadge: { backgroundColor: '#1c1c1c10', color: '#1c1c1c', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700' },
 
-    inlineInput: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '4px', padding: '5px 8px', color: '#1c1c1c', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
-    inlineSelect: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '4px', padding: '5px 8px', color: '#1c1c1c', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
+    inlineInput: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '4px', padding: '5px 8px', color: '#1c1c1c', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.2s ease' },
+    inlineSelect: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '4px', padding: '5px 8px', color: '#1c1c1c', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.2s ease' },
 
     rowActions: { display: 'flex', justifyContent: 'flex-end', gap: '6px', alignItems: 'center' },
     iconBtnEdit: { backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
@@ -1604,8 +1791,8 @@ const styles = {
     form: { display: 'flex', flexDirection: 'column', gap: '12px' },
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
     label: { color: '#6e6962', fontSize: '11px', fontWeight: '500' },
-    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%' },
-    checkboxContainer: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '140px', overflowY: 'auto' },
+    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%', transition: 'border-color 0.2s ease' },
+    checkboxContainer: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '140px', overflowY: 'auto', transition: 'border-color 0.2s ease' },
     checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', color: '#1c1c1c', fontSize: '12px', cursor: 'pointer' },
     checkboxInput: { accentColor: '#b3251e', width: '14px', height: '14px', cursor: 'pointer' },
     noServiceText: { color: '#6e6962', fontSize: '12px', fontStyle: 'italic', textAlign: 'center' },

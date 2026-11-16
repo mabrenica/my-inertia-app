@@ -45,7 +45,7 @@ function MinimalTypeIcon({ type, size = 16 }) {
     );
 }
 
-function MobileVehicleTypeDropdown({ value, options = ['Car', 'Motorbike'], onChange }) {
+function MobileVehicleTypeDropdown({ value, options = ['Car', 'Motorbike'], onChange, isInvalid = false, shakeKey = 0 }) {
     const [open, setOpen] = useState(false);
     const containerRef = useRef(null);
 
@@ -66,8 +66,10 @@ function MobileVehicleTypeDropdown({ value, options = ['Car', 'Motorbike'], onCh
     return (
         <div ref={containerRef} className={`home-mobile-type-select ${open ? 'is-open' : ''}`}>
             <button
+                key={isInvalid ? `mobile-type-${shakeKey}` : 'mobile-type'}
                 type="button"
-                className={`home-mobile-type-trigger ${open ? 'is-focused' : ''}`}
+                className={`home-mobile-type-trigger ${open ? 'is-focused' : ''} ${isInvalid ? 'shake-invalid' : ''}`}
+                style={isInvalid ? { borderColor: '#b3251e' } : undefined}
                 onClick={() => setOpen((prev) => !prev)}
                 aria-expanded={open}
             >
@@ -144,6 +146,8 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     const [showModal, setShowModal] = useState(false);
     const [editingVehicle, setEditingVehicle] = useState(null);
     const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
+    const [emptyRequiredFields, setEmptyRequiredFields] = useState({});
+    const [shakeKey, setShakeKey] = useState(0);
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [vehicleToDelete, setVehicleToDelete] = useState(null);
@@ -166,6 +170,15 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         description: '',
         photo: null,
     });
+
+    const clearRequiredError = (field) => {
+        setEmptyRequiredFields((prev) => {
+            if (!prev[field]) return prev;
+            const next = { ...prev };
+            delete next[field];
+            return next;
+        });
+    };
 
     const getPhilippineToday = () => {
         const options = { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -285,6 +298,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     const openCreateModal = () => {
         setEditingVehicle(null);
         setRemoveExistingPhoto(false);
+        setEmptyRequiredFields({});
         clearErrors();
         setData({
             type: 'Car',
@@ -300,6 +314,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     const openEditModal = (vehicle) => {
         setEditingVehicle(vehicle);
         setRemoveExistingPhoto(false);
+        setEmptyRequiredFields({});
         clearErrors();
         setData({
             type: vehicle.type || 'Car',
@@ -354,6 +369,18 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         clearErrors('photo');
+
+        const missing = {};
+        if (!String(data.type || '').trim()) missing.type = true;
+        if (!String(data.make || '').trim()) missing.make = true;
+        if (!String(data.model || '').trim()) missing.model = true;
+        if (!String(data.year || '').trim()) missing.year = true;
+
+        setEmptyRequiredFields(missing);
+        if (Object.keys(missing).length > 0) {
+            setShakeKey((k) => k + 1);
+            return;
+        }
 
         if (data.photo) {
             const maxSizeInBytes = 2100 * 1024;
@@ -410,6 +437,13 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                     from { opacity: 0; transform: translateY(12px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
+                @keyframes fieldShake {
+                    0%, 100% { transform: translateX(0); }
+                    20% { transform: translateX(-5px); }
+                    40% { transform: translateX(5px); }
+                    60% { transform: translateX(-4px); }
+                    80% { transform: translateX(4px); }
+                }
                 .animated-modal {
                     animation: slideUpFade 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
@@ -418,6 +452,9 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                 }
                 .page-card-anim {
                     animation: staggerFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .shake-invalid {
+                    animation: fieldShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
                 }
                 .interactive-card {
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -727,7 +764,6 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 const photoUrl = getVehiclePhotoUrl(vehicle.photo);
                                 return (
                                     <div key={vehicle.id} style={styles.vehicleCard} className="interactive-card page-card-anim">
-                                        {/* Desktop Ride Card Content */}
                                         <div
                                             style={styles.cardContentClickable}
                                             className="desktop-ride-content"
@@ -749,7 +785,6 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                             </div>
                                         </div>
 
-                                        {/* Mobile Structured Ride Card */}
                                         <div
                                             className="mobile-ride-meta"
                                             onClick={() => router.visit(`/vehicles/${vehicle.id}`)}
@@ -814,7 +849,6 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 <span style={styles.badgeUpcoming}>{upcomingAlerts.length}</span>
                             </div>
 
-                            {/* Desktop Alert List */}
                             <div style={styles.alertList} className="desktop-alert-list">
                                 {upcomingAlerts.length === 0 ? (
                                     <p style={styles.emptyAlertText}>No upcoming maintenance due in the next 15 days or 1,000 km.</p>
@@ -831,7 +865,6 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 )}
                             </div>
 
-                            {/* Mobile Alert Card List */}
                             <div className="mobile-alert-card-list">
                                 {upcomingAlerts.length === 0 ? (
                                     <p style={styles.emptyAlertText}>No upcoming maintenance due in the next 15 days or 1,000 km.</p>
@@ -867,7 +900,6 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 <span style={styles.badgePastDue}>{pastDueAlerts.length}</span>
                             </div>
 
-                            {/* Desktop Alert List */}
                             <div style={styles.alertList} className="desktop-alert-list">
                                 {pastDueAlerts.length === 0 ? (
                                     <p style={styles.emptyAlertText}>No past due maintenance records. All up to date!</p>
@@ -884,7 +916,6 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 )}
                             </div>
 
-                            {/* Mobile Alert Card List */}
                             <div className="mobile-alert-card-list">
                                 {pastDueAlerts.length === 0 ? (
                                     <p style={styles.emptyAlertText}>No past due maintenance records. All up to date!</p>
@@ -921,11 +952,23 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 <button onClick={() => setShowModal(false)} style={styles.closeBtn} type="button">✕</button>
                             </div>
 
-                            <form onSubmit={handleSubmit} style={styles.form}>
+                            <form onSubmit={handleSubmit} style={styles.form} noValidate>
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Vehicle Type *</label>
                                     <div className="desktop-only-type-select">
-                                        <select value={data.type} onChange={e => setData('type', e.target.value)} style={styles.input}>
+                                        <select
+                                            key={emptyRequiredFields.type ? `type-${shakeKey}` : 'type'}
+                                            className={emptyRequiredFields.type ? 'shake-invalid' : ''}
+                                            value={data.type}
+                                            onChange={e => {
+                                                setData('type', e.target.value);
+                                                if (e.target.value.trim()) clearRequiredError('type');
+                                            }}
+                                            style={{
+                                                ...styles.input,
+                                                borderColor: emptyRequiredFields.type ? '#b3251e' : '#d6ccbb',
+                                            }}
+                                        >
                                             <option value="Car">Car</option>
                                             <option value="Motorbike">Motorbike</option>
                                         </select>
@@ -933,25 +976,72 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                     <MobileVehicleTypeDropdown
                                         value={data.type}
                                         options={['Car', 'Motorbike']}
-                                        onChange={(val) => setData('type', val)}
+                                        isInvalid={Boolean(emptyRequiredFields.type)}
+                                        shakeKey={shakeKey}
+                                        onChange={(val) => {
+                                            setData('type', val);
+                                            if (String(val || '').trim()) clearRequiredError('type');
+                                        }}
                                     />
                                 </div>
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Make *</label>
-                                    <input type="text" placeholder="e.g. Toyota" value={data.make} onChange={e => setData('make', e.target.value)} style={styles.input} />
+                                    <input
+                                        key={emptyRequiredFields.make ? `make-${shakeKey}` : 'make'}
+                                        className={emptyRequiredFields.make ? 'shake-invalid' : ''}
+                                        type="text"
+                                        placeholder="e.g. Toyota"
+                                        value={data.make}
+                                        onChange={e => {
+                                            setData('make', e.target.value);
+                                            if (e.target.value.trim()) clearRequiredError('make');
+                                        }}
+                                        style={{
+                                            ...styles.input,
+                                            borderColor: emptyRequiredFields.make ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                    />
                                     {errors.make && <span style={styles.error}>{errors.make}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Model *</label>
-                                    <input type="text" placeholder="e.g. Civic" value={data.model} onChange={e => setData('model', e.target.value)} style={styles.input} />
+                                    <input
+                                        key={emptyRequiredFields.model ? `model-${shakeKey}` : 'model'}
+                                        className={emptyRequiredFields.model ? 'shake-invalid' : ''}
+                                        type="text"
+                                        placeholder="e.g. Civic"
+                                        value={data.model}
+                                        onChange={e => {
+                                            setData('model', e.target.value);
+                                            if (e.target.value.trim()) clearRequiredError('model');
+                                        }}
+                                        style={{
+                                            ...styles.input,
+                                            borderColor: emptyRequiredFields.model ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                    />
                                     {errors.model && <span style={styles.error}>{errors.model}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Year *</label>
-                                    <input type="text" placeholder="e.g. 2022" value={data.year} onChange={e => setData('year', e.target.value)} style={styles.input} />
+                                    <input
+                                        key={emptyRequiredFields.year ? `year-${shakeKey}` : 'year'}
+                                        className={emptyRequiredFields.year ? 'shake-invalid' : ''}
+                                        type="text"
+                                        placeholder="e.g. 2022"
+                                        value={data.year}
+                                        onChange={e => {
+                                            setData('year', e.target.value);
+                                            if (e.target.value.trim()) clearRequiredError('year');
+                                        }}
+                                        style={{
+                                            ...styles.input,
+                                            borderColor: emptyRequiredFields.year ? '#b3251e' : '#d6ccbb',
+                                        }}
+                                    />
                                     {errors.year && <span style={styles.error}>{errors.year}</span>}
                                 </div>
 
@@ -1095,7 +1185,7 @@ const styles = {
     form: { display: 'flex', flexDirection: 'column', gap: '10px' },
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
     label: { color: '#6e6962', fontSize: '11px', fontWeight: '500' },
-    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '6px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%' },
+    input: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '6px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%', transition: 'border-color 0.2s ease' },
     uploadBoxWrapper: { display: 'flex', gap: '8px', alignItems: 'center' },
     uploadBox: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box', flex: 1, overflow: 'hidden', minHeight: '32px' },
     uploadText: { color: '#1c1c1c', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'left' },
