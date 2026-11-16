@@ -5,10 +5,10 @@ import Toast from '@/Components/Toast';
 import Breadcrumb from '@/Components/Breadcrumb';
 
 export default function VehicleShow({ vehicle, servicePreferences = [], maintenanceLogs = [] }) {
-    const photoUrl = vehicle.photo 
-        ? (vehicle.photo.startsWith('http://') || vehicle.photo.startsWith('https://') || vehicle.photo.startsWith('data:') 
-            ? vehicle.photo 
-            : `/storage/${vehicle.photo}`) 
+    const photoUrl = vehicle.photo
+        ? (vehicle.photo.startsWith('http://') || vehicle.photo.startsWith('https://') || vehicle.photo.startsWith('data:')
+            ? vehicle.photo
+            : `/storage/${vehicle.photo}`)
         : null;
 
     const [showLogModal, setShowLogModal] = useState(false);
@@ -53,7 +53,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             }
         });
     };
-    
+
     const [selectedServiceFilters, setSelectedServiceFilters] = useState([]);
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
     const dropdownRef = useRef(null);
@@ -184,6 +184,12 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    const getOverallScheduleTag = (dateTag, odoTag) => {
+        if (dateTag === 'past_due' || odoTag === 'past_due') return 'past_due';
+        if (dateTag === 'upcoming' || odoTag === 'upcoming') return 'upcoming';
+        return null;
+    };
+
     const serviceScheduleStatus = servicePreferences.map(pref => {
         const name = pref.name;
         const intervalDays = pref.interval_days ? Number(pref.interval_days) : null;
@@ -230,8 +236,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         }
 
         let odoTag = null;
-        const currentOdoNum = vehicle.current_odo !== null && vehicle.current_odo !== undefined && vehicle.current_odo !== '' 
-            ? Number(vehicle.current_odo) 
+        const currentOdoNum = vehicle.current_odo !== null && vehicle.current_odo !== undefined && vehicle.current_odo !== ''
+            ? Number(vehicle.current_odo)
             : null;
 
         if (nextOdoVal !== null && currentOdoNum !== null) {
@@ -247,6 +253,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             nextOdo: nextOdoStr,
             nextOdoVal,
             odoTag,
+            overallTag: getOverallScheduleTag(dateTag, odoTag),
         };
     });
 
@@ -273,6 +280,14 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         if (selectedServiceFilters.length === 0) return true;
         return log.services && log.services.some(s => selectedServiceFilters.includes(s));
     });
+
+    const formattedOdo = vehicle.current_odo
+        ? `${Number(vehicle.current_odo).toLocaleString()} km`
+        : '—';
+
+    const formattedUpdatedDate = vehicle.odo_updated_at
+        ? formatTimestampToReadable(vehicle.odo_updated_at)
+        : null;
 
     return (
         <div style={styles.page} className="page-layout">
@@ -343,22 +358,198 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                 input[type="date"]::-webkit-inner-spin-button {
                     display: none;
                 }
+                .mobile-showcase-meta,
+                .mobile-card-list {
+                    display: none;
+                }
                 @media (max-width: 768px) {
                     .page-layout {
                         flex-direction: column !important;
                     }
                     .mainContent {
-                        padding: 16px !important;
+                        padding: 16px 16px 96px 16px !important;
                     }
                     .tableContainer {
-                        overflow-x: auto;
+                        display: none !important;
                     }
-                    table {
-                        min-width: 600px;
+                    .mobile-card-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 12px;
+                        width: 100%;
+                    }
+                    .mobile-record-card {
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 12px;
+                        padding: 14px 16px;
+                        box-shadow: 0 4px 12px rgba(28, 28, 28, 0.04);
+                        display: flex;
+                        flex-direction: column;
+                        gap: 10px;
+                        box-sizing: border-box;
+                    }
+                    .mobile-record-top-meta {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 8px;
+                        font-size: 11px;
+                        font-weight: 600;
+                        color: #6e6962;
+                    }
+                    .mobile-record-header {
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: space-between;
+                        gap: 10px;
+                    }
+                    .mobile-record-title-group {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 3px;
+                        min-width: 0;
+                        flex: 1;
+                    }
+                    .mobile-record-title {
+                        font-size: 14px;
+                        font-weight: 700;
+                        color: #1c1c1c;
+                        margin: 0;
+                        line-height: 1.3;
+                    }
+                    .mobile-record-subtitle {
+                        font-size: 12px;
+                        color: #6e6962;
+                        margin: 0;
+                        line-height: 1.35;
+                    }
+                    .mobile-record-rows {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 6px;
+                        padding-top: 8px;
+                        border-top: 1px solid #ede6d8;
+                    }
+                    .mobile-record-row {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 12px;
+                        font-size: 12px;
+                    }
+                    .mobile-record-label {
+                        color: #6e6962;
+                        font-weight: 500;
+                        flex-shrink: 0;
+                    }
+                    .mobile-record-val {
+                        color: #1c1c1c;
+                        font-weight: 500;
+                        text-align: right;
+                        overflow-wrap: anywhere;
+                    }
+                    .mobile-edit-grid {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                    }
+                    .mobile-edit-field {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 4px;
+                    }
+                    .mobile-edit-label {
+                        font-size: 10px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        color: #6e6962;
+                        letter-spacing: 0.4px;
+                    }
+                    .mobile-edit-actions {
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 8px;
+                        padding-top: 4px;
+                    }
+                    .mobile-empty-card {
+                        background-color: #ffffff;
+                        border: 1px solid #d6ccbb;
+                        border-radius: 12px;
+                        padding: 22px 16px;
+                        text-align: center;
+                        color: #6e6962;
+                        font-size: 12px;
+                        font-style: italic;
                     }
                     .profileCard {
                         flex-direction: column !important;
-                        align-items: flex-start !important;
+                        align-items: stretch !important;
+                        gap: 14px !important;
+                        padding: 16px !important;
+                    }
+                    .mobile-card-top-bar {
+                        display: flex;
+                        justify-content: flex-end;
+                        margin-bottom: -4px;
+                    }
+                    .updateOdoBtnTopRight {
+                        position: static !important;
+                    }
+                    .profileLeft {
+                        width: 100%;
+                    }
+                    .photoThumbContainer,
+                    .placeholderThumb {
+                        width: 100% !important;
+                        height: 210px !important;
+                        border-radius: 12px !important;
+                    }
+                    .profileRight {
+                        display: none !important;
+                    }
+                    .mobile-showcase-meta {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 6px;
+                    }
+                    .mobile-title-row {
+                        display: flex;
+                        align-items: flex-start;
+                        justify-content: space-between;
+                        gap: 12px;
+                    }
+                    .mobile-vehicle-title {
+                        font-size: 16px;
+                        font-weight: 700;
+                        color: #1c1c1c;
+                        margin: 0;
+                        line-height: 1.25;
+                    }
+                    .mobile-sub-line {
+                        font-size: 13px;
+                        color: #6e6962;
+                        line-height: 1.35;
+                        margin: 0;
+                    }
+                    .mobile-odo-line {
+                        font-size: 13px;
+                        font-weight: 600;
+                        color: #1c1c1c;
+                        text-decoration: underline;
+                        text-underline-offset: 3px;
+                        margin-top: 2px;
+                        display: inline-block;
+                    }
+                    .mobile-desc-line {
+                        font-size: 12px;
+                        color: #6e6962;
+                        line-height: 1.45;
+                        margin: 2px 0 0 0;
+                    }
+                    .floating-btn-anim {
+                        bottom: 84px !important;
+                        right: 20px !important;
                     }
                 }
             `}</style>
@@ -366,7 +557,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             <Sidebar activePage="home" />
 
             <div style={styles.mainContent} className="mainContent">
-                <Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
+                <Toast message={toastMessage} duration={1000} onClose={() => setToastMessage(null)} />
 
                 <div style={styles.topBar}>
                     <Breadcrumb items={[
@@ -383,17 +574,19 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
                 <div style={styles.contentBody}>
                     <div style={styles.profileCard} className="interactive-card page-card-anim profileCard">
-                        <button onClick={openOdoModal} style={styles.updateOdoBtnTopRight} className="hover-btn" type="button" title="Update Current ODO">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                            Update ODO
-                        </button>
+                        <div className="mobile-card-top-bar">
+                            <button onClick={openOdoModal} style={styles.updateOdoBtnTopRight} className="hover-btn updateOdoBtnTopRight" type="button" title="Update Current ODO">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                                Update ODO
+                            </button>
+                        </div>
 
-                        <div style={styles.profileLeft}>
+                        <div style={styles.profileLeft} className="profileLeft">
                             {photoUrl ? (
-                                <div style={styles.photoThumbContainer} onClick={() => setShowPhotoModal(true)} title="Click to view full size">
+                                <div style={styles.photoThumbContainer} className="photoThumbContainer" onClick={() => setShowPhotoModal(true)} title="Click to view full size">
                                     <img src={photoUrl} alt={vehicle.make} style={styles.vehicleThumb} />
                                     <div style={styles.photoOverlay}>
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -405,8 +598,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     </div>
                                 </div>
                             ) : (
-                                <div style={styles.placeholderThumb}>
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                <div style={styles.placeholderThumb} className="placeholderThumb" onClick={() => setShowPhotoModal(true)}>
+                                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
                                         <circle cx="7" cy="17" r="2"></circle>
                                         <circle cx="17" cy="17" r="2"></circle>
@@ -415,7 +608,26 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             )}
                         </div>
 
-                        <div style={styles.profileRight}>
+                        {/* Mobile Reference-Style Metadata Layout */}
+                        <div className="mobile-showcase-meta">
+                            <div className="mobile-title-row">
+                                <h1 className="mobile-vehicle-title">{vehicle.make} {vehicle.model}</h1>
+                                <span style={styles.typeBadge}>{vehicle.type}</span>
+                            </div>
+                            <p className="mobile-sub-line">Year {vehicle.year}</p>
+                            <p className="mobile-sub-line">
+                                {formattedUpdatedDate ? `ODO updated ${formattedUpdatedDate}` : 'Odometer status'}
+                            </p>
+                            <div>
+                                <span className="mobile-odo-line">{formattedOdo}</span>
+                            </div>
+                            {vehicle.description && (
+                                <p className="mobile-desc-line">{vehicle.description}</p>
+                            )}
+                        </div>
+
+                        {/* Desktop Horizontal Details Layout */}
+                        <div style={styles.profileRight} className="profileRight">
                             <div style={styles.detailItem}>
                                 <span style={styles.detailKey}>Type:</span>
                                 <span style={styles.typeBadge}>{vehicle.type}</span>
@@ -435,12 +647,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             <div style={styles.detailItem}>
                                 <span style={styles.detailKey}>Current ODO:</span>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                    <span style={styles.detailVal}>
-                                        {vehicle.current_odo ? `${Number(vehicle.current_odo).toLocaleString()} km` : '—'}
-                                    </span>
-                                    {vehicle.odo_updated_at && (
+                                    <span style={styles.detailVal}>{formattedOdo}</span>
+                                    {formattedUpdatedDate && (
                                         <span style={styles.lastUpdatedText}>
-                                            (Updated: {formatTimestampToReadable(vehicle.odo_updated_at)})
+                                            (Updated: {formattedUpdatedDate})
                                         </span>
                                     )}
                                 </div>
@@ -452,6 +662,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </div>
                     </div>
 
+                    {/* Service Schedule Status */}
                     <div style={styles.sectionHeaderRow}>
                         <h2 style={styles.sectionTitle}>Service Schedule Status</h2>
                     </div>
@@ -495,9 +706,48 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </table>
                     </div>
 
+                    {/* Mobile Card View: Service Schedule Status */}
+                    <div className="mobile-card-list page-card-anim">
+                        {serviceScheduleStatus.length === 0 ? (
+                            <div className="mobile-empty-card">No services configured in settings.</div>
+                        ) : (
+                            serviceScheduleStatus.map((item, idx) => (
+                                <div key={idx} className="mobile-record-card">
+                                    <div className="mobile-record-header">
+                                        <div className="mobile-record-title-group">
+                                            <h3 className="mobile-record-title">{item.name}</h3>
+                                            <p className="mobile-record-subtitle">Service schedule interval</p>
+                                        </div>
+                                        {item.overallTag === 'past_due' && <span style={styles.tagPastDue}>Past Due</span>}
+                                        {item.overallTag === 'upcoming' && <span style={styles.tagUpcoming}>Upcoming</span>}
+                                    </div>
+                                    <div className="mobile-record-rows">
+                                        <div className="mobile-record-row">
+                                            <span className="mobile-record-label">Next Schedule (Date)</span>
+                                            <span className="mobile-record-val">
+                                                {item.nextDate}
+                                                {item.dateTag === 'past_due' && ' · Past Due'}
+                                                {item.dateTag === 'upcoming' && ' · Upcoming'}
+                                            </span>
+                                        </div>
+                                        <div className="mobile-record-row">
+                                            <span className="mobile-record-label">Next Schedule (ODO)</span>
+                                            <span className="mobile-record-val">
+                                                {item.nextOdo}
+                                                {item.odoTag === 'past_due' && ' · Past Due'}
+                                                {item.odoTag === 'upcoming' && ' · Upcoming'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {/* Maintenance Logs */}
                     <div style={styles.sectionHeaderRow}>
                         <h2 style={styles.sectionTitle}>Maintenance Logs</h2>
-                        
+
                         <div style={styles.dropdownWrapper} ref={dropdownRef}>
                             <button type="button" onClick={() => setShowFilterDropdown(!showFilterDropdown)} style={styles.dropdownToggleBtn} className="hover-btn">
                                 <span>
@@ -642,6 +892,121 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Mobile Card View: Maintenance Logs */}
+                    <div className="mobile-card-list page-card-anim">
+                        {filteredLogs.length === 0 ? (
+                            <div className="mobile-empty-card">No maintenance records found.</div>
+                        ) : (
+                            filteredLogs.map((log) => {
+                                const isEditing = editingLogId === log.id;
+                                const serviceTitle = (log.services && log.services.length > 0)
+                                    ? log.services.join(', ')
+                                    : 'Maintenance Service';
+                                const formattedCost = log.cost
+                                    ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                    : '—';
+
+                                return (
+                                    <div key={log.id} className="mobile-record-card">
+                                        {isEditing ? (
+                                            <div className="mobile-edit-grid">
+                                                <div className="mobile-edit-field">
+                                                    <span className="mobile-edit-label">Date</span>
+                                                    <input
+                                                        type="date"
+                                                        value={inlineData.date}
+                                                        onChange={e => setInlineData({ ...inlineData, date: e.target.value })}
+                                                        style={styles.inlineInput}
+                                                    />
+                                                </div>
+                                                <div className="mobile-edit-field">
+                                                    <span className="mobile-edit-label">Service</span>
+                                                    <select
+                                                        value={inlineData.services}
+                                                        onChange={e => setInlineData({ ...inlineData, services: e.target.value })}
+                                                        style={styles.inlineSelect}
+                                                    >
+                                                        {servicePreferences.map((srv, i) => (
+                                                            <option key={i} value={srv.name}>{srv.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div className="mobile-edit-field">
+                                                    <span className="mobile-edit-label">ODO</span>
+                                                    <input
+                                                        type="text"
+                                                        value={inlineData.odo}
+                                                        onChange={e => {
+                                                            const val = e.target.value;
+                                                            if (/^\d*$/.test(val)) setInlineData({ ...inlineData, odo: val });
+                                                        }}
+                                                        style={styles.inlineInput}
+                                                    />
+                                                </div>
+                                                <div className="mobile-edit-field">
+                                                    <span className="mobile-edit-label">Cost</span>
+                                                    <input
+                                                        type="text"
+                                                        value={inlineData.cost}
+                                                        onChange={e => {
+                                                            const val = e.target.value;
+                                                            if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
+                                                        }}
+                                                        style={styles.inlineInput}
+                                                    />
+                                                </div>
+                                                <div className="mobile-edit-field">
+                                                    <span className="mobile-edit-label">Notes</span>
+                                                    <input
+                                                        type="text"
+                                                        value={inlineData.notes}
+                                                        onChange={e => setInlineData({ ...inlineData, notes: e.target.value })}
+                                                        style={styles.inlineInput}
+                                                    />
+                                                </div>
+                                                <div className="mobile-edit-actions">
+                                                    <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                    </button>
+                                                    <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button">
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="mobile-record-top-meta">
+                                                    <span>{formatDateToReadable(log.date)}</span>
+                                                    <span style={{ color: '#1c1c1c', fontWeight: '700' }}>{formattedCost}</span>
+                                                </div>
+                                                <div className="mobile-record-header">
+                                                    <div className="mobile-record-title-group">
+                                                        <h3 className="mobile-record-title">{serviceTitle}</h3>
+                                                        <p className="mobile-record-subtitle">ODO: {log.odo}</p>
+                                                    </div>
+                                                    <div style={styles.rowActions}>
+                                                        <button onClick={() => startEditingRow(log)} style={styles.iconBtnEdit} className="hover-btn" title="Edit record" type="button">
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                        </button>
+                                                        <button onClick={() => promptDeleteLog(log)} style={styles.iconBtnDelete} className="hover-btn" title="Delete record" type="button">
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div className="mobile-record-rows">
+                                                    <div className="mobile-record-row">
+                                                        <span className="mobile-record-label">Notes</span>
+                                                        <span className="mobile-record-val">{log.notes || '—'}</span>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
                 </div>
 
                 <button onClick={openCreateModal} style={styles.floatingBtn} className="floating-btn-anim" title="Add Maintenance Log" type="button">
@@ -667,7 +1032,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             <form onSubmit={handleUpdateOdo} style={styles.form}>
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Current Odometer (km/miles) *</label>
-                                    <input 
+                                    <input
                                         type="text" placeholder="e.g. 15500" value={odoData.current_odo}
                                         onChange={e => {
                                             const val = e.target.value;
@@ -713,7 +1078,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Odometer (ODO) (miles/km) *</label>
-                                    <input 
+                                    <input
                                         type="text" placeholder="e.g. 45000" value={data.odo}
                                         onChange={e => {
                                             const val = e.target.value;
@@ -734,7 +1099,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     <label style={styles.label}>Cost (PHP)</label>
                                     <div style={styles.currencyWrapper}>
                                         <span style={styles.currencySymbol}>₱</span>
-                                        <input 
+                                        <input
                                             type="text" placeholder="0.00" value={data.cost}
                                             onChange={e => {
                                                 const val = e.target.value;
@@ -796,15 +1161,15 @@ const styles = {
         justifyContent: 'center', alignItems: 'center', textDecoration: 'none',
     },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '850px', width: '100%', paddingBottom: '60px', margin: '0 auto' },
-    
-    profileCard: { 
-        backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', 
+
+    profileCard: {
+        backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px',
         padding: '20px', boxShadow: '0 4px 12px rgba(28, 28, 28, 0.04)', display: 'flex', alignItems: 'center', gap: '24px',
         position: 'relative', width: '100%', boxSizing: 'border-box'
     },
     profileLeft: { flexShrink: 0 },
-    photoThumbContainer: { 
-        width: '120px', height: '90px', borderRadius: '8px', overflow: 'hidden', 
+    photoThumbContainer: {
+        width: '120px', height: '90px', borderRadius: '8px', overflow: 'hidden',
         backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', position: 'relative', cursor: 'pointer',
         display: 'flex', justifyContent: 'center', alignItems: 'center'
     },
@@ -819,7 +1184,7 @@ const styles = {
     detailItem: { display: 'flex', alignItems: 'center', fontSize: '13px', gap: '8px', flexWrap: 'wrap' },
     detailKey: { color: '#6e6962', fontWeight: '500', width: '105px', flexShrink: 0 },
     detailVal: { color: '#1c1c1c', fontWeight: '500' },
-    typeBadge: { display: 'inline-block', backgroundColor: '#1c1c1c10', color: '#1c1c1c', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' },
+    typeBadge: { display: 'inline-block', backgroundColor: '#1c1c1c10', color: '#1c1c1c', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 },
     updateOdoBtnTopRight: {
         position: 'absolute', top: '16px', right: '16px',
         backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb',
@@ -829,8 +1194,8 @@ const styles = {
     lastUpdatedText: { color: '#6e6962', fontSize: '11px', fontStyle: 'italic' },
 
     cellWithTag: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' },
-    tagUpcoming: { backgroundColor: '#b3251e15', color: '#b3251e', border: '1px solid #b3251e44', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px' },
-    tagPastDue: { backgroundColor: '#1c1c1c15', color: '#1c1c1c', border: '1px solid #1c1c1c44', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px' },
+    tagUpcoming: { backgroundColor: '#eab30824', color: '#854d0e', border: '1px solid #eab30866', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', flexShrink: 0 },
+    tagPastDue: { backgroundColor: '#dc262618', color: '#dc2626', border: '1px solid #dc262644', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', flexShrink: 0 },
 
     fullPhotoBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '16px', maxWidth: '85vw', maxHeight: '85vh', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 25px 50px rgba(28, 28, 28, 0.3)' },
     fullImage: { maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain' },
@@ -865,7 +1230,7 @@ const styles = {
     emptyTableCell: { padding: '24px', textAlign: 'center', color: '#6e6962', fontStyle: 'italic' },
     serviceBadgeList: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
     serviceBadge: { backgroundColor: '#1c1c1c10', color: '#1c1c1c', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700' },
-    
+
     inlineInput: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '4px', padding: '5px 8px', color: '#1c1c1c', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
     inlineSelect: { backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '4px', padding: '5px 8px', color: '#1c1c1c', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box' },
 
