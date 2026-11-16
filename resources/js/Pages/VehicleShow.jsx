@@ -933,18 +933,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             <div style={styles.mainContent} className="mainContent">
                 <Toast message={toastMessage} duration={1000} onClose={() => setToastMessage(null)} />
 
-                <div style={styles.topBar}>
-                    <Breadcrumb items={[
-                        { label: 'Main / Home', href: '/home' },
-                        { label: `${vehicle.make} ${vehicle.model}` }
-                    ]} />
-                    <Link href="/home" style={styles.backIconButton} className="hover-btn" title="Back to Rides">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="19" y1="12" x2="5" y2="12"></line>
-                            <polyline points="12 19 5 12 12 5"></polyline>
-                        </svg>
-                    </Link>
-                </div>
+                <Breadcrumb items={[
+                    { label: 'Main / Home', href: '/home' },
+                    { label: `${vehicle.make} ${vehicle.model}` }
+                ]} />
 
                 <div style={styles.contentBody}>
                     <div style={styles.profileCard} className="interactive-card page-card-anim profileCard">
@@ -1691,12 +1683,6 @@ const styles = {
         overflow: 'hidden',
     },
     mainContent: { flex: 1, backgroundColor: '#ede6d8', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
-    topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', width: '100%', maxWidth: '850px' },
-    backIconButton: {
-        backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb',
-        width: '32px', height: '32px', borderRadius: '6px', display: 'flex',
-        justifyContent: 'center', alignItems: 'center', textDecoration: 'none',
-    },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '850px', width: '100%', paddingBottom: '60px', margin: '0 auto' },
 
     profileCard: {
