@@ -10,9 +10,14 @@ description = "FleetFlow Laravel Application"
 "/app" = "."
 
 [build]
-root-directory = "."
-install = "composer install --no-dev --optimize-autoloader && npm install"
-command = "php artisan config:cache && php artisan route:cache"
+dockerfile = """
+FROM debian:trixie-slim
+RUN apt-get update && apt-get -y install curl unzip git php-cli php-mbstring php-xml php-bcmath
+COPY . /app
+WORKDIR /app
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+RUN composer install --no-dev --optimize-autoloader
+"""
 
 [[command]]
 name = "run"
