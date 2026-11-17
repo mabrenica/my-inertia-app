@@ -1,9 +1,16 @@
 kind: wasmer.io/App.v0
 name: fleetflow
 owner: mabrenica_stormblue
-package: .
+package: mabrenica_stormblue/fleetflow@0.1.51
 
 capabilities:
   database:
     engine: postgres
 app_id: da_KgYIZt9Upk6B
+
+command:
+  - name: run
+    runner: web
+    env:
+      PORT: "8080"
+      DOCUMENT_ROOT: "/app/public"
