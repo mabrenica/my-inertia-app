@@ -2,7 +2,7 @@
 name = "mabrenica_stormblue/fleetflow"
 version = "0.1.51"
 description = "FleetFlow Laravel Application"
-private = true
+private = false
 
 [dependencies]
 "php/php" = "=8.3.4"
