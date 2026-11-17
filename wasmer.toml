@@ -11,8 +11,9 @@ description = "FleetFlow Laravel Application"
 
 [[command]]
 name = "run"
-module = "php/php:php"
-runner = "wasi"
+package = "php/php"
+runner = "web"
 
-[command.annotations.wasi]
-main-args = ["-S", "0.0.0.0:8080", "-t", "/app/public"]
+[command.env]
+PORT = "8080"
+DOCUMENT_ROOT = "/app/public"
