@@ -8,13 +8,12 @@ private = true
 "php/php" = "=8.3.4"
 
 [fs]
-"/app" = "."
+"/app/" = "."
 
 [[command]]
 name = "run"
-package = "php/php"
-runner = "web"
+module = "php/php:php"
+runner = "wasi"
 
-[command.env]
-PORT = "8080"
-DOCUMENT_ROOT = "/app/public"
+[command.annotations.wasi]
+main-args = ["-t", "/app/public", "-S", "localhost:8080"]
