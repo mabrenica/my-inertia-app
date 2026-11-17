@@ -1,12 +1,16 @@
+
 kind: wasmer.io/App.v0
+
 name: fleetflow
 owner: mabrenica_stormblue
-package: mabrenica_stormblue/fleetflow-app@0.1.54
+
+package: mabrenica_stormblue/fleetflow-edge-2026
+
+app_id: da_KgYIZt9Upk6B
 
 capabilities:
   database:
     engine: postgres
-app_id: da_KgYIZt9Upk6B
 
 command:
   - name: run

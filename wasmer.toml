@@ -1,8 +1,8 @@
 [package]
-name = "mabrenica_stormblue/fleetflow-app"
-version = "0.1.54"
+name = "mabrenica_stormblue/fleetflow-edge-2026"
+version = "0.1.0"
 description = "FleetFlow Laravel Application"
-private = false
+private = true
 
 [dependencies]
 "php/php" = "=8.3.4"
