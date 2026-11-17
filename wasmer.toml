@@ -9,6 +9,10 @@ description = "FleetFlow Laravel Application"
 [fs]
 "/app" = "."
 
+[build]
+root-directory = "."
+command = "composer install --no-dev --optimize-autoloader && npm install && php artisan config:cache && php artisan route:cache"
+
 [[command]]
 name = "run"
 package = "php/php"
