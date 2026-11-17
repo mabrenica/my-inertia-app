@@ -1,5 +1,5 @@
 [package]
-name = "mabrenica_stormblue/fleetflow"
+name = "mabrenica_stormblue/fleetflow-app"
 version = "0.1.53"
 description = "FleetFlow Laravel Application"
 private = false
