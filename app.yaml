@@ -1,7 +1,7 @@
 kind: wasmer.io/App.v0
 name: fleetflow
 owner: mabrenica_stormblue
-package: mabrenica_stormblue/fleetflow@0.1.51
+package: mabrenica_stormblue/fleetflow@^0.1.51
 
 capabilities:
   database:
