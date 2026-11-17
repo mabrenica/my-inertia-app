@@ -11,7 +11,8 @@ description = "FleetFlow Laravel Application"
 
 [build]
 root-directory = "."
-command = "composer install --no-dev --optimize-autoloader && npm install && php artisan config:cache && php artisan route:cache"
+install = "composer install --no-dev --optimize-autoloader && npm install"
+command = "php artisan config:cache && php artisan route:cache"
 
 [[command]]
 name = "run"
