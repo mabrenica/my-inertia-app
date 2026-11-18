@@ -3,6 +3,7 @@ import { useForm, router } from '@inertiajs/react';
 import Sidebar from '@/Components/Sidebar';
 import Breadcrumb from '@/Components/Breadcrumb';
 import Toast from '@/Components/Toast';
+import { optimizeImage } from '@/Utils/optimizeImage';
 
 export default function Profile({ auth }) {
     const user = auth?.user || {};
@@ -11,6 +12,7 @@ export default function Profile({ auth }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [avatarError, setAvatarError] = useState('');
+    const [isOptimizingAvatar, setIsOptimizingAvatar] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
     const fileInputRef = useRef(null);
 
@@ -39,27 +41,24 @@ export default function Profile({ auth }) {
     };
 
     const handleAvatarClick = () => {
-        fileInputRef.current?.click();
+        if (!isOptimizingAvatar) fileInputRef.current?.click();
     };
 
-    const handleAvatarChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setAvatarError('');
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file || isOptimizingAvatar) return;
 
-            if (!file.type.startsWith('image/')) {
-                setAvatarError('Please select a valid image file.');
-                return;
-            }
+        setAvatarError('');
+        setIsOptimizingAvatar(true);
 
-            const maxSizeInBytes = 2100 * 1024;
-            if (file.size > maxSizeInBytes) {
-                setAvatarError('Image size must be under 2100 KB.');
-                return;
-            }
+        try {
+            const optimized = await optimizeImage(file, {
+                maxDimension: 640,
+                quality: 0.78,
+            });
 
             const formData = new FormData();
-            formData.append('avatar', file);
+            formData.append('avatar', optimized);
 
             router.post('/profile/avatar', formData, {
                 forceFormData: true,
@@ -67,7 +66,16 @@ export default function Profile({ auth }) {
                     setIsHovered(false);
                     setToastMessage('Profile picture updated!');
                 },
+                onError: (errors) => {
+                    setAvatarError(errors.avatar || 'Unable to upload profile picture.');
+                },
+                onFinish: () => setIsOptimizingAvatar(false),
             });
+        } catch (error) {
+            setAvatarError(error.message || 'Unable to optimize this photo.');
+            setIsOptimizingAvatar(false);
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
@@ -184,7 +192,7 @@ export default function Profile({ auth }) {
                                             </svg>
                                         </button>
                                     )}
-                                    <button onClick={handleAvatarClick} style={styles.iconBtnUpload} className="hover-btn" title="Upload Avatar" type="button">
+                                    <button onClick={handleAvatarClick} disabled={isOptimizingAvatar} style={styles.iconBtnUpload} className="hover-btn" title="Upload Avatar" type="button">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                             <polyline points="17 8 12 3 7 8"></polyline>
@@ -201,7 +209,7 @@ export default function Profile({ auth }) {
                                     )}
                                 </div>
                             </div>
-                            <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/*" style={{ display: 'none' }} />
+                            <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/jpeg,image/png,image/webp" disabled={isOptimizingAvatar} style={{ display: 'none' }} />
                         </div>
 
                         {avatarError && <span style={styles.errorText}>{avatarError}</span>}

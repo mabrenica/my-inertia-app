@@ -3,6 +3,7 @@ import { useForm, router, usePage, Link } from '@inertiajs/react';
 import Sidebar from '@/Components/Sidebar';
 import Toast from '@/Components/Toast';
 import Breadcrumb from '@/Components/Breadcrumb';
+import { optimizeImage } from '@/Utils/optimizeImage';
 
 function MinimalTypeIcon({ type, size = 16 }) {
     if (type === 'Car') {
@@ -161,6 +162,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     }, [flash]);
 
     const fileInputRef = useRef(null);
+    const photoTaskRef = useRef(0);
+    const [isOptimizingPhoto, setIsOptimizingPhoto] = useState(false);
+    const [photoProcessingFailed, setPhotoProcessingFailed] = useState(false);
+    // Keep the selected filename for display only. The uploaded file stays optimized WebP.
+    const [originalPhotoName, setOriginalPhotoName] = useState('');
 
     const { data, setData, post, processing, errors, setError, clearErrors, reset } = useForm({
         type: 'Car',
@@ -296,6 +302,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     });
 
     const openCreateModal = () => {
+        photoTaskRef.current += 1;
+        setIsOptimizingPhoto(false);
+        setPhotoProcessingFailed(false);
+        setOriginalPhotoName('');
+        if (fileInputRef.current) fileInputRef.current.value = '';
         setEditingVehicle(null);
         setRemoveExistingPhoto(false);
         setEmptyRequiredFields({});
@@ -312,6 +323,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     };
 
     const openEditModal = (vehicle) => {
+        photoTaskRef.current += 1;
+        setIsOptimizingPhoto(false);
+        setPhotoProcessingFailed(false);
+        setOriginalPhotoName('');
+        if (fileInputRef.current) fileInputRef.current.value = '';
         setEditingVehicle(vehicle);
         setRemoveExistingPhoto(false);
         setEmptyRequiredFields({});
@@ -343,22 +359,49 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         }
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            clearErrors('photo');
-            const maxSizeInBytes = 2100 * 1024;
-            if (file.size > maxSizeInBytes) {
-                setError('photo', 'The photo must not be greater than 2100 KB.');
-                return;
-            }
-            setData('photo', file);
+    const handleFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const taskId = ++photoTaskRef.current;
+        setPhotoProcessingFailed(false);
+        setOriginalPhotoName(file.name);
+        clearErrors('photo');
+        setData('photo', null);
+        setIsOptimizingPhoto(true);
+
+        try {
+            // The original selected photo has no 2,100 KB browser limit.
+            // Only a smaller, optimized file is sent to Wasmer/Supabase.
+            const optimized = await optimizeImage(file, {
+                maxDimension: 1600,
+                quality: 0.78,
+            });
+
+            if (taskId !== photoTaskRef.current) return;
+            setData('photo', optimized);
+            setPhotoProcessingFailed(false);
             setRemoveExistingPhoto(false);
+        } catch (error) {
+            if (taskId !== photoTaskRef.current) return;
+            setPhotoProcessingFailed(true);
+            setOriginalPhotoName('');
+            setError('photo', error.message || 'Unable to optimize this photo.');
+        } finally {
+            if (taskId === photoTaskRef.current) {
+                setIsOptimizingPhoto(false);
+            }
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
     const handleRemovePhotoClick = (e) => {
         e.stopPropagation();
+        photoTaskRef.current += 1;
+        setIsOptimizingPhoto(false);
+        setPhotoProcessingFailed(false);
+        setOriginalPhotoName('');
+        clearErrors('photo');
         setData('photo', null);
         setRemoveExistingPhoto(true);
         if (fileInputRef.current) {
@@ -368,6 +411,14 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (isOptimizingPhoto) {
+            setError('photo', 'Please wait until the photo is optimized.');
+            return;
+        }
+        if (photoProcessingFailed) {
+            setError('photo', 'Please select a valid JPG, PNG, or WebP photo before saving.');
+            return;
+        }
         clearErrors('photo');
 
         const missing = {};
@@ -382,14 +433,6 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
             return;
         }
 
-        if (data.photo) {
-            const maxSizeInBytes = 2100 * 1024;
-            if (data.photo.size > maxSizeInBytes) {
-                setError('photo', 'The photo must not be greater than 2100 KB.');
-                return;
-            }
-        }
-
         const formData = {
             ...data,
             remove_photo: removeExistingPhoto ? 1 : 0,
@@ -398,6 +441,9 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         if (editingVehicle) {
             router.post(`/vehicles/${editingVehicle.id}`, formData, {
                 forceFormData: true,
+                onError: (responseErrors) => {
+                    if (responseErrors.photo) setError('photo', responseErrors.photo);
+                },
                 onSuccess: () => {
                     reset();
                     setShowModal(false);
@@ -408,6 +454,9 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         } else {
             router.post('/vehicles', formData, {
                 forceFormData: true,
+                onError: (responseErrors) => {
+                    if (responseErrors.photo) setError('photo', responseErrors.photo);
+                },
                 onSuccess: () => {
                     reset();
                     setShowModal(false);
@@ -1069,11 +1118,13 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 </div>
 
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Photo (Optional - Max 2100 KB)</label>
+                                    <label style={styles.label}>Photo (Optional)</label>
                                     <div style={styles.uploadBoxWrapper}>
-                                        <div style={styles.uploadBox} onClick={() => fileInputRef.current?.click()}>
-                                            {data.photo ? (
-                                                <span style={styles.uploadText}>{data.photo.name}</span>
+                                        <div style={styles.uploadBox} onClick={() => { if (!isOptimizingPhoto) fileInputRef.current?.click(); }}>
+                                            {isOptimizingPhoto ? (
+                                                <span style={styles.uploadText}>Optimizing photo...</span>
+                                            ) : data.photo ? (
+                                                <span style={styles.uploadText}>{originalPhotoName || data.photo.name}</span>
                                             ) : hasExistingPhoto ? (
                                                 <span style={styles.uploadIconOnly} aria-label="Uploaded photo" title="Uploaded photo">
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFF8F0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1098,13 +1149,13 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                             </button>
                                         )}
                                     </div>
-                                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
+                                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/jpeg,image/png,image/webp" disabled={isOptimizingPhoto || processing} style={{ display: 'none' }} />
                                     {errors.photo && <span style={styles.error}>{errors.photo}</span>}
                                 </div>
 
                                 <div style={styles.modalActions}>
-                                    <button type="button" onClick={() => setShowModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>Save</button>
+                                    <button type="button" onClick={() => { photoTaskRef.current += 1; setIsOptimizingPhoto(false); setShowModal(false); }} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing || isOptimizingPhoto}>Save</button>
                                 </div>
                             </form>
                         </div>
