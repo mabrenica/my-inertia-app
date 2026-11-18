@@ -57,7 +57,46 @@ jobs:
           test -f public/build/manifest.json
           grep -Eq '^[[:space:]]*private[[:space:]]*=[[:space:]]*false' wasmer.toml
 
-      - name: Set unique package version
+      
+      - name: Set package version
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          manifest = Path("wasmer.toml")
+          content = manifest.read_text()
+
+          # GitHub workflow run number
+          run_number = int(os.environ["GITHUB_RUN_NUMBER"])
+
+          # Run #2 starts at version 0.2.0
+          start_run = 2
+
+          # Automatically increment patch number
+          patch = run_number - start_run
+
+          if patch < 0:
+              raise SystemExit("Invalid package version")
+
+          version = f"0.2.{patch}"
+
+          content, count = re.subn(
+              r'(?m)^version\s*=\s*"[^"]+"',
+              f'version = "{version}"',
+              content,
+              count=1
+          )
+
+          if count != 1:
+              raise SystemExit("Package version not found")
+
+          manifest.write_text(content)
+
+          print(f"FleetFlow release version: {version}")
+          PY
+
         run: |
           python3 - <<'PY'
           import os
