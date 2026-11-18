@@ -147,6 +147,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     const [isDeletingLog, setIsDeletingLog] = useState(false);
 
     const [editingLogId, setEditingLogId] = useState(null);
+    const [updatingLogId, setUpdatingLogId] = useState(null);
     const [inlineData, setInlineData] = useState({
         services: '',
         odo: '',
@@ -288,6 +289,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     };
 
     const saveEditingRow = (logId) => {
+        if (updatingLogId) return;
+
         const missing = {};
         if (!String(inlineData.date || '').trim()) missing.date = true;
         if (!String(inlineData.services || '').trim()) missing.services = true;
@@ -298,6 +301,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             triggerShake();
             return;
         }
+
+        setUpdatingLogId(logId);
 
         router.put(`/maintenance-logs/${logId}`, {
             services: [inlineData.services],
@@ -311,6 +316,9 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                 setInlineEmptyFields({});
                 setEditingLogId(null);
                 setToastMessage('Maintenance log updated successfully!');
+            },
+            onFinish: () => {
+                setUpdatingLogId(null);
             },
         });
     };
@@ -1247,6 +1255,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 ) : (
                                     filteredLogs.map((log) => {
                                         const isEditing = editingLogId === log.id;
+                                        const isThisRowUpdating = updatingLogId === log.id;
                                         return (
                                             <tr key={log.id} style={styles.tableBodyRow} className="hover-table-row">
                                                 <td style={styles.td}>
@@ -1340,10 +1349,22 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                     <div style={styles.rowActions}>
                                                         {isEditing ? (
                                                             <>
-                                                                <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button">
-                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button" disabled={isThisRowUpdating}>
+                                                                    {isThisRowUpdating ? (
+                                                                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                                                            <circle
+                                                                                cx="25" cy="25" r="20"
+                                                                                fill="none"
+                                                                                stroke="#FFF8F0"
+                                                                                strokeWidth="5"
+                                                                                className="btn-spinner-circle"
+                                                                            />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                    )}
                                                                 </button>
-                                                                <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button">
+                                                                <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button" disabled={isThisRowUpdating}>
                                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                                                 </button>
                                                             </>
@@ -1373,6 +1394,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         ) : (
                             filteredLogs.map((log) => {
                                 const isEditing = editingLogId === log.id;
+                                const isThisRowUpdating = updatingLogId === log.id;
                                 const serviceTitle = (log.services && log.services.length > 0)
                                     ? log.services.join(', ')
                                     : 'Maintenance Service';
@@ -1474,11 +1496,23 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                     />
                                                 </div>
                                                 <div className="mobile-edit-actions">
-                                                    <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button">
+                                                    <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button" disabled={isThisRowUpdating}>
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                                     </button>
-                                                    <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                    <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button" disabled={isThisRowUpdating}>
+                                                        {isThisRowUpdating ? (
+                                                            <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                                                <circle
+                                                                    cx="25" cy="25" r="20"
+                                                                    fill="none"
+                                                                    stroke="#FFF8F0"
+                                                                    strokeWidth="5"
+                                                                    className="btn-spinner-circle"
+                                                                />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                        )}
                                                     </button>
                                                 </div>
                                             </div>
