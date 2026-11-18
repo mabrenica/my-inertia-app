@@ -142,6 +142,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
     const [activeModal, setActiveModal] = useState(null);
     const [tempServices, setTempServices] = useState([]);
+    const [isSavingServices, setIsSavingServices] = useState(false);
     const [newItem, setNewItem] = useState({
         name: '',
         interval_days: '',
@@ -242,6 +243,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
     };
 
     const handleSaveModal = () => {
+        if (isSavingServices) return;
+        setIsSavingServices(true);
         const updatedCar = activeModal === 'car' ? tempServices : carServices;
         const updatedMoto = activeModal === 'moto' ? tempServices : motoServices;
 
@@ -254,6 +257,9 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 if (activeModal === 'moto') setMotoServices(updatedMoto);
                 setToastMessage('Services updated successfully!');
                 closeModal();
+            },
+            onFinish: () => {
+                setIsSavingServices(false);
             }
         });
     };
@@ -320,6 +326,23 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
     return (
         <div style={styles.page} className="page-layout">
             <style>{`
+                @keyframes spinnerRotate {
+                    100% { transform: rotate(360deg); }
+                }
+                @keyframes spinnerDash {
+                    0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+                    50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+                    100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+                }
+                .btn-spinner {
+                    animation: spinnerRotate 1.4s linear infinite;
+                    width: 16px;
+                    height: 16px;
+                }
+                .btn-spinner-circle {
+                    animation: spinnerDash 1.2s ease-in-out infinite;
+                    stroke-linecap: round;
+                }
                 @keyframes slideUpFade {
                     from { opacity: 0; transform: translateY(16px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
@@ -664,7 +687,6 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     }
                 }
 
-                /* Carbon / Toffee dark theme: accessible fields and soft focus glow */
                 input:focus-visible, select:focus-visible, textarea:focus-visible,
                 button:focus-visible, a:focus-visible {
                     outline: 2px solid #E9C5E4;
@@ -929,8 +951,20 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                             </div>
 
                             <div style={styles.modalActions}>
-                                <button onClick={closeModal} style={styles.cancelBtn} className="hover-btn" type="button">Cancel</button>
-                                <button onClick={handleSaveModal} style={styles.saveBtn} className="hover-btn" type="button">Save Changes</button>
+                                <button onClick={closeModal} style={styles.cancelBtn} className="hover-btn" type="button" disabled={isSavingServices}>Cancel</button>
+                                <button onClick={handleSaveModal} style={styles.saveBtn} className="hover-btn" type="button" disabled={isSavingServices}>
+                                    {isSavingServices ? (
+                                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                            <circle
+                                                cx="25" cy="25" r="20"
+                                                fill="none"
+                                                stroke="#110D08"
+                                                strokeWidth="5"
+                                                className="btn-spinner-circle"
+                                            />
+                                        </svg>
+                                    ) : 'Save Changes'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1008,5 +1042,5 @@ const styles = {
     iconDeleteBtn: { backgroundColor: 'transparent', border: 'none', color: '#FF8F9A', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.9, flexShrink: 0 },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #50545D', paddingTop: '14px', marginTop: '4px', boxSizing: 'border-box' },
     cancelBtn: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
+    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '95px', minHeight: '26px' },
 };

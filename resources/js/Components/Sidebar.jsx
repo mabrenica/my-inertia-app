@@ -1,13 +1,56 @@
+import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 
 export default function Sidebar({ activePage }) {
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
     const handleLogout = () => {
-        router.post('/logout');
+        if (isLoggingOut) return;
+        setIsLoggingOut(true);
+        router.post('/logout', {}, {
+            onError: () => {
+                setIsLoggingOut(false);
+            },
+            onFinish: () => {
+                setIsLoggingOut(false);
+            }
+        });
     };
 
     return (
         <>
             <style>{`
+                @keyframes spinnerRotate {
+                    100% { transform: rotate(360deg); }
+                }
+                @keyframes spinnerDash {
+                    0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+                    50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+                    100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+                }
+                .btn-spinner {
+                    animation: spinnerRotate 1.4s linear infinite;
+                    width: 24px;
+                    height: 24px;
+                }
+                .btn-spinner-circle {
+                    animation: spinnerDash 1.2s ease-in-out infinite;
+                    stroke-linecap: round;
+                }
+                @keyframes fadeInOverlay {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUpModal {
+                    from { opacity: 0; transform: translateY(14px) scale(0.96); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                .animated-overlay {
+                    animation: fadeInOverlay 0.2s ease-out forwards;
+                }
+                .animated-modal {
+                    animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
                 .sidebar-container {
                     width: 240px;
                     background-image: linear-gradient(180deg, #1D1A1B 0%, #151217 100%);
@@ -33,8 +76,13 @@ export default function Sidebar({ activePage }) {
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .sidebar-logout-btn:hover {
-                    background-color: rgba(255, 143, 154, 0.14);
-                    transform: translateX(4px);
+                    background-color: rgba(255, 143, 154, 0.15);
+                    border-color: rgba(255, 143, 154, 0.45) !important;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 14px rgba(255, 143, 154, 0.15);
+                }
+                .sidebar-logout-btn:active {
+                    transform: translateY(1px);
                 }
                 .mobile-active-dot {
                     display: none;
@@ -125,12 +173,15 @@ export default function Sidebar({ activePage }) {
                         padding: 0 !important;
                         gap: 0 !important;
                         border-radius: 999px !important;
+                        border: none !important;
+                        background: transparent !important;
                     }
                     .sidebar-logout-btn span {
                         display: none;
                     }
                     .sidebar-logout-btn:hover {
                         transform: scale(1.06) !important;
+                        background-color: rgba(255, 143, 154, 0.14) !important;
                     }
                     .sidebar-logout-btn:active {
                         transform: scale(0.92) !important;
@@ -207,6 +258,7 @@ export default function Sidebar({ activePage }) {
                         style={styles.logoutButton}
                         className="sidebar-logout-btn"
                         type="button"
+                        disabled={isLoggingOut}
                     >
                         <svg className="sidebar-icon-svg" style={{ ...styles.navIcon, color: '#FF8F9A' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -215,6 +267,23 @@ export default function Sidebar({ activePage }) {
                     </button>
                 </div>
             </div>
+
+            {isLoggingOut && (
+                <div style={styles.modalOverlay} className="animated-overlay">
+                    <div style={styles.modalBox} className="animated-modal">
+                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                            <circle
+                                cx="25" cy="25" r="20"
+                                fill="none"
+                                stroke="#FF8F9A"
+                                strokeWidth="5"
+                                className="btn-spinner-circle"
+                            />
+                        </svg>
+                        <span style={styles.modalText}>Logging out</span>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
@@ -266,13 +335,46 @@ const styles = {
         gap: '10px',
         width: '100%',
         padding: '10px 12px',
-        backgroundColor: 'transparent',
-        border: 'none',
-        borderRadius: '8px',
+        backgroundColor: 'rgba(255, 143, 154, 0.06)',
+        border: '1px solid rgba(255, 143, 154, 0.22)',
+        borderRadius: '10px',
         color: '#FF8F9A',
         fontSize: '13px',
-        fontWeight: '500',
+        fontWeight: '600',
         cursor: 'pointer',
         textAlign: 'left',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 0 10px rgba(255, 143, 154, 0.08)',
+    },
+    modalOverlay: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.70)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+        padding: '16px',
+    },
+    modalBox: {
+        backgroundColor: '#1D1A1B',
+        border: '1px solid #50545D',
+        borderRadius: '14px',
+        padding: '24px 32px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 143, 154, 0.15)',
+        boxSizing: 'border-box',
+    },
+    modalText: {
+        color: '#FFF8F0',
+        fontSize: '14px',
+        fontWeight: '600',
+        letterSpacing: '-0.2px',
     },
 };

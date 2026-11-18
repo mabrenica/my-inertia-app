@@ -40,8 +40,33 @@ export default function Login() {
     return (
         <div style={styles.page}>
             <style>{`
+                @keyframes spinnerRotate {
+                    100% { transform: rotate(360deg); }
+                }
+                @keyframes spinnerDash {
+                    0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+                    50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+                    100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+                }
+                .btn-spinner {
+                    animation: spinnerRotate 1.4s linear infinite;
+                    width: 24px;
+                    height: 24px;
+                }
+                .btn-spinner-circle {
+                    animation: spinnerDash 1.2s ease-in-out infinite;
+                    stroke-linecap: round;
+                }
                 @keyframes cardFadeIn {
                     from { opacity: 0; transform: translateY(20px) scale(0.98); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                @keyframes fadeInOverlay {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUpModal {
+                    from { opacity: 0; transform: translateY(14px) scale(0.96); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 @keyframes fieldShake {
@@ -53,6 +78,12 @@ export default function Login() {
                 }
                 .animated-card {
                     animation: cardFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+                .animated-overlay {
+                    animation: fadeInOverlay 0.2s ease-out forwards;
+                }
+                .animated-modal {
+                    animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
                 .shake-invalid {
                     animation: fieldShake 0.36s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
@@ -172,12 +203,9 @@ export default function Login() {
                                     type="submit"
                                     disabled={processing}
                                     className="hover-btn"
-                                    style={{
-                                        ...styles.primaryButton,
-                                        opacity: processing ? 0.7 : 1
-                                    }}
+                                    style={styles.primaryButton}
                                 >
-                                    {processing ? 'Signing In...' : 'Sign In'}
+                                    Sign In
                                 </button>
                             </div>
                         </form>
@@ -197,6 +225,23 @@ export default function Login() {
                     </div>
                 </div>
             </div>
+
+            {processing && (
+                <div style={styles.modalOverlay} className="animated-overlay">
+                    <div style={styles.modalBox} className="animated-modal">
+                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                            <circle
+                                cx="25" cy="25" r="20"
+                                fill="none"
+                                stroke="#E9C5E4"
+                                strokeWidth="5"
+                                className="btn-spinner-circle"
+                            />
+                        </svg>
+                        <span style={styles.modalText}>Logging In</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -327,6 +372,10 @@ const styles = {
         fontSize: '13px',
         cursor: 'pointer',
         boxShadow: '0 10px 24px rgba(0,0,0,0.34), 0 0 16px rgba(233, 197, 228, 0.26)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '41px',
     },
     imageSection: {
         flex: '1.2',
@@ -371,6 +420,38 @@ const styles = {
         justifyContent: 'center',
     },
     logoText: {
+        color: '#FFF8F0',
+        fontSize: '14px',
+        fontWeight: '600',
+        letterSpacing: '-0.2px',
+    },
+    modalOverlay: {
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.70)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+        padding: '16px',
+    },
+    modalBox: {
+        backgroundColor: '#1D1A1B',
+        border: '1px solid #50545D',
+        borderRadius: '14px',
+        padding: '24px 32px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.35), 0 0 20px rgba(233, 197, 228, 0.18)',
+        boxSizing: 'border-box',
+    },
+    modalText: {
         color: '#FFF8F0',
         fontSize: '14px',
         fontWeight: '600',

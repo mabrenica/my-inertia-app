@@ -12,6 +12,8 @@ use App\Models\UserServicePreference;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Models\VehicleMaintenanceLog;
+use App\Support\OptimizedImageUploader;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -127,27 +129,26 @@ class AuthController extends Controller
 
     public function updateAvatar(Request $request)
     {
+        // 2,100 KB limit removed. React sends an optimized image, while
+        // this 20 MB post-optimization safety cap protects the Wasmer runtime.
         $request->validate([
-            'avatar' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2100'],
+            'avatar' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:20480'],
         ]);
 
         $user = $request->user();
+        $oldAvatar = $user->avatar;
+        $newPath = OptimizedImageUploader::store($request->file('avatar'), 'avatars', 'avatar', 640);
+        $newUrl = Storage::disk('supabase')->url($newPath);
 
-        if ($request->hasFile('avatar')) {
-            if ($user->avatar && !filter_var($user->avatar, FILTER_VALIDATE_URL) === false) {
-                $this->deleteStoredFile($user->avatar);
-            }
-
-            $path = $request->file('avatar')->store('avatars', 'supabase');
-
-            if (!$path) {
-                abort(500, 'File upload failed.');
-            }
-
-            $url = Storage::disk('supabase')->url($path);
-
-            $user->update(['avatar' => $url]);
+        try {
+            $user->update(['avatar' => $newUrl]);
+        } catch (\Throwable $exception) {
+            Storage::disk('supabase')->delete($newPath);
+            throw $exception;
         }
+
+        // Delete the old file only after the new avatar is stored and saved.
+        $this->deleteStoredFile($oldAvatar);
 
         return back();
     }
@@ -155,7 +156,9 @@ class AuthController extends Controller
     public function removeAvatar(Request $request)
     {
         $user = $request->user();
+        $oldAvatar = $user->avatar;
         $user->update(['avatar' => null]);
+        $this->deleteStoredFile($oldAvatar);
 
         return back();
     }
@@ -168,25 +171,32 @@ class AuthController extends Controller
             'model' => ['required', 'string', 'max:255'],
             'year' => ['required', 'string', 'max:10'],
             'description' => ['nullable', 'string'],
-            'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2100'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:20480'],
         ]);
 
+        $newPath = null;
         $photoUrl = null;
+
         if ($request->hasFile('photo')) {
-            $path = $request->file('photo')->store('vehicles', 'supabase');
-            if ($path) {
-                $photoUrl = Storage::disk('supabase')->url($path);
-            }
+            $newPath = OptimizedImageUploader::store($request->file('photo'), 'vehicles', 'photo', 1600);
+            $photoUrl = Storage::disk('supabase')->url($newPath);
         }
 
-        $request->user()->vehicles()->create([
-            'type' => $validated['type'],
-            'make' => $validated['make'],
-            'model' => $validated['model'],
-            'year' => $validated['year'],
-            'description' => $validated['description'] ?? null,
-            'photo' => $photoUrl,
-        ]);
+        try {
+            $request->user()->vehicles()->create([
+                'type' => $validated['type'],
+                'make' => $validated['make'],
+                'model' => $validated['model'],
+                'year' => $validated['year'],
+                'description' => $validated['description'] ?? null,
+                'photo' => $photoUrl,
+            ]);
+        } catch (\Throwable $exception) {
+            if ($newPath !== null) {
+                Storage::disk('supabase')->delete($newPath);
+            }
+            throw $exception;
+        }
 
         return back()->with('success', 'Vehicle successfully added!');
     }
@@ -203,38 +213,44 @@ class AuthController extends Controller
             'model' => ['required', 'string', 'max:255'],
             'year' => ['required', 'string', 'max:10'],
             'description' => ['nullable', 'string'],
-            'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2100'],
+            'photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:20480'],
             'remove_photo' => ['nullable', 'boolean'],
         ]);
 
-        $photoUrl = $vehicle->photo;
+        $oldPhotoUrl = $vehicle->photo;
+        $photoUrl = $oldPhotoUrl;
+        $newPath = null;
 
         if ($request->boolean('remove_photo')) {
-            if ($vehicle->photo && !filter_var($vehicle->photo, FILTER_VALIDATE_URL) === false) {
-                $this->deleteStoredFile($vehicle->photo);
-            }
             $photoUrl = null;
         }
 
+        // A newly selected photo takes precedence over remove_photo.
         if ($request->hasFile('photo')) {
-            if ($vehicle->photo && !filter_var($vehicle->photo, FILTER_VALIDATE_URL) === false) {
-                $this->deleteStoredFile($vehicle->photo);
-            }
-
-            $path = $request->file('photo')->store('vehicles', 'supabase');
-            if ($path) {
-                $photoUrl = Storage::disk('supabase')->url($path);
-            }
+            $newPath = OptimizedImageUploader::store($request->file('photo'), 'vehicles', 'photo', 1600);
+            $photoUrl = Storage::disk('supabase')->url($newPath);
         }
 
-        $vehicle->update([
-            'type' => $validated['type'],
-            'make' => $validated['make'],
-            'model' => $validated['model'],
-            'year' => $validated['year'],
-            'description' => $validated['description'] ?? null,
-            'photo' => $photoUrl,
-        ]);
+        try {
+            $vehicle->update([
+                'type' => $validated['type'],
+                'make' => $validated['make'],
+                'model' => $validated['model'],
+                'year' => $validated['year'],
+                'description' => $validated['description'] ?? null,
+                'photo' => $photoUrl,
+            ]);
+        } catch (\Throwable $exception) {
+            if ($newPath !== null) {
+                Storage::disk('supabase')->delete($newPath);
+            }
+            throw $exception;
+        }
+
+        // Never delete the previous photo before the database update succeeds.
+        if ($oldPhotoUrl && $oldPhotoUrl !== $photoUrl) {
+            $this->deleteStoredFile($oldPhotoUrl);
+        }
 
         return back()->with('success', 'Vehicle successfully updated!');
     }
@@ -245,11 +261,9 @@ class AuthController extends Controller
             ->where('user_id', $request->user()->id)
             ->firstOrFail();
 
-        if ($vehicle->photo && !filter_var($vehicle->photo, FILTER_VALIDATE_URL) === false) {
-            $this->deleteStoredFile($vehicle->photo);
-        }
-
+        $photoUrl = $vehicle->photo;
         $vehicle->delete();
+        $this->deleteStoredFile($photoUrl);
 
         return back()->with('success', 'Vehicle successfully deleted!');
     }
@@ -376,14 +390,44 @@ class AuthController extends Controller
         return back()->with('success', 'Current ODO updated successfully!');
     }
 
-    protected function deleteStoredFile($url)
+    protected function deleteStoredFile(?string $url): void
     {
-        $parsedUrl = parse_url($url, PHP_URL_PATH);
-        $prefix = '/storage/v1/object/public/fleetflow/';
-        
-        if (str_starts_with($parsedUrl, $prefix)) {
-            $path = substr($parsedUrl, strlen($prefix));
+        if (!$url) {
+            return;
+        }
+
+        // Derive the URL prefix from the active Supabase disk. This works
+        // with BOTH production (fleetflow) and development (fleetflow-dev).
+        $marker = 'fleetflow-path-check-marker';
+
+        try {
+            $exampleUrl = Storage::disk('supabase')->url($marker);
+            $position = strpos($exampleUrl, $marker);
+
+            if ($position === false) {
+                return;
+            }
+
+            $prefix = substr($exampleUrl, 0, $position);
+            if (!str_starts_with($url, $prefix)) {
+                return; // Never delete files outside our configured bucket.
+            }
+
+            $relativeUrl = substr($url, strlen($prefix));
+            $path = rawurldecode(parse_url($relativeUrl, PHP_URL_PATH) ?: '');
+
+            // Only remove files managed by FleetFlow's photo upload paths.
+            if (!preg_match('~^(avatars|vehicles)/[A-Za-z0-9._-]+\.(webp|png|jpe?g)$~i', $path)) {
+                return;
+            }
+
             Storage::disk('supabase')->delete($path);
+        } catch (\Throwable $exception) {
+            // A failed object cleanup must not undo a successful DB update.
+            Log::warning('Unable to clean up a FleetFlow image', [
+                'message' => $exception->getMessage(),
+            ]);
         }
     }
+
 }

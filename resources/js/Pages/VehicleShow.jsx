@@ -144,6 +144,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     const [showLogModal, setShowLogModal] = useState(false);
     const [showDeleteLogModal, setShowDeleteLogModal] = useState(false);
     const [logToDelete, setLogToDelete] = useState(null);
+    const [isDeletingLog, setIsDeletingLog] = useState(false);
 
     const [editingLogId, setEditingLogId] = useState(null);
     const [inlineData, setInlineData] = useState({
@@ -320,13 +321,17 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     };
 
     const confirmDeleteLog = () => {
-        if (logToDelete) {
+        if (logToDelete && !isDeletingLog) {
+            setIsDeletingLog(true);
             router.delete(`/maintenance-logs/${logToDelete.id}`, {
                 preserveScroll: true,
                 onSuccess: () => {
                     setShowDeleteLogModal(false);
                     setLogToDelete(null);
                     setToastMessage('Maintenance log deleted successfully!');
+                },
+                onFinish: () => {
+                    setIsDeletingLog(false);
                 },
             });
         }
@@ -490,6 +495,23 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     return (
         <div style={styles.page} className="page-layout">
             <style>{`
+                @keyframes spinnerRotate {
+                    100% { transform: rotate(360deg); }
+                }
+                @keyframes spinnerDash {
+                    0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+                    50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+                    100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+                }
+                .btn-spinner {
+                    animation: spinnerRotate 1.4s linear infinite;
+                    width: 16px;
+                    height: 16px;
+                }
+                .btn-spinner-circle {
+                    animation: spinnerDash 1.2s ease-in-out infinite;
+                    stroke-linecap: round;
+                }
                 @keyframes slideUpFade {
                     from { opacity: 0; transform: translateY(16px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
@@ -689,7 +711,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         color: #C9C3CC;
                         font-style: italic;
                     }
-                    /* Multi-select Filter Dropdown on Mobile */
                     .mobile-filter-toggle {
                         background-color: #1D1A1B !important;
                         border-radius: 10px !important;
@@ -927,7 +948,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     }
                 }
 
-                /* Carbon / Toffee dark theme: accessible fields and soft focus glow */
                 input:focus-visible, select:focus-visible, textarea:focus-visible,
                 button:focus-visible, a:focus-visible {
                     outline: 2px solid #E9C5E4;
@@ -992,7 +1012,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             )}
                         </div>
 
-                        {/* Mobile Reference-Style Metadata Layout */}
                         <div className="mobile-showcase-meta">
                             <div className="mobile-title-row">
                                 <h1 className="mobile-vehicle-title">{vehicle.make} {vehicle.model}</h1>
@@ -1010,7 +1029,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             )}
                         </div>
 
-                        {/* Desktop Horizontal Details Layout */}
                         <div style={styles.profileRight} className="profileRight">
                             <div style={styles.detailItem}>
                                 <span style={styles.detailKey}>Type:</span>
@@ -1046,7 +1064,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </div>
                     </div>
 
-                    {/* Service Schedule Status */}
                     <div style={styles.sectionHeaderRow}>
                         <h2 style={styles.sectionTitle}>Service Schedule Status</h2>
                     </div>
@@ -1090,7 +1107,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </table>
                     </div>
 
-                    {/* Mobile Card View: Service Schedule Status */}
                     <div className="mobile-card-list page-card-anim">
                         {serviceScheduleStatus.length === 0 ? (
                             <div className="mobile-empty-card">No services configured in settings.</div>
@@ -1128,7 +1144,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         )}
                     </div>
 
-                    {/* Maintenance Logs */}
                     <div style={styles.sectionHeaderRow}>
                         <h2 style={styles.sectionTitle}>Maintenance Logs</h2>
 
@@ -1352,7 +1367,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         </table>
                     </div>
 
-                    {/* Mobile Card View: Maintenance Logs */}
                     <div className="mobile-card-list page-card-anim">
                         {filteredLogs.length === 0 ? (
                             <div className="mobile-empty-card">No maintenance records found.</div>
@@ -1548,8 +1562,20 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     {odoErrors.current_odo && <span style={styles.errorText}>{odoErrors.current_odo}</span>}
                                 </div>
                                 <div style={styles.modalActions}>
-                                    <button type="button" onClick={closeOdoModal} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={odoProcessing}>{odoProcessing ? 'Saving...' : 'Save ODO'}</button>
+                                    <button type="button" onClick={closeOdoModal} style={styles.cancelBtn} className="hover-btn" disabled={odoProcessing}>Cancel</button>
+                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={odoProcessing}>
+                                        {odoProcessing ? (
+                                            <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                                <circle
+                                                    cx="25" cy="25" r="20"
+                                                    fill="none"
+                                                    stroke="#110D08"
+                                                    strokeWidth="5"
+                                                    className="btn-spinner-circle"
+                                                />
+                                            </svg>
+                                        ) : 'Save ODO'}
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -1665,8 +1691,20 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 </div>
 
                                 <div style={styles.modalActions}>
-                                    <button type="button" onClick={closeModal} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>{processing ? 'Saving...' : 'Save Log'}</button>
+                                    <button type="button" onClick={closeModal} style={styles.cancelBtn} className="hover-btn" disabled={processing}>Cancel</button>
+                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>
+                                        {processing ? (
+                                            <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                                <circle
+                                                    cx="25" cy="25" r="20"
+                                                    fill="none"
+                                                    stroke="#110D08"
+                                                    strokeWidth="5"
+                                                    className="btn-spinner-circle"
+                                                />
+                                            </svg>
+                                        ) : 'Save Log'}
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -1682,8 +1720,20 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             </div>
                             <p style={{ color: '#C9C3CC', fontSize: '13px', margin: '8px 0 16px 0' }}>Are you sure you want to delete this maintenance record? This action cannot be undone.</p>
                             <div style={styles.modalActions}>
-                                <button type="button" onClick={() => setShowDeleteLogModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                <button type="button" onClick={confirmDeleteLog} style={styles.deleteCardBtn} className="hover-btn">Delete</button>
+                                <button type="button" onClick={() => setShowDeleteLogModal(false)} style={styles.cancelBtn} className="hover-btn" disabled={isDeletingLog}>Cancel</button>
+                                <button type="button" onClick={confirmDeleteLog} style={styles.deleteCardBtn} className="hover-btn" disabled={isDeletingLog}>
+                                    {isDeletingLog ? (
+                                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                            <circle
+                                                cx="25" cy="25" r="20"
+                                                fill="none"
+                                                stroke="#FF8F9A"
+                                                strokeWidth="5"
+                                                className="btn-spinner-circle"
+                                            />
+                                        </svg>
+                                    ) : 'Delete'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1805,6 +1855,6 @@ const styles = {
     errorText: { color: '#FF8F9A', fontSize: '11px', marginTop: '2px' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #50545D', paddingTop: '14px', marginTop: '4px' },
     cancelBtn: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
-    deleteCardBtn: { backgroundColor: 'rgba(255, 143, 154, 0.10)', color: '#FF8F9A', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '85px', minHeight: '26px' },
+    deleteCardBtn: { backgroundColor: 'rgba(255, 143, 154, 0.10)', color: '#FF8F9A', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '65px', minHeight: '26px' },
 };

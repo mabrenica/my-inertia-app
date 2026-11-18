@@ -3,6 +3,7 @@ import { useForm, router, usePage, Link } from '@inertiajs/react';
 import Sidebar from '@/Components/Sidebar';
 import Toast from '@/Components/Toast';
 import Breadcrumb from '@/Components/Breadcrumb';
+import { optimizeImage } from '@/Utils/optimizeImage';
 
 function MinimalTypeIcon({ type, size = 16 }) {
     if (type === 'Car') {
@@ -148,9 +149,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     const [removeExistingPhoto, setRemoveExistingPhoto] = useState(false);
     const [emptyRequiredFields, setEmptyRequiredFields] = useState({});
     const [shakeKey, setShakeKey] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [vehicleToDelete, setVehicleToDelete] = useState(null);
+    const [isDeletingVehicle, setIsDeletingVehicle] = useState(false);
 
     const [toastMessage, setToastMessage] = useState(null);
 
@@ -161,6 +164,10 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     }, [flash]);
 
     const fileInputRef = useRef(null);
+    const photoTaskRef = useRef(0);
+    const [isOptimizingPhoto, setIsOptimizingPhoto] = useState(false);
+    const [photoProcessingFailed, setPhotoProcessingFailed] = useState(false);
+    const [originalPhotoName, setOriginalPhotoName] = useState('');
 
     const { data, setData, post, processing, errors, setError, clearErrors, reset } = useForm({
         type: 'Car',
@@ -296,6 +303,12 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     });
 
     const openCreateModal = () => {
+        photoTaskRef.current += 1;
+        setIsOptimizingPhoto(false);
+        setPhotoProcessingFailed(false);
+        setOriginalPhotoName('');
+        setIsSubmitting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
         setEditingVehicle(null);
         setRemoveExistingPhoto(false);
         setEmptyRequiredFields({});
@@ -312,6 +325,12 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     };
 
     const openEditModal = (vehicle) => {
+        photoTaskRef.current += 1;
+        setIsOptimizingPhoto(false);
+        setPhotoProcessingFailed(false);
+        setOriginalPhotoName('');
+        setIsSubmitting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
         setEditingVehicle(vehicle);
         setRemoveExistingPhoto(false);
         setEmptyRequiredFields({});
@@ -333,32 +352,61 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     };
 
     const confirmDeleteVehicle = () => {
-        if (vehicleToDelete) {
+        if (vehicleToDelete && !isDeletingVehicle) {
+            setIsDeletingVehicle(true);
             router.delete(`/vehicles/${vehicleToDelete.id}`, {
                 onSuccess: () => {
                     setShowDeleteModal(false);
                     setVehicleToDelete(null);
                 },
+                onFinish: () => {
+                    setIsDeletingVehicle(false);
+                },
             });
         }
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            clearErrors('photo');
-            const maxSizeInBytes = 2100 * 1024;
-            if (file.size > maxSizeInBytes) {
-                setError('photo', 'The photo must not be greater than 2100 KB.');
-                return;
-            }
-            setData('photo', file);
+    const handleFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const taskId = ++photoTaskRef.current;
+        setPhotoProcessingFailed(false);
+        setOriginalPhotoName(file.name);
+        clearErrors('photo');
+        setData('photo', null);
+        setIsOptimizingPhoto(true);
+
+        try {
+            const optimized = await optimizeImage(file, {
+                maxDimension: 1600,
+                quality: 0.78,
+            });
+
+            if (taskId !== photoTaskRef.current) return;
+            setData('photo', optimized);
+            setPhotoProcessingFailed(false);
             setRemoveExistingPhoto(false);
+        } catch (error) {
+            if (taskId !== photoTaskRef.current) return;
+            setPhotoProcessingFailed(true);
+            setOriginalPhotoName('');
+            setError('photo', error.message || 'Unable to optimize this photo.');
+        } finally {
+            if (taskId === photoTaskRef.current) {
+                setIsOptimizingPhoto(false);
+            }
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
     const handleRemovePhotoClick = (e) => {
         e.stopPropagation();
+        photoTaskRef.current += 1;
+        setIsOptimizingPhoto(false);
+        setPhotoProcessingFailed(false);
+        setOriginalPhotoName('');
+        clearErrors('photo');
         setData('photo', null);
         setRemoveExistingPhoto(true);
         if (fileInputRef.current) {
@@ -368,6 +416,14 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        if (isOptimizingPhoto) {
+            setError('photo', 'Please wait until the photo is optimized.');
+            return;
+        }
+        if (photoProcessingFailed) {
+            setError('photo', 'Please select a valid JPG, PNG, or WebP photo before saving.');
+            return;
+        }
         clearErrors('photo');
 
         const missing = {};
@@ -382,13 +438,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
             return;
         }
 
-        if (data.photo) {
-            const maxSizeInBytes = 2100 * 1024;
-            if (data.photo.size > maxSizeInBytes) {
-                setError('photo', 'The photo must not be greater than 2100 KB.');
-                return;
-            }
-        }
+        setIsSubmitting(true);
 
         const formData = {
             ...data,
@@ -398,19 +448,33 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
         if (editingVehicle) {
             router.post(`/vehicles/${editingVehicle.id}`, formData, {
                 forceFormData: true,
+                onError: (responseErrors) => {
+                    if (responseErrors.photo) setError('photo', responseErrors.photo);
+                    setIsSubmitting(false);
+                },
                 onSuccess: () => {
                     reset();
                     setShowModal(false);
                     setEditingVehicle(null);
                     setRemoveExistingPhoto(false);
                 },
+                onFinish: () => {
+                    setIsSubmitting(false);
+                },
             });
         } else {
             router.post('/vehicles', formData, {
                 forceFormData: true,
+                onError: (responseErrors) => {
+                    if (responseErrors.photo) setError('photo', responseErrors.photo);
+                    setIsSubmitting(false);
+                },
                 onSuccess: () => {
                     reset();
                     setShowModal(false);
+                },
+                onFinish: () => {
+                    setIsSubmitting(false);
                 },
             });
         }
@@ -425,6 +489,23 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     return (
         <div style={styles.page} className="page-layout">
             <style>{`
+                @keyframes spinnerRotate {
+                    100% { transform: rotate(360deg); }
+                }
+                @keyframes spinnerDash {
+                    0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+                    50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+                    100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+                }
+                .btn-spinner {
+                    animation: spinnerRotate 1.4s linear infinite;
+                    width: 16px;
+                    height: 16px;
+                }
+                .btn-spinner-circle {
+                    animation: spinnerDash 1.2s ease-in-out infinite;
+                    stroke-linecap: round;
+                }
                 @keyframes slideUpFade {
                     from { opacity: 0; transform: translateY(16px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
@@ -735,7 +816,6 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                     }
                 }
 
-                /* Carbon / Toffee dark theme: accessible fields and soft focus glow */
                 input:focus-visible, select:focus-visible, textarea:focus-visible,
                 button:focus-visible, a:focus-visible {
                     outline: 2px solid #E9C5E4;
@@ -1069,11 +1149,13 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 </div>
 
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Photo (Optional - Max 2100 KB)</label>
+                                    <label style={styles.label}>Photo (Optional)</label>
                                     <div style={styles.uploadBoxWrapper}>
-                                        <div style={styles.uploadBox} onClick={() => fileInputRef.current?.click()}>
-                                            {data.photo ? (
-                                                <span style={styles.uploadText}>{data.photo.name}</span>
+                                        <div style={styles.uploadBox} onClick={() => { if (!isOptimizingPhoto) fileInputRef.current?.click(); }}>
+                                            {isOptimizingPhoto ? (
+                                                <span style={styles.uploadText}>Optimizing photo...</span>
+                                            ) : data.photo ? (
+                                                <span style={styles.uploadText}>{originalPhotoName || data.photo.name}</span>
                                             ) : hasExistingPhoto ? (
                                                 <span style={styles.uploadIconOnly} aria-label="Uploaded photo" title="Uploaded photo">
                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFF8F0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1098,13 +1180,25 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                             </button>
                                         )}
                                     </div>
-                                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
+                                    <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/jpeg,image/png,image/webp" disabled={isOptimizingPhoto || processing || isSubmitting} style={{ display: 'none' }} />
                                     {errors.photo && <span style={styles.error}>{errors.photo}</span>}
                                 </div>
 
                                 <div style={styles.modalActions}>
-                                    <button type="button" onClick={() => setShowModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing}>Save</button>
+                                    <button type="button" onClick={() => { photoTaskRef.current += 1; setIsOptimizingPhoto(false); setShowModal(false); }} style={styles.cancelBtn} className="hover-btn">Cancel</button>
+                                    <button type="submit" style={styles.saveBtn} className="hover-btn" disabled={processing || isOptimizingPhoto || isSubmitting}>
+                                        {processing || isOptimizingPhoto || isSubmitting ? (
+                                            <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                                <circle
+                                                    cx="25" cy="25" r="20"
+                                                    fill="none"
+                                                    stroke="#110D08"
+                                                    strokeWidth="5"
+                                                    className="btn-spinner-circle"
+                                                />
+                                            </svg>
+                                        ) : 'Save'}
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -1122,8 +1216,20 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 Are you sure you want to delete <strong style={{ color: '#FFF8F0' }}>{vehicleToDelete?.make} {vehicleToDelete?.model}</strong>? This action cannot be undone.
                             </p>
                             <div style={styles.modalActions}>
-                                <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.cancelBtn} className="hover-btn">Cancel</button>
-                                <button type="button" onClick={confirmDeleteVehicle} style={styles.deleteCardBtn} className="hover-btn">Delete</button>
+                                <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.cancelBtn} className="hover-btn" disabled={isDeletingVehicle}>Cancel</button>
+                                <button type="button" onClick={confirmDeleteVehicle} style={styles.deleteCardBtn} className="hover-btn" disabled={isDeletingVehicle}>
+                                    {isDeletingVehicle ? (
+                                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                            <circle
+                                                cx="25" cy="25" r="20"
+                                                fill="none"
+                                                stroke="#FF8F9A"
+                                                strokeWidth="5"
+                                                className="btn-spinner-circle"
+                                            />
+                                        </svg>
+                                    ) : 'Delete'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1194,7 +1300,7 @@ const styles = {
     vehicleDesc: { color: '#C9C3CC', fontSize: '12px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' },
     cardActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #50545D', paddingTop: '12px' },
     editCardBtn: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer' },
-    deleteCardBtn: { backgroundColor: 'rgba(255, 143, 154, 0.10)', color: '#FF8F9A', border: '1px solid #50545D', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer' },
+    deleteCardBtn: { backgroundColor: 'rgba(255, 143, 154, 0.10)', color: '#FF8F9A', border: '1px solid #50545D', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '60px', minHeight: '26px' },
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.70)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
     modalBox: { backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), 0 0 16px rgba(233, 197, 228, 0.14)', boxSizing: 'border-box' },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
@@ -1212,6 +1318,5 @@ const styles = {
     error: { color: '#FF8F9A', fontSize: '11px' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' },
     cancelBtn: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
+    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '60px', minHeight: '26px' },
 };
-//test

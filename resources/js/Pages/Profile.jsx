@@ -3,6 +3,7 @@ import { useForm, router } from '@inertiajs/react';
 import Sidebar from '@/Components/Sidebar';
 import Breadcrumb from '@/Components/Breadcrumb';
 import Toast from '@/Components/Toast';
+import { optimizeImage } from '@/Utils/optimizeImage';
 
 export default function Profile({ auth }) {
     const user = auth?.user || {};
@@ -11,6 +12,8 @@ export default function Profile({ auth }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [avatarError, setAvatarError] = useState('');
+    const [isOptimizingAvatar, setIsOptimizingAvatar] = useState(false);
+    const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
     const [toastMessage, setToastMessage] = useState(null);
     const fileInputRef = useRef(null);
 
@@ -39,27 +42,24 @@ export default function Profile({ auth }) {
     };
 
     const handleAvatarClick = () => {
-        fileInputRef.current?.click();
+        if (!isOptimizingAvatar) fileInputRef.current?.click();
     };
 
-    const handleAvatarChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setAvatarError('');
+    const handleAvatarChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file || isOptimizingAvatar) return;
 
-            if (!file.type.startsWith('image/')) {
-                setAvatarError('Please select a valid image file.');
-                return;
-            }
+        setAvatarError('');
+        setIsOptimizingAvatar(true);
 
-            const maxSizeInBytes = 2100 * 1024;
-            if (file.size > maxSizeInBytes) {
-                setAvatarError('Image size must be under 2100 KB.');
-                return;
-            }
+        try {
+            const optimized = await optimizeImage(file, {
+                maxDimension: 640,
+                quality: 0.78,
+            });
 
             const formData = new FormData();
-            formData.append('avatar', file);
+            formData.append('avatar', optimized);
 
             router.post('/profile/avatar', formData, {
                 forceFormData: true,
@@ -67,16 +67,32 @@ export default function Profile({ auth }) {
                     setIsHovered(false);
                     setToastMessage('Profile picture updated!');
                 },
+                onError: (errors) => {
+                    setAvatarError(errors.avatar || 'Unable to upload profile picture.');
+                },
+                onFinish: () => {
+                    setIsOptimizingAvatar(false);
+                },
             });
+        } catch (error) {
+            setAvatarError(error.message || 'Unable to optimize this photo.');
+            setIsOptimizingAvatar(false);
+        } finally {
+            if (fileInputRef.current) fileInputRef.current.value = '';
         }
     };
 
     const confirmDeleteAvatar = () => {
+        if (isDeletingAvatar) return;
+        setIsDeletingAvatar(true);
         router.delete('/profile/avatar', {
             onSuccess: () => {
                 setShowDeleteModal(false);
                 setIsHovered(false);
                 setToastMessage('Profile picture removed.');
+            },
+            onFinish: () => {
+                setIsDeletingAvatar(false);
             },
         });
     };
@@ -90,6 +106,32 @@ export default function Profile({ auth }) {
     return (
         <div style={styles.page} className="page-layout">
             <style>{`
+                @keyframes spinnerRotate {
+                    100% { transform: rotate(360deg); }
+                }
+                @keyframes spinnerDash {
+                    0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+                    50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+                    100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+                }
+                .avatar-spinner {
+                    animation: spinnerRotate 1.4s linear infinite;
+                    width: 32px;
+                    height: 32px;
+                }
+                .avatar-spinner-circle {
+                    animation: spinnerDash 1.2s ease-in-out infinite;
+                    stroke-linecap: round;
+                }
+                .btn-spinner {
+                    animation: spinnerRotate 1.4s linear infinite;
+                    width: 16px;
+                    height: 16px;
+                }
+                .btn-spinner-circle {
+                    animation: spinnerDash 1.2s ease-in-out infinite;
+                    stroke-linecap: round;
+                }
                 @keyframes cardFadeIn {
                     from { opacity: 0; transform: translateY(16px) scale(0.98); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
@@ -125,7 +167,6 @@ export default function Profile({ auth }) {
                     }
                 }
 
-                /* Carbon / Toffee dark theme: accessible fields and soft focus glow */
                 input:focus-visible, select:focus-visible, textarea:focus-visible,
                 button:focus-visible, a:focus-visible {
                     outline: 2px solid #E9C5E4;
@@ -168,12 +209,29 @@ export default function Profile({ auth }) {
                                         </svg>
                                     </div>
                                 )}
+                                {isOptimizingAvatar && (
+                                    <div
+                                        style={styles.avatarProgressOverlay}
+                                        role="status"
+                                        aria-label="Processing profile photo"
+                                    >
+                                        <svg viewBox="0 0 50 50" style={styles.avatarSpinnerSvg} className="avatar-spinner" aria-hidden="true">
+                                            <circle
+                                                cx="25" cy="25" r="20"
+                                                fill="none"
+                                                stroke="#110D08"
+                                                strokeWidth="4"
+                                                className="avatar-spinner-circle"
+                                            />
+                                        </svg>
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{
                                 ...styles.hoverOverlay,
-                                opacity: isHovered ? 1 : 0,
-                                visibility: isHovered ? 'visible' : 'hidden',
+                                opacity: isHovered && !isOptimizingAvatar ? 1 : 0,
+                                visibility: isHovered && !isOptimizingAvatar ? 'visible' : 'hidden',
                             }}>
                                 <div style={styles.bottomActionRow}>
                                     {avatarUrl && (
@@ -184,7 +242,7 @@ export default function Profile({ auth }) {
                                             </svg>
                                         </button>
                                     )}
-                                    <button onClick={handleAvatarClick} style={styles.iconBtnUpload} className="hover-btn" title="Upload Avatar" type="button">
+                                    <button onClick={handleAvatarClick} disabled={isOptimizingAvatar} style={styles.iconBtnUpload} className="hover-btn" title="Upload Avatar" type="button">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                             <polyline points="17 8 12 3 7 8"></polyline>
@@ -201,7 +259,7 @@ export default function Profile({ auth }) {
                                     )}
                                 </div>
                             </div>
-                            <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/*" style={{ display: 'none' }} />
+                            <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/jpeg,image/png,image/webp" disabled={isOptimizingAvatar} style={{ display: 'none' }} />
                         </div>
 
                         {avatarError && <span style={styles.errorText}>{avatarError}</span>}
@@ -229,7 +287,19 @@ export default function Profile({ auth }) {
                                 ) : (
                                     <div style={styles.actionButtonGroup}>
                                         <button type="button" onClick={handleCancel} style={styles.cancelButton} className="hover-btn" disabled={processing}>Cancel</button>
-                                        <button type="submit" style={styles.saveButton} className="hover-btn" disabled={processing}>{processing ? 'Saving...' : 'Save Changes'}</button>
+                                        <button type="submit" style={styles.saveButton} className="hover-btn" disabled={processing}>
+                                            {processing ? (
+                                                <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                                    <circle
+                                                        cx="25" cy="25" r="20"
+                                                        fill="none"
+                                                        stroke="#110D08"
+                                                        strokeWidth="5"
+                                                        className="btn-spinner-circle"
+                                                    />
+                                                </svg>
+                                            ) : 'Save Changes'}
+                                        </button>
                                     </div>
                                 )}
                             </div>
@@ -337,8 +407,20 @@ export default function Profile({ auth }) {
                             <h3 style={styles.modalTitle}>Delete Avatar</h3>
                             <p style={styles.modalText}>Are you sure you want to delete your profile picture? This action cannot be undone.</p>
                             <div style={styles.modalActions}>
-                                <button onClick={() => setShowDeleteModal(false)} style={styles.modalCancelBtn} className="hover-btn" type="button">Cancel</button>
-                                <button onClick={confirmDeleteAvatar} style={styles.modalDeleteBtn} className="hover-btn" type="button">Yes, Delete</button>
+                                <button onClick={() => setShowDeleteModal(false)} style={styles.modalCancelBtn} className="hover-btn" type="button" disabled={isDeletingAvatar}>Cancel</button>
+                                <button onClick={confirmDeleteAvatar} style={styles.modalDeleteBtn} className="hover-btn" type="button" disabled={isDeletingAvatar}>
+                                    {isDeletingAvatar ? (
+                                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                            <circle
+                                                cx="25" cy="25" r="20"
+                                                fill="none"
+                                                stroke="#FFF8F0"
+                                                strokeWidth="5"
+                                                className="btn-spinner-circle"
+                                            />
+                                        </svg>
+                                    ) : 'Yes, Delete'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -362,15 +444,18 @@ const styles = {
         borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
     },
     profileHeader: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px', width: '100%' },
-    avatarContainer: { position: 'relative', marginBottom: '12px', cursor: 'pointer', width: '76px', height: '76px', borderRadius: '50%' },
-    avatarWrapper: { width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '2px solid #50545D', backgroundColor: '#50545D' },
+    avatarContainer: { position: 'relative', marginBottom: '24px', cursor: 'pointer', width: '76px', height: '76px' },
+    avatarProgressOverlay: { position: 'absolute', inset: 0, borderRadius: '50%', backgroundColor: '#FFF8F0', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20, pointerEvents: 'none' },
+    avatarSpinnerSvg: { width: '32px', height: '32px', filter: 'drop-shadow(0 0 4px rgba(0, 0, 0, 0.08))' },
+    avatarWrapper: { width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '2px solid #50545D', backgroundColor: '#50545D', position: 'relative' },
     avatar: { width: '100%', height: '100%', objectFit: 'cover' },
     blankAvatar: { width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#292831' },
     blankAvatarIcon: { width: '44px', height: '44px' },
     hoverOverlay: {
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: '50%',
-        backgroundColor: 'transparent', display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        zIndex: 10, paddingBottom: '6px', transition: 'opacity 0.25s ease-in-out, visibility 0.25s ease-in-out',
+        position: 'absolute', bottom: '-14px', left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', justifyContent: 'center',
+        zIndex: 10, transition: 'opacity 0.25s ease-in-out, visibility 0.25s ease-in-out',
+        width: 'max-content',
     },
     bottomActionRow: { display: 'flex', gap: '4px' },
     iconBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.2), 0 0 16px rgba(233, 197, 228, 0.14)' },
@@ -388,7 +473,7 @@ const styles = {
     modalText: { fontSize: '13px', color: '#C9C3CC', margin: '0 0 20px 0', lineHeight: '1.4' },
     modalActions: { display: 'flex', justifyContent: 'center', gap: '10px' },
     modalCancelBtn: { backgroundColor: 'transparent', color: '#C9C3CC', border: '1px solid #50545D', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    modalDeleteBtn: { backgroundColor: '#FF8F9A', color: '#FFF8F0', border: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    modalDeleteBtn: { backgroundColor: '#FF8F9A', color: '#FFF8F0', border: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '85px', minHeight: '26px' },
     profileNameRow: { display: 'flex', alignItems: 'center', gap: '6px' },
     profileName: { fontSize: '18px', fontWeight: '600', color: '#FFF8F0', margin: 0 },
     verifiedBadge: { width: '16px', height: '16px' },
@@ -399,7 +484,7 @@ const styles = {
     cardTitle: { fontSize: '14px', fontWeight: '600', color: '#FFF8F0', margin: 0 },
     actionButtonGroup: { display: 'flex', gap: '8px' },
     cancelButton: { backgroundColor: 'transparent', color: '#C9C3CC', border: '1px solid #50545D', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveButton: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
+    saveButton: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '4px 20px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '26px' },
     detailRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', padding: '8px 0', borderBottom: '1px solid #50545D', gap: '12px' },
     key: { color: '#C9C3CC', flexBasis: '35%', flexShrink: 0 },
     value: { color: '#FFF8F0', fontWeight: '500', flexBasis: '65%', textAlign: 'right', overflowWrap: 'anywhere' },
