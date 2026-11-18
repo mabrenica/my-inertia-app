@@ -97,33 +97,6 @@ jobs:
           print(f"FleetFlow release version: {version}")
           PY
 
-        run: |
-          python3 - <<'PY'
-          import os
-          import re
-          from pathlib import Path
-
-          manifest = Path("wasmer.toml")
-          content = manifest.read_text()
-
-          run_number = int(os.environ["GITHUB_RUN_NUMBER"])
-          attempt = int(os.environ["GITHUB_RUN_ATTEMPT"])
-          version = f"0.2.{run_number * 1000 + attempt}"
-
-          content, count = re.subn(
-              r'(?m)^version\s*=\s*"[^"]+"',
-              f'version = "{version}"',
-              content,
-              count=1
-          )
-
-          if count != 1:
-              raise SystemExit("Package version not found")
-
-          manifest.write_text(content)
-          print(f"Package version: {version}")
-          PY
-
       - name: Setup Wasmer CLI
         uses: wasmerio/setup-wasmer@v3.1
 
