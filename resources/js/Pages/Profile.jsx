@@ -101,7 +101,7 @@ export default function Profile({ auth }) {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .hover-list-row:hover {
-                    background-color: rgba(237, 230, 216, 0.5);
+                    background-color: rgba(141, 102, 67, 0.16);
                     padding-left: 6px;
                     padding-right: 6px;
                     border-radius: 6px;
@@ -111,7 +111,7 @@ export default function Profile({ auth }) {
                 }
                 .hover-btn:hover {
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(28, 28, 28, 0.12);
+                    box-shadow: 0 4px 12px rgba(28, 28, 28, 0.12), 0 0 14px rgba(141, 102, 67, 0.14);
                 }
                 .hover-btn:active {
                     transform: translateY(1px);
@@ -123,6 +123,24 @@ export default function Profile({ auth }) {
                     .mainContent {
                         padding: 16px 16px 92px 16px !important;
                     }
+                }
+
+                /* Carbon / Toffee dark theme: accessible fields and soft focus glow */
+                input:focus-visible, select:focus-visible, textarea:focus-visible,
+                button:focus-visible, a:focus-visible {
+                    outline: 2px solid #8D6643;
+                    outline-offset: 2px;
+                }
+                input::placeholder, textarea::placeholder {
+                    color: #A99B89;
+                    opacity: 1;
+                }
+                input:-webkit-autofill,
+                input:-webkit-autofill:hover,
+                input:-webkit-autofill:focus {
+                    -webkit-box-shadow: 0 0 0 1000px #28302A inset !important;
+                    -webkit-text-fill-color: #F4EEE0 !important;
+                    caret-color: #F4EEE0;
                 }
             `}</style>
 
@@ -145,7 +163,7 @@ export default function Profile({ auth }) {
                                     <img src={avatarUrl} alt="User Avatar" style={styles.avatar} />
                                 ) : (
                                     <div style={styles.blankAvatar}>
-                                        <svg style={styles.blankAvatarIcon} fill="#6e6962" viewBox="0 0 24 24">
+                                        <svg style={styles.blankAvatarIcon} fill="#CBBEAD" viewBox="0 0 24 24">
                                             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                                         </svg>
                                     </div>
@@ -190,7 +208,7 @@ export default function Profile({ auth }) {
 
                         <div style={styles.profileNameRow}>
                             <h2 style={styles.profileName}>{user.name || 'User'}</h2>
-                            <svg style={styles.verifiedBadge} viewBox="0 0 24 24" fill="#b3251e">
+                            <svg style={styles.verifiedBadge} viewBox="0 0 24 24" fill="#8D6643">
                                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
@@ -303,7 +321,7 @@ export default function Profile({ auth }) {
                                     <img src={avatarUrl} alt="Full Profile" style={styles.fullImage} />
                                 ) : (
                                     <div style={styles.fullBlankAvatar}>
-                                        <svg style={{ width: '96px', height: '96px' }} fill="#6e6962" viewBox="0 0 24 24">
+                                        <svg style={{ width: '96px', height: '96px' }} fill="#CBBEAD" viewBox="0 0 24 24">
                                             <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                                         </svg>
                                     </div>
@@ -333,21 +351,21 @@ export default function Profile({ auth }) {
 const styles = {
     page: {
         height: '100vh', width: '100vw',
-        backgroundColor: '#ede6d8', display: 'flex', flexDirection: 'row',
+        backgroundColor: '#111613', display: 'flex', flexDirection: 'row',
         margin: 0, padding: 0, boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         overflow: 'hidden',
     },
-    mainContent: { flex: 1, backgroundColor: '#ede6d8', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box' },
+    mainContent: { flex: 1, backgroundColor: '#111613', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box' },
     contentBody: { display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '750px', margin: '0 auto' },
     iconEditBtn: {
-        backgroundColor: '#ede6d8', color: '#1c1c1c', border: '1px solid #d6ccbb', width: '30px', height: '30px',
+        backgroundColor: '#28302A', color: '#F4EEE0', border: '1px solid #49483E', width: '30px', height: '30px',
         borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
     },
     profileHeader: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px', width: '100%' },
     avatarContainer: { position: 'relative', marginBottom: '12px', cursor: 'pointer', width: '76px', height: '76px', borderRadius: '50%' },
-    avatarWrapper: { width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '2px solid #d6ccbb', backgroundColor: '#ede6d8' },
+    avatarWrapper: { width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '2px solid #49483E', backgroundColor: '#49483E' },
     avatar: { width: '100%', height: '100%', objectFit: 'cover' },
-    blankAvatar: { width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#ede6d8' },
+    blankAvatar: { width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#28302A' },
     blankAvatarIcon: { width: '44px', height: '44px' },
     hoverOverlay: {
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, borderRadius: '50%',
@@ -355,38 +373,38 @@ const styles = {
         zIndex: 10, paddingBottom: '6px', transition: 'opacity 0.25s ease-in-out, visibility 0.25s ease-in-out',
     },
     bottomActionRow: { display: 'flex', gap: '4px' },
-    iconBtn: { backgroundColor: '#1c1c1c', color: '#ede6d8', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' },
-    iconBtnUpload: { backgroundColor: '#b3251e', color: '#ede6d8', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' },
-    iconBtnDelete: { backgroundColor: '#b3251e', color: '#ffffff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(28, 28, 28, 0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
-    viewModalBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2)', boxSizing: 'border-box' },
+    iconBtn: { backgroundColor: '#F4EEE0', color: '#1D2320', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.2), 0 0 16px rgba(141, 102, 67, 0.14)' },
+    iconBtnUpload: { backgroundColor: '#8D6643', color: '#F4EEE0', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.2), 0 0 16px rgba(141, 102, 67, 0.14)' },
+    iconBtnDelete: { backgroundColor: '#CB4928', color: '#FFFFFF', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.2), 0 0 16px rgba(141, 102, 67, 0.14)' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.70)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
+    viewModalBox: { backgroundColor: '#1D2320', border: '1px solid #49483E', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2), 0 0 16px rgba(141, 102, 67, 0.14)', boxSizing: 'border-box' },
     viewModalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
-    closeModalBtn: { background: 'none', border: 'none', color: '#6e6962', fontSize: '16px', cursor: 'pointer' },
-    fullImageContainer: { width: '100%', height: '320px', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#ede6d8', borderRadius: '8px', overflow: 'hidden', border: '1px solid #d6ccbb' },
+    closeModalBtn: { background: 'none', border: 'none', color: '#CBBEAD', fontSize: '16px', cursor: 'pointer' },
+    fullImageContainer: { width: '100%', height: '320px', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#28302A', borderRadius: '8px', overflow: 'hidden', border: '1px solid #49483E' },
     fullImage: { maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' },
-    fullBlankAvatar: { width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#ede6d8' },
-    modalBox: { backgroundColor: '#ffffff', border: '1px solid #d6ccbb', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2)', textAlign: 'center', boxSizing: 'border-box' },
-    modalTitle: { fontSize: '16px', fontWeight: '600', color: '#1c1c1c', margin: 0 },
-    modalText: { fontSize: '13px', color: '#6e6962', margin: '0 0 20px 0', lineHeight: '1.4' },
+    fullBlankAvatar: { width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#28302A' },
+    modalBox: { backgroundColor: '#1D2320', border: '1px solid #49483E', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(28, 28, 28, 0.2), 0 0 16px rgba(141, 102, 67, 0.14)', textAlign: 'center', boxSizing: 'border-box' },
+    modalTitle: { fontSize: '16px', fontWeight: '600', color: '#F4EEE0', margin: 0 },
+    modalText: { fontSize: '13px', color: '#CBBEAD', margin: '0 0 20px 0', lineHeight: '1.4' },
     modalActions: { display: 'flex', justifyContent: 'center', gap: '10px' },
-    modalCancelBtn: { backgroundColor: 'transparent', color: '#6e6962', border: '1px solid #d6ccbb', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    modalDeleteBtn: { backgroundColor: '#b3251e', color: '#ffffff', border: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    modalCancelBtn: { backgroundColor: 'transparent', color: '#CBBEAD', border: '1px solid #49483E', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    modalDeleteBtn: { backgroundColor: '#CB4928', color: '#FFFFFF', border: 'none', padding: '6px 16px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
     profileNameRow: { display: 'flex', alignItems: 'center', gap: '6px' },
-    profileName: { fontSize: '18px', fontWeight: '600', color: '#1c1c1c', margin: 0 },
+    profileName: { fontSize: '18px', fontWeight: '600', color: '#F4EEE0', margin: 0 },
     verifiedBadge: { width: '16px', height: '16px' },
-    profileEmail: { fontSize: '13px', color: '#6e6962', margin: '4px 0 0 0' },
+    profileEmail: { fontSize: '13px', color: '#CBBEAD', margin: '4px 0 0 0' },
     gridContainer: { display: 'flex', justifyContent: 'center', paddingBottom: '20px', width: '100%' },
-    cardBox: { width: '100%', maxWidth: '750px', backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #d6ccbb', padding: '20px', boxSizing: 'border-box', boxShadow: '0 4px 12px rgba(28, 28, 28, 0.04)' },
+    cardBox: { width: '100%', maxWidth: '750px', backgroundColor: '#1D2320', borderRadius: '12px', border: '1px solid #49483E', padding: '20px', boxSizing: 'border-box', boxShadow: '0 4px 12px rgba(28, 28, 28, 0.04), 0 0 16px rgba(141, 102, 67, 0.14)' },
     cardHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
-    cardTitle: { fontSize: '14px', fontWeight: '600', color: '#1c1c1c', margin: 0 },
+    cardTitle: { fontSize: '14px', fontWeight: '600', color: '#F4EEE0', margin: 0 },
     actionButtonGroup: { display: 'flex', gap: '8px' },
-    cancelButton: { backgroundColor: 'transparent', color: '#6e6962', border: '1px solid #d6ccbb', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveButton: { backgroundColor: '#1c1c1c', color: '#ede6d8', border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
-    detailRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', padding: '8px 0', borderBottom: '1px solid #ede6d8', gap: '12px' },
-    key: { color: '#6e6962', flexBasis: '35%', flexShrink: 0 },
-    value: { color: '#1c1c1c', fontWeight: '500', flexBasis: '65%', textAlign: 'right', overflowWrap: 'anywhere' },
-    disabledValue: { color: '#a39b8e', fontWeight: '500', flexBasis: '65%', textAlign: 'right', overflowWrap: 'anywhere' },
+    cancelButton: { backgroundColor: 'transparent', color: '#CBBEAD', border: '1px solid #49483E', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    saveButton: { backgroundColor: '#F4EEE0', color: '#1D2320', border: 'none', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
+    detailRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', padding: '8px 0', borderBottom: '1px solid #49483E', gap: '12px' },
+    key: { color: '#CBBEAD', flexBasis: '35%', flexShrink: 0 },
+    value: { color: '#F4EEE0', fontWeight: '500', flexBasis: '65%', textAlign: 'right', overflowWrap: 'anywhere' },
+    disabledValue: { color: '#8D6643', fontWeight: '500', flexBasis: '65%', textAlign: 'right', overflowWrap: 'anywhere' },
     inputWrapper: { flexBasis: '65%', display: 'flex', flexDirection: 'column' },
-    input: { width: '100%', backgroundColor: '#ede6d8', border: '1px solid #d6ccbb', borderRadius: '6px', padding: '6px 10px', color: '#1c1c1c', fontSize: '12px', outline: 'none', boxSizing: 'border-box' },
-    errorText: { color: '#b3251e', fontSize: '11px', marginTop: '4px', textAlign: 'center' },
+    input: { width: '100%', backgroundColor: '#28302A', border: '1px solid #49483E', borderRadius: '6px', padding: '6px 10px', color: '#F4EEE0', fontSize: '12px', outline: 'none', boxSizing: 'border-box' },
+    errorText: { color: '#CB4928', fontSize: '11px', marginTop: '4px', textAlign: 'center' },
 };

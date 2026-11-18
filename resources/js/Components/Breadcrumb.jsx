@@ -28,9 +28,9 @@ export default function Breadcrumb({ items = [] }) {
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
-                    background-color: #ffffff;
-                    color: #1c1c1c;
-                    border: 1px solid #d6ccbb;
+                    background-color: #1D2320;
+                    color: #F4EEE0;
+                    border: 1px solid #49483E;
                     width: 30px;
                     height: 30px;
                     padding: 0;
@@ -38,13 +38,13 @@ export default function Breadcrumb({ items = [] }) {
                     cursor: pointer;
                     text-decoration: none;
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-                    box-shadow: 0 2px 6px rgba(28, 28, 28, 0.04);
+                    box-shadow: 0 2px 6px rgba(28, 28, 28, 0.04), 0 0 14px rgba(141, 102, 67, 0.14);
                     flex-shrink: 0;
                     box-sizing: border-box;
                 }
                 .breadcrumb-back-btn:hover {
-                    background-color: #ede6d8;
-                    border-color: #b5b0a6;
+                    background-color: #28302A;
+                    border-color: #8D6643;
                     transform: translateY(-1px);
                 }
                 .breadcrumb-back-btn:active {
@@ -112,7 +112,7 @@ const styles = {
         gap: '6px',
         fontSize: '12px',
         lineHeight: '1',
-        color: '#6e6962',
+        color: '#CBBEAD',
         margin: 0,
     },
     itemWrapper: {
@@ -122,23 +122,23 @@ const styles = {
         lineHeight: '1',
     },
     link: {
-        color: '#6e6962',
+        color: '#CBBEAD',
         textDecoration: 'none',
         fontWeight: '500',
         lineHeight: '1',
     },
     label: {
-        color: '#6e6962',
+        color: '#CBBEAD',
         fontWeight: '500',
         lineHeight: '1',
     },
     active: {
-        color: '#1c1c1c',
+        color: '#F4EEE0',
         fontWeight: '600',
         lineHeight: '1',
     },
     separator: {
-        color: '#a39b8e',
+        color: '#8D6643',
         lineHeight: '1',
     },
 };

@@ -24,10 +24,10 @@ export default function Toast({ message, duration = 1000, onClose }) {
                     left: 50%;
                     transform: translate(-50%, 0);
                     z-index: 1200;
-                    background-color: #1c1c1c;
-                    color: #ede6d8;
-                    border: 1px solid #2e2e2e;
-                    border-left: 3px solid #b3251e;
+                    background-color: #F4EEE0;
+                    color: #F4EEE0;
+                    border: 1px solid #49483E;
+                    border-left: 3px solid #8D6643;
                     border-radius: 10px;
                     padding: 12px 16px;
                     display: flex;
@@ -37,7 +37,7 @@ export default function Toast({ message, duration = 1000, onClose }) {
                     gap: 10px;
                     font-size: 13px;
                     font-weight: 500;
-                    box-shadow: 0 12px 28px rgba(28, 28, 28, 0.22);
+                    box-shadow: 0 12px 28px rgba(28, 28, 28, 0.22), 0 0 14px rgba(141, 102, 67, 0.14);
                     width: max-content;
                     max-width: calc(100vw - 48px);
                     box-sizing: border-box;
@@ -57,7 +57,7 @@ export default function Toast({ message, duration = 1000, onClose }) {
                     height="16"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#b3251e"
+                    stroke="#8D6643"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
