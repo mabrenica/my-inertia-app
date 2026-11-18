@@ -60,7 +60,94 @@ jobs:
           test -f app.dev.yaml
           test -f wasmer.toml
 
+      
       - name: Configure isolated DEV target and release version
+        run: |
+          cp app.dev.yaml app.yaml
+
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          # Validate the DEV app
+          app = Path('app.yaml').read_text()
+
+          name = re.search(
+              r'(?m)^name:\s*(\S+)\s*$',
+              app
+          )
+
+          app_id = re.search(
+              r'(?m)^app_id:\s*(\S+)\s*$',
+              app
+          )
+
+          if not name or name.group(1) != 'fleetflow-dev':
+              raise SystemExit(
+                  'Refusing deployment: expected fleetflow-dev'
+              )
+
+          if not app_id or 'REPLACE_' in app_id.group(1):
+              raise SystemExit(
+                  'Create Wasmer DEV app and set its app_id'
+              )
+
+          if app_id.group(1) == 'da_KgYIZt9Upk6B':
+              raise SystemExit(
+                  'SAFETY STOP: DEV points to production!'
+              )
+
+          # Configure the DEV package
+          manifest = Path('wasmer.toml')
+          content = manifest.read_text()
+
+          run_number = int(os.environ['GITHUB_RUN_NUMBER'])
+          version = f'0.2.{run_number - 1}'
+
+          # Set DEV package name
+          content, names = re.subn(
+              r'(?m)^name\s*=\s*"[^"]+"',
+              'name = "mabrenica_stormblue/fleetflow-dev"',
+              content,
+              count=1
+          )
+
+          # Set automatic DEV version
+          content, versions = re.subn(
+              r'(?m)^version\s*=\s*"[^"]+"',
+              f'version = "{version}"',
+              content,
+              count=1
+          )
+
+          # IMPORTANT: Match existing private DEV package
+          content, visibility = re.subn(
+              r'(?m)^private\s*=\s*(?:true|false)\s*$',
+              'private = true',
+              content,
+              count=1
+          )
+
+          if names != 1 or versions != 1:
+              raise SystemExit(
+                  'Missing package name or version'
+              )
+
+          if visibility != 1:
+              raise SystemExit(
+                  'Missing private setting in wasmer.toml'
+              )
+
+          manifest.write_text(content)
+
+          print(f'DEV app: {name.group(1)}')
+          print(f'DEV app ID: {app_id.group(1)}')
+          print('Package: mabrenica_stormblue/fleetflow-dev')
+          print(f'Version: {version}')
+          print('Package visibility: PRIVATE')
+          PY
+
         run: |
           cp app.dev.yaml app.yaml
           python3 - <<'PY'
