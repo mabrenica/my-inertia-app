@@ -4,7 +4,7 @@ kind: wasmer.io/App.v0
 name: fleetflow
 owner: mabrenica_stormblue
 
-package: mabrenica_stormblue/fleetflow-edge-2026
+package: .
 
 app_id: da_KgYIZt9Upk6B
 
