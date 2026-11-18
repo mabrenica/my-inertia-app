@@ -15,4 +15,6 @@
 
 # Logs
 *.log
+
+.env.*
   
