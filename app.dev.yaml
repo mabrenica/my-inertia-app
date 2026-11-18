@@ -1,0 +1,20 @@
+kind: wasmer.io/App.v0
+
+name: fleetflow-dev
+owner: mabrenica_stormblue
+package: .
+
+# Create a separate FleetFlow DEV application in Wasmer first.
+# Replace this placeholder with its NEW app ID, never the production app ID.
+app_id: da_nVEIoteUAq7g
+
+debug: false
+
+# Deliberately no capabilities.database:
+# this app uses a separate external Supabase development PostgreSQL database.
+command:
+  - name: run
+    runner: web
+    env:
+      PORT: "8080"
+      DOCUMENT_ROOT: "/app/public"
