@@ -1,10 +1,18 @@
-/node_modules
+
+# Git metadata
 /.git
-/storage/*.key
-/storage/framework/cache/*
-/storage/framework/sessions/*
-/storage/framework/views/*
+
+# Node dependencies (rebuilt by npm)
+/node_modules
+
+# Laravel environment secrets
 .env
-/vendor/*/*/tests
-/vendor/*/*/docs
-/vendor/*/*/.github
+.env.backup
+.env.production
+
+# Sensitive files
+/storage/*.key
+
+# Logs
+*.log
+  
