@@ -10,8 +10,8 @@ export default function Sidebar({ activePage }) {
             <style>{`
                 .sidebar-container {
                     width: 240px;
-                    background-image: linear-gradient(180deg, #1D2320 0%, #141A16 100%);
-                    border-right: 1px solid #49483E;
+                    background-image: linear-gradient(180deg, #1D1A1B 0%, #151217 100%);
+                    border-right: 1px solid #50545D;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
@@ -25,15 +25,15 @@ export default function Sidebar({ activePage }) {
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .sidebar-nav-item:hover {
-                    background-color: rgba(141, 102, 67, 0.16);
+                    background-color: rgba(233, 197, 228, 0.16);
                     transform: translateX(4px);
-                    color: #F4EEE0 !important;
+                    color: #FFF8F0 !important;
                 }
                 .sidebar-logout-btn {
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .sidebar-logout-btn:hover {
-                    background-color: rgba(203, 73, 40, 0.14);
+                    background-color: rgba(255, 143, 154, 0.14);
                     transform: translateX(4px);
                 }
                 .mobile-active-dot {
@@ -52,10 +52,10 @@ export default function Sidebar({ activePage }) {
                         align-items: center !important;
                         justify-content: space-between !important;
                         padding: 0 8px !important;
-                        border: 1px solid #49483E;
+                        border: 1px solid #50545D;
                         border-radius: 999px;
-                        background-image: linear-gradient(180deg, #252D27 0%, #151B17 100%) !important;
-                        box-shadow: 0 12px 28px rgba(28, 28, 28, 0.28), 0 0 14px rgba(141, 102, 67, 0.14);
+                        background-image: linear-gradient(180deg, #25232B 0%, #1A171C 100%) !important;
+                        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 0 14px rgba(233, 197, 228, 0.14);
                     }
                     .sidebar-nav-section {
                         display: contents !important;
@@ -79,16 +79,16 @@ export default function Sidebar({ activePage }) {
                     }
                     .sidebar-nav-item:hover {
                         transform: scale(1.06) !important;
-                        background-color: rgba(141, 102, 67, 0.16) !important;
+                        background-color: rgba(233, 197, 228, 0.16) !important;
                     }
                     .sidebar-nav-item:active {
                         transform: scale(0.92) !important;
                     }
                     .sidebar-nav-item.is-active {
-                        color: #F4EEE0 !important;
+                        color: #FFF8F0 !important;
                     }
                     .sidebar-nav-item.is-active .sidebar-icon-svg {
-                        color: #F4EEE0 !important;
+                        color: #FFF8F0 !important;
                         transform: translateY(-2px);
                     }
                     .sidebar-icon-svg {
@@ -104,7 +104,7 @@ export default function Sidebar({ activePage }) {
                         width: 5px;
                         height: 5px;
                         border-radius: 50%;
-                        background-color: #8D6643;
+                        background-color: #EDF2B2;
                         transform: translateX(-50%) scale(0);
                         opacity: 0;
                         transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
@@ -208,7 +208,7 @@ export default function Sidebar({ activePage }) {
                         className="sidebar-logout-btn"
                         type="button"
                     >
-                        <svg className="sidebar-icon-svg" style={{ ...styles.navIcon, color: '#CB4928' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="sidebar-icon-svg" style={{ ...styles.navIcon, color: '#FF8F9A' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                         <span>Log out</span>
@@ -228,7 +228,7 @@ const styles = {
     navLabel: {
         fontSize: '11px',
         fontWeight: '600',
-        color: '#CBBEAD',
+        color: '#C9C3CC',
         textTransform: 'uppercase',
         letterSpacing: '0.5px',
         paddingLeft: '10px',
@@ -240,25 +240,25 @@ const styles = {
         gap: '10px',
         padding: '10px 12px',
         borderRadius: '8px',
-        color: '#CBBEAD',
+        color: '#C9C3CC',
         fontSize: '13px',
         fontWeight: '500',
         textDecoration: 'none',
     },
     navItemActive: {
-        backgroundImage: 'linear-gradient(135deg, #30392F 0%, #252D27 100%)',
-        color: '#F4EEE0',
-        boxShadow: 'inset 2px 0 0 #8D6643, 0 0 16px rgba(141, 102, 67, 0.14)',
+        backgroundImage: 'linear-gradient(135deg, #373540 0%, #25232B 100%)',
+        color: '#FFF8F0',
+        boxShadow: 'inset 2px 0 0 #E9C5E4, 0 0 16px rgba(233, 197, 228, 0.14)',
     },
     navIcon: {
         width: '16px',
         height: '16px',
-        color: '#CBBEAD',
+        color: '#C9C3CC',
         flexShrink: 0,
     },
     logoutContainer: {
         paddingTop: '16px',
-        borderTop: '1px solid #49483E',
+        borderTop: '1px solid #50545D',
     },
     logoutButton: {
         display: 'flex',
@@ -269,7 +269,7 @@ const styles = {
         backgroundColor: 'transparent',
         border: 'none',
         borderRadius: '8px',
-        color: '#CB4928',
+        color: '#FF8F9A',
         fontSize: '13px',
         fontWeight: '500',
         cursor: 'pointer',

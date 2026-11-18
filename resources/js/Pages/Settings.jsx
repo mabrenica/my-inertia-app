@@ -356,23 +356,23 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 }
                 .interactive-card:hover {
                     transform: translateY(-2px);
-                    box-shadow: 0 8px 20px rgba(28, 28, 28, 0.08), 0 0 14px rgba(141, 102, 67, 0.14);
-                    border-color: #8D6643;
+                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 0 14px rgba(233, 197, 228, 0.14);
+                    border-color: #E9C5E4;
                 }
                 .hover-list-item {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .hover-list-item:hover {
                     transform: translateX(4px);
-                    background-color: rgba(141, 102, 67, 0.16) !important;
-                    border-color: #8D6643 !important;
+                    background-color: rgba(233, 197, 228, 0.16) !important;
+                    border-color: #E9C5E4 !important;
                 }
                 .hover-btn {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .hover-btn:hover {
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(28, 28, 28, 0.12), 0 0 14px rgba(141, 102, 67, 0.14);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 0 14px rgba(233, 197, 228, 0.14);
                 }
                 .hover-btn:active {
                     transform: translateY(1px);
@@ -390,8 +390,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 .tooltip-text {
                     visibility: hidden;
                     width: 240px;
-                    background-color: #1D2320;
-                    color: #F4EEE0;
+                    background-color: #1D1A1B;
+                    color: #FFF8F0;
                     text-align: left;
                     border-radius: 6px;
                     padding: 8px 12px;
@@ -405,8 +405,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     font-size: 11px;
                     font-weight: normal;
                     line-height: 1.4;
-                    border: 1px solid #49483E;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 14px rgba(141, 102, 67, 0.14);
+                    border: 1px solid #50545D;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 14px rgba(233, 197, 228, 0.14);
                     pointer-events: none;
                 }
                 .tooltip-container:hover .tooltip-text,
@@ -441,11 +441,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     }
                     .settings-mobile-dropdown-trigger {
                         width: 100%;
-                        background-color: #1D2320;
-                        border: 1px solid #49483E;
+                        background-color: #1D1A1B;
+                        border: 1px solid #50545D;
                         border-radius: 10px;
                         padding: 10px 12px;
-                        color: #F4EEE0;
+                        color: #FFF8F0;
                         font-size: 13px;
                         font-weight: 500;
                         display: flex;
@@ -454,13 +454,13 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         gap: 8px;
                         cursor: pointer;
                         box-sizing: border-box;
-                        box-shadow: 0 0 0 3px transparent, 0 0 14px rgba(141, 102, 67, 0.14);
+                        box-shadow: 0 0 0 3px transparent, 0 0 14px rgba(233, 197, 228, 0.14);
                         transition: border-color 0.18s ease, box-shadow 0.18s ease;
                         text-align: left;
                     }
                     .settings-mobile-dropdown-trigger.is-focused {
-                        border-color: #8D6643;
-                        box-shadow: 0 0 0 3px rgba(141, 102, 67, 0.24);
+                        border-color: #E9C5E4;
+                        box-shadow: 0 0 0 3px rgba(233, 197, 228, 0.24);
                     }
                     .settings-mobile-dropdown-value {
                         overflow: hidden;
@@ -472,11 +472,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         top: calc(100% + 6px);
                         left: 0;
                         right: 0;
-                        background-color: #1D2320;
-                        border: 1px solid #49483E;
+                        background-color: #1D1A1B;
+                        border: 1px solid #50545D;
                         border-radius: 12px;
                         padding: 8px 6px 8px 8px;
-                        box-shadow: 0 12px 28px rgba(28, 28, 28, 0.14), 0 0 14px rgba(141, 102, 67, 0.14);
+                        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14), 0 0 14px rgba(233, 197, 228, 0.14);
                         z-index: 80;
                         max-height: 220px;
                         overflow-y: auto;
@@ -492,7 +492,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         background: transparent;
                     }
                     .settings-mobile-popover::-webkit-scrollbar-thumb {
-                        background-color: #49483E;
+                        background-color: #50545D;
                         border-radius: 999px;
                     }
                     .settings-mobile-option {
@@ -501,7 +501,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         border: none;
                         border-radius: 8px;
                         padding: 9px 10px;
-                        color: #F4EEE0;
+                        color: #FFF8F0;
                         font-size: 13px;
                         font-weight: 400;
                         display: flex;
@@ -514,11 +514,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         transition: background-color 0.15s ease, color 0.15s ease;
                     }
                     .settings-mobile-option:hover {
-                        background-color: #1D2320;
+                        background-color: #1D1A1B;
                     }
                     .settings-mobile-option.is-selected {
-                        background-color: #1D2320;
-                        color: #F4EEE0;
+                        background-color: #1D1A1B;
+                        color: #FFF8F0;
                         font-weight: 600;
                     }
                     .settings-mobile-option-label {
@@ -528,14 +528,14 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         flex: 1;
                     }
                     .settings-mobile-check {
-                        color: #F4EEE0;
+                        color: #FFF8F0;
                         flex-shrink: 0;
                     }
                     .settings-mobile-empty {
                         padding: 12px;
                         text-align: center;
                         font-size: 12px;
-                        color: #CBBEAD;
+                        color: #C9C3CC;
                         font-style: italic;
                     }
                     .desktop-service-list,
@@ -550,11 +550,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         width: 100%;
                     }
                     .mobile-service-card {
-                        background-color: #1D2320;
-                        border: 1px solid #49483E;
+                        background-color: #1D1A1B;
+                        border: 1px solid #50545D;
                         border-radius: 10px;
                         padding: 12px 14px;
-                        box-shadow: 0 2px 8px rgba(28, 28, 28, 0.04), 0 0 14px rgba(141, 102, 67, 0.14);
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 14px rgba(233, 197, 228, 0.14);
                         display: flex;
                         flex-direction: column;
                         gap: 8px;
@@ -576,13 +576,13 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     .mobile-service-card-title {
                         font-size: 13px;
                         font-weight: 700;
-                        color: #F4EEE0;
+                        color: #FFF8F0;
                         margin: 0;
                         line-height: 1.3;
                     }
                     .mobile-service-card-sub {
                         font-size: 11px;
-                        color: #CBBEAD;
+                        color: #C9C3CC;
                         margin: 0;
                     }
                     .mobile-service-card-rows {
@@ -590,7 +590,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         flex-direction: column;
                         gap: 6px;
                         padding-top: 8px;
-                        border-top: 1px solid #49483E;
+                        border-top: 1px solid #50545D;
                     }
                     .mobile-service-card-row {
                         display: flex;
@@ -600,11 +600,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         font-size: 12px;
                     }
                     .mobile-service-row-label {
-                        color: #CBBEAD;
+                        color: #C9C3CC;
                         font-weight: 500;
                     }
                     .mobile-service-row-val {
-                        color: #F4EEE0;
+                        color: #FFF8F0;
                         font-weight: 600;
                         text-align: right;
                     }
@@ -635,8 +635,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         padding-right: 2px;
                     }
                     .mobile-modal-card {
-                        background-color: #1D2320;
-                        border: 1px solid #49483E;
+                        background-color: #1D1A1B;
+                        border: 1px solid #50545D;
                         border-radius: 10px;
                         padding: 12px;
                         display: flex;
@@ -654,7 +654,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         font-size: 10px;
                         font-weight: 600;
                         text-transform: uppercase;
-                        color: #CBBEAD;
+                        color: #C9C3CC;
                         letter-spacing: 0.4px;
                     }
                     .mobile-modal-two-col {
@@ -667,19 +667,19 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 /* Carbon / Toffee dark theme: accessible fields and soft focus glow */
                 input:focus-visible, select:focus-visible, textarea:focus-visible,
                 button:focus-visible, a:focus-visible {
-                    outline: 2px solid #8D6643;
+                    outline: 2px solid #E9C5E4;
                     outline-offset: 2px;
                 }
                 input::placeholder, textarea::placeholder {
-                    color: #A99B89;
+                    color: #ABA8B4;
                     opacity: 1;
                 }
                 input:-webkit-autofill,
                 input:-webkit-autofill:hover,
                 input:-webkit-autofill:focus {
-                    -webkit-box-shadow: 0 0 0 1000px #28302A inset !important;
-                    -webkit-text-fill-color: #F4EEE0 !important;
-                    caret-color: #F4EEE0;
+                    -webkit-box-shadow: 0 0 0 1000px #292831 inset !important;
+                    -webkit-text-fill-color: #FFF8F0 !important;
+                    caret-color: #FFF8F0;
                 }
             `}</style>
 
@@ -701,7 +701,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                             <div style={styles.cardTitleRow} onClick={() => setCarOpen(!carOpen)}>
                                 <div style={styles.cardTitleLeft}>
                                     <svg
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CBBEAD" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9C3CC" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                                         style={{ transform: carOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
                                     >
                                         <polyline points="9 18 15 12 9 6"></polyline>
@@ -731,7 +731,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                             <div style={styles.cardTitleRow} onClick={() => setMotoOpen(!motoOpen)}>
                                 <div style={styles.cardTitleLeft}>
                                     <svg
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CBBEAD" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9C3CC" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                                         style={{ transform: motoOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
                                     >
                                         <polyline points="9 18 15 12 9 6"></polyline>
@@ -773,7 +773,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                         style={styles.tooltipIconWrapper}
                                         onClick={() => setTooltipOpen((prev) => !prev)}
                                     >
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#CBBEAD" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer' }}>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9C3CC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer' }}>
                                             <circle cx="12" cy="12" r="10"></circle>
                                             <line x1="12" y1="16" x2="12" y2="12"></line>
                                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -800,7 +800,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                         style={{
                                             ...styles.modalInput,
                                             flex: 2,
-                                            borderColor: emptyNameError ? '#CB4928' : '#49483E',
+                                            borderColor: emptyNameError ? '#FF8F9A' : '#50545D',
                                         }}
                                         className={`modalInput ${emptyNameError ? 'shake-invalid' : ''}`}
                                     />
@@ -943,70 +943,70 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 const styles = {
     page: {
         height: '100vh', width: '100vw',
-        backgroundColor: '#111613', display: 'flex', flexDirection: 'row',
+        backgroundColor: '#110D08', display: 'flex', flexDirection: 'row',
         margin: 0, padding: 0, boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         overflow: 'hidden',
     },
-    mainContent: { flex: 1, backgroundColor: '#111613', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
+    mainContent: { flex: 1, backgroundColor: '#110D08', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '750px', width: '100%', paddingBottom: '40px', margin: '0 auto' },
-    pageTitle: { fontSize: '28px', fontWeight: '700', color: '#F4EEE0', letterSpacing: '-0.5px', margin: 0 },
+    pageTitle: { fontSize: '28px', fontWeight: '700', color: '#FFF8F0', letterSpacing: '-0.5px', margin: 0 },
     sectionBlock: { display: 'flex', flexDirection: 'column', gap: '16px' },
-    sectionHeaderTitle: { color: '#F4EEE0', fontSize: '18px', fontWeight: '600', margin: 0 },
-    sectionHeaderDesc: { color: '#CBBEAD', fontSize: '13px', margin: '-10px 0 0 0' },
+    sectionHeaderTitle: { color: '#FFF8F0', fontSize: '18px', fontWeight: '600', margin: 0 },
+    sectionHeaderDesc: { color: '#C9C3CC', fontSize: '13px', margin: '-10px 0 0 0' },
     settingsCard: {
-        backgroundColor: '#1D2320', border: '1px solid #49483E', borderRadius: '12px',
-        padding: '20px', boxShadow: '0 4px 12px rgba(28, 28, 28, 0.04), 0 0 16px rgba(141, 102, 67, 0.14)', display: 'flex', flexDirection: 'column', gap: '16px',
+        backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px',
+        padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04), 0 0 16px rgba(233, 197, 228, 0.14)', display: 'flex', flexDirection: 'column', gap: '16px',
     },
     cardTitleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' },
     cardTitleLeft: { display: 'flex', alignItems: 'center', gap: '10px' },
     cardTitleRight: { display: 'flex', alignItems: 'center' },
-    cardTitle: { color: '#F4EEE0', fontSize: '15px', fontWeight: '600', margin: 0 },
+    cardTitle: { color: '#FFF8F0', fontSize: '15px', fontWeight: '600', margin: 0 },
     collapsibleContent: { display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '4px' },
     iconEditBtn: {
-        backgroundColor: '#28302A', color: '#F4EEE0', border: '1px solid #49483E', width: '32px', height: '32px',
+        backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', width: '32px', height: '32px',
         borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
     },
     emptyContainer: {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: '12px', padding: '24px 0', border: '1px dashed #49483E', borderRadius: '8px', backgroundColor: '#49483E',
+        gap: '12px', padding: '24px 0', border: '1px dashed #50545D', borderRadius: '8px', backgroundColor: '#50545D',
     },
-    emptyStateText: { color: '#CBBEAD', fontSize: '13px', fontStyle: 'italic' },
-    primaryAddBtn: { backgroundColor: '#F4EEE0', color: '#1D2320', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
+    emptyStateText: { color: '#C9C3CC', fontSize: '13px', fontStyle: 'italic' },
+    primaryAddBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
     verticalList: { display: 'flex', flexDirection: 'column', gap: '8px' },
     verticalItem: {
-        backgroundColor: '#28302A', border: '1px solid #49483E', borderRadius: '8px',
+        backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '8px',
         padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     },
-    verticalItemText: { color: '#F4EEE0', fontSize: '13px', fontWeight: '500' },
+    verticalItemText: { color: '#FFF8F0', fontSize: '13px', fontWeight: '500' },
     intervalTagsGroup: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
-    intervalBadge: { backgroundColor: 'rgba(141, 102, 67, 0.16)', color: '#F4EEE0', fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', flexShrink: 0 },
+    intervalBadge: { backgroundColor: 'rgba(233, 197, 228, 0.16)', color: '#FFF8F0', fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', flexShrink: 0 },
 
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.70)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
     modalBox: {
-        backgroundColor: '#1D2320', border: '1px solid #49483E', borderRadius: '14px',
-        padding: '24px', width: '100%', maxWidth: '640px', boxShadow: '0 25px 50px rgba(28, 28, 28, 0.2), 0 0 16px rgba(141, 102, 67, 0.14)',
+        backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '14px',
+        padding: '24px', width: '100%', maxWidth: '640px', boxShadow: '0 25px 50px rgba(0, 0, 0, 0.2), 0 0 16px rgba(233, 197, 228, 0.14)',
         display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box',
     },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     modalTitleWrapper: { display: 'flex', alignItems: 'center', gap: '10px' },
-    modalTitle: { color: '#F4EEE0', fontSize: '16px', fontWeight: '600', margin: 0 },
+    modalTitle: { color: '#FFF8F0', fontSize: '16px', fontWeight: '600', margin: 0 },
     tooltipIconWrapper: { display: 'flex', alignItems: 'center' },
-    closeBtn: { background: 'none', border: 'none', color: '#CBBEAD', fontSize: '16px', cursor: 'pointer' },
+    closeBtn: { background: 'none', border: 'none', color: '#C9C3CC', fontSize: '16px', cursor: 'pointer' },
     addItemForm: { display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' },
     formRow: { display: 'flex', gap: '8px', width: '100%', alignItems: 'center', boxSizing: 'border-box', flexWrap: 'wrap' },
-    modalInput: { backgroundColor: '#28302A', border: '1px solid #49483E', borderRadius: '6px', padding: '8px 10px', color: '#F4EEE0', fontSize: '12px', outline: 'none', boxSizing: 'border-box', minWidth: '100px', transition: 'border-color 0.2s ease' },
-    modalAddBtn: { backgroundColor: '#F4EEE0', color: '#1D2320', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 },
-    modalListHeader: { display: 'flex', gap: '8px', padding: '0 8px', color: '#CBBEAD', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', boxSizing: 'border-box' },
+    modalInput: { backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '6px', padding: '8px 10px', color: '#FFF8F0', fontSize: '12px', outline: 'none', boxSizing: 'border-box', minWidth: '100px', transition: 'border-color 0.2s ease' },
+    modalAddBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 },
+    modalListHeader: { display: 'flex', gap: '8px', padding: '0 8px', color: '#C9C3CC', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', boxSizing: 'border-box' },
     modalListContainer: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '260px', overflowY: 'auto', paddingRight: '4px', boxSizing: 'border-box' },
-    modalEmptyText: { color: '#CBBEAD', fontSize: '12px', textAlign: 'center', margin: '12px 0' },
+    modalEmptyText: { color: '#C9C3CC', fontSize: '12px', textAlign: 'center', margin: '12px 0' },
     modalListItem: {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        backgroundColor: '#28302A', border: '1px solid #49483E', borderRadius: '6px',
+        backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '6px',
         padding: '6px 8px', gap: '8px', boxSizing: 'border-box', width: '100%',
     },
-    modalInlineInput: { backgroundColor: '#1D2320', border: '1px solid #49483E', borderRadius: '4px', color: '#F4EEE0', fontSize: '12px', outline: 'none', padding: '6px 8px', boxSizing: 'border-box' },
-    iconDeleteBtn: { backgroundColor: 'transparent', border: 'none', color: '#CB4928', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.9, flexShrink: 0 },
-    modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #49483E', paddingTop: '14px', marginTop: '4px', boxSizing: 'border-box' },
-    cancelBtn: { backgroundColor: '#28302A', color: '#F4EEE0', border: '1px solid #49483E', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#F4EEE0', color: '#1D2320', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
+    modalInlineInput: { backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '4px', color: '#FFF8F0', fontSize: '12px', outline: 'none', padding: '6px 8px', boxSizing: 'border-box' },
+    iconDeleteBtn: { backgroundColor: 'transparent', border: 'none', color: '#FF8F9A', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.9, flexShrink: 0 },
+    modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #50545D', paddingTop: '14px', marginTop: '4px', boxSizing: 'border-box' },
+    cancelBtn: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
+    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
 };
