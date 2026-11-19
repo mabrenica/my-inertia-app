@@ -73,15 +73,15 @@ export default function Sidebar({ activePage }) {
                 .desktop-sidebar {
                     width: 76px;
                     height: calc(100vh - 32px);
-                    background-image: linear-gradient(180deg, #1D1A1B 0%, #151217 100%);
-                    border: 1px solid #50545D;
+                    background-image: linear-gradient(180deg, #131722 0%, #090A10 100%);
+                    border: 1px solid #252D45;
                     border-radius: 20px;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
                     padding: 20px 14px;
                     box-sizing: border-box;
-                    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(233, 197, 228, 0.12);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 16px 36px rgba(0, 0, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.4);
                     transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                     overflow: hidden;
                     position: relative;
@@ -89,7 +89,7 @@ export default function Sidebar({ activePage }) {
 
                 .desktop-sidebar:hover {
                     width: 240px;
-                    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), 0 0 28px rgba(233, 197, 228, 0.22);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 20px 48px rgba(0, 0, 0, 0.8), 0 4px 10px rgba(0, 0, 0, 0.5);
                 }
 
                 .sidebar-brand {
@@ -104,20 +104,21 @@ export default function Sidebar({ activePage }) {
                 .sidebar-brand-icon {
                     width: 32px;
                     height: 32px;
-                    background-color: rgba(233, 197, 228, 0.18);
-                    border: 1px solid rgba(233, 197, 228, 0.45);
+                    background-color: rgba(47, 107, 255, 0.2);
+                    border: 1px solid rgba(47, 107, 255, 0.5);
                     border-radius: 8px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: #FFF8F0;
+                    color: #FFFFFF;
                     flex-shrink: 0;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 5px rgba(0, 0, 0, 0.3);
                 }
 
                 .sidebar-brand-text {
                     font-size: 15px;
                     font-weight: 700;
-                    color: #FFF8F0;
+                    color: #FFFFFF;
                     letter-spacing: -0.2px;
                     opacity: 0;
                     transition: opacity 0.2s ease;
@@ -139,7 +140,7 @@ export default function Sidebar({ activePage }) {
                 .sidebar-nav-label {
                     font-size: 10px;
                     font-weight: 600;
-                    color: #C9C3CC;
+                    color: #8A99C2;
                     text-transform: uppercase;
                     letter-spacing: 0.8px;
                     padding: 0 10px 6px 10px;
@@ -158,7 +159,7 @@ export default function Sidebar({ activePage }) {
                     gap: 12px;
                     padding: 10px 12px;
                     border-radius: 10px;
-                    color: #C9C3CC;
+                    color: #A5B3D0;
                     font-size: 13px;
                     font-weight: 500;
                     text-decoration: none;
@@ -177,26 +178,28 @@ export default function Sidebar({ activePage }) {
                 }
 
                 .sidebar-nav-item:hover {
-                    background-color: rgba(233, 197, 228, 0.16);
-                    color: #FFF8F0 !important;
+                    background-color: rgba(47, 107, 255, 0.15);
+                    color: #FFFFFF !important;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.3);
                 }
 
                 .sidebar-nav-item.is-active {
-                    background-color: #292831;
-                    color: #FFF8F0;
+                    background-color: #1A243F;
+                    color: #FFFFFF;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
                 }
 
                 .sidebar-icon-svg {
                     width: 18px;
                     height: 18px;
-                    color: #C9C3CC;
+                    color: #A5B3D0;
                     flex-shrink: 0;
                     transition: color 0.2s ease;
                 }
 
                 .sidebar-nav-item:hover .sidebar-icon-svg,
                 .sidebar-nav-item.is-active .sidebar-icon-svg {
-                    color: #FFF8F0;
+                    color: #FFFFFF;
                 }
 
                 .sidebar-footer {
@@ -204,7 +207,7 @@ export default function Sidebar({ activePage }) {
                     flex-direction: column;
                     gap: 12px;
                     padding-top: 16px;
-                    border-top: 1px solid #50545D;
+                    border-top: 1px solid #252D45;
                 }
 
                 .sidebar-user-card {
@@ -213,12 +216,13 @@ export default function Sidebar({ activePage }) {
                     justify-content: space-between;
                     gap: 8px;
                     padding: 8px 6px;
-                    background-color: #292831;
-                    border: 1px solid #50545D;
+                    background-color: #131722;
+                    border: 1px solid #252D45;
                     border-radius: 12px;
                     box-sizing: border-box;
                     white-space: nowrap;
                     overflow: hidden;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.4);
                 }
 
                 .sidebar-user-left {
@@ -242,23 +246,25 @@ export default function Sidebar({ activePage }) {
                     height: 34px;
                     border-radius: 50%;
                     object-fit: cover;
-                    border: 1px solid #50545D;
+                    border: 1px solid #252D45;
                     flex-shrink: 0;
+                    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2), 0 2px 4px rgba(0, 0, 0, 0.4);
                 }
 
                 .sidebar-user-avatar-placeholder {
                     width: 34px;
                     height: 34px;
                     border-radius: 50%;
-                    background-color: rgba(233, 197, 228, 0.18);
-                    border: 1px solid rgba(233, 197, 228, 0.4);
-                    color: #FFF8F0;
+                    background-color: rgba(47, 107, 255, 0.2);
+                    border: 1px solid rgba(47, 107, 255, 0.4);
+                    color: #FFFFFF;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-size: 13px;
                     font-weight: 700;
                     flex-shrink: 0;
+                    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.25), 0 2px 4px rgba(0, 0, 0, 0.4);
                 }
 
                 .sidebar-user-meta {
@@ -280,7 +286,7 @@ export default function Sidebar({ activePage }) {
                 }
 
                 .sidebar-user-name {
-                    color: #FFF8F0;
+                    color: #FFFFFF;
                     font-size: 12px;
                     font-weight: 600;
                     white-space: nowrap;
@@ -289,7 +295,7 @@ export default function Sidebar({ activePage }) {
                 }
 
                 .sidebar-user-email {
-                    color: #C9C3CC;
+                    color: #8A99C2;
                     font-size: 10px;
                     white-space: nowrap;
                     overflow: hidden;
@@ -297,8 +303,8 @@ export default function Sidebar({ activePage }) {
                 }
 
                 .sidebar-logout-icon-btn {
-                    background: rgba(255, 143, 154, 0.08);
-                    border: 1px solid rgba(255, 143, 154, 0.25);
+                    background: rgba(255, 161, 26, 0.1);
+                    border: 1px solid rgba(255, 161, 26, 0.3);
                     border-radius: 8px;
                     width: 0;
                     height: 30px;
@@ -307,12 +313,13 @@ export default function Sidebar({ activePage }) {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: #FF8F9A;
+                    color: #FFA11A;
                     cursor: pointer;
                     flex-shrink: 0;
                     opacity: 0;
                     visibility: hidden;
                     overflow: hidden;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 5px rgba(0, 0, 0, 0.3);
                     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                 }
 
@@ -325,9 +332,10 @@ export default function Sidebar({ activePage }) {
                 }
 
                 .sidebar-logout-icon-btn:hover {
-                    background-color: rgba(255, 143, 154, 0.2);
-                    border-color: rgba(255, 143, 154, 0.5);
+                    background-color: rgba(255, 161, 26, 0.25);
+                    border-color: rgba(255, 161, 26, 0.6);
                     transform: translateY(-1px);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 4px 8px rgba(255, 161, 26, 0.25);
                 }
 
                 .sidebar-logout-icon-btn:active {
@@ -354,10 +362,10 @@ export default function Sidebar({ activePage }) {
                         align-items: center !important;
                         justify-content: space-between !important;
                         padding: 0 8px !important;
-                        border: 1px solid #50545D;
+                        border: 1px solid #252D45;
                         border-radius: 999px;
-                        background-image: linear-gradient(180deg, #25232B 0%, #1A171C 100%) !important;
-                        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 0 14px rgba(233, 197, 228, 0.14);
+                        background-image: linear-gradient(180deg, #131722 0%, #090A10 100%) !important;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 12px 28px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
                         z-index: 200;
                         box-sizing: border-box;
                     }
@@ -377,23 +385,23 @@ export default function Sidebar({ activePage }) {
                     }
                     .mobile-nav-item:hover {
                         transform: scale(1.06);
-                        background-color: rgba(233, 197, 228, 0.16);
+                        background-color: rgba(47, 107, 255, 0.15);
                     }
                     .mobile-nav-item:active {
                         transform: scale(0.92);
                     }
                     .mobile-nav-item.logout-btn:hover {
-                        background-color: rgba(255, 143, 154, 0.14);
+                        background-color: rgba(255, 161, 26, 0.15);
                     }
                     .mobile-nav-icon {
                         width: 20px !important;
                         height: 20px !important;
-                        color: #C9C3CC;
+                        color: #A5B3D0;
                         transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
                     }
                     .mobile-nav-item.is-active .mobile-nav-icon,
                     .mobile-nav-item:hover .mobile-nav-icon {
-                        color: #FFF8F0 !important;
+                        color: #FFFFFF !important;
                         transform: translateY(-2px);
                     }
                     .mobile-active-dot {
@@ -404,9 +412,10 @@ export default function Sidebar({ activePage }) {
                         width: 5px;
                         height: 5px;
                         border-radius: 50%;
-                        background-color: #EDF2B2;
+                        background-color: #FFA11A;
                         transform: translateX(-50%) scale(0);
                         opacity: 0;
+                        box-shadow: 0 0 4px #FFA11A;
                         transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
                     }
                     .mobile-nav-item.is-active .mobile-active-dot {
@@ -422,7 +431,7 @@ export default function Sidebar({ activePage }) {
                     <div>
                         <div className="sidebar-brand">
                             <div className="sidebar-brand-icon">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF8F0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="9"></circle>
                                     <path d="M12 3v9l5.5 5.5"></path>
                                 </svg>
@@ -484,7 +493,7 @@ export default function Sidebar({ activePage }) {
                                 className="sidebar-logout-icon-btn"
                                 disabled={isLoggingOut}
                             >
-                                <svg className="sidebar-icon-svg" style={{ color: '#FF8F9A', width: '15px', height: '15px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="sidebar-icon-svg" style={{ color: '#FFA11A', width: '15px', height: '15px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
                             </button>
@@ -540,7 +549,7 @@ export default function Sidebar({ activePage }) {
                     className="mobile-nav-item logout-btn"
                     disabled={isLoggingOut}
                 >
-                    <svg className="mobile-nav-icon" style={{ color: '#FF8F9A' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="mobile-nav-icon" style={{ color: '#FFA11A' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                 </button>
@@ -554,7 +563,7 @@ export default function Sidebar({ activePage }) {
                             <circle
                                 cx="25" cy="25" r="20"
                                 fill="none"
-                                stroke="#FF8F9A"
+                                stroke="#FFA11A"
                                 strokeWidth="5"
                                 className="btn-spinner-circle"
                             />
@@ -574,7 +583,7 @@ const styles = {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.70)',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -582,8 +591,8 @@ const styles = {
         padding: '16px',
     },
     modalBox: {
-        backgroundColor: '#1D1A1B',
-        border: '1px solid #50545D',
+        backgroundColor: '#131722',
+        border: '1px solid #252D45',
         borderRadius: '14px',
         padding: '24px 32px',
         display: 'flex',
@@ -591,11 +600,11 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         gap: '12px',
-        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 143, 154, 0.15)',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 25px 50px rgba(0, 0, 0, 0.8), 0 4px 10px rgba(0, 0, 0, 0.5)',
         boxSizing: 'border-box',
     },
     modalText: {
-        color: '#FFF8F0',
+        color: '#FFFFFF',
         fontSize: '14px',
         fontWeight: '600',
         letterSpacing: '-0.2px',
