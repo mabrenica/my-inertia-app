@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 
 export default function Sidebar({ activePage }) {
+    const { auth } = usePage().props;
+    const user = auth?.user;
+
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const handleLogout = () => {
@@ -17,6 +20,12 @@ export default function Sidebar({ activePage }) {
         });
     };
 
+    const avatarUrl = user?.avatar
+        ? (user.avatar.startsWith('http://') || user.avatar.startsWith('https://') || user.avatar.startsWith('data:')
+            ? user.avatar
+            : `/storage/${user.avatar}`)
+        : null;
+
     return (
         <>
             <style>{`
@@ -30,8 +39,8 @@ export default function Sidebar({ activePage }) {
                 }
                 .btn-spinner {
                     animation: spinnerRotate 1.4s linear infinite;
-                    width: 24px;
-                    height: 24px;
+                    width: 20px;
+                    height: 20px;
                 }
                 .btn-spinner-circle {
                     animation: spinnerDash 1.2s ease-in-out infinite;
@@ -51,50 +60,287 @@ export default function Sidebar({ activePage }) {
                 .animated-modal {
                     animation: slideUpModal 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
-                .sidebar-container {
-                    width: 240px;
-                    background-image: linear-gradient(180deg, #1D1A1B 0%, #151217 100%);
-                    border-right: 1px solid #50545D;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: space-between;
-                    padding: 24px 16px;
+
+                .desktop-sidebar-wrapper {
+                    padding: 16px 0 16px 16px;
                     box-sizing: border-box;
                     flex-shrink: 0;
                     z-index: 200;
+                    display: flex;
+                    align-items: center;
                 }
-                .sidebar-nav-item {
+
+                .desktop-sidebar {
+                    width: 76px;
+                    height: calc(100vh - 32px);
+                    background-image: linear-gradient(180deg, #1D1A1B 0%, #151217 100%);
+                    border: 1px solid #50545D;
+                    border-radius: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    padding: 20px 14px;
+                    box-sizing: border-box;
+                    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(233, 197, 228, 0.12);
+                    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                    overflow: hidden;
                     position: relative;
+                }
+
+                .desktop-sidebar:hover {
+                    width: 240px;
+                    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), 0 0 28px rgba(233, 197, 228, 0.22);
+                }
+
+                .sidebar-brand {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 4px 6px;
+                    margin-bottom: 24px;
+                    white-space: nowrap;
+                }
+
+                .sidebar-brand-icon {
+                    width: 32px;
+                    height: 32px;
+                    background-color: rgba(233, 197, 228, 0.18);
+                    border: 1px solid rgba(233, 197, 228, 0.45);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #FFF8F0;
+                    flex-shrink: 0;
+                }
+
+                .sidebar-brand-text {
+                    font-size: 15px;
+                    font-weight: 700;
+                    color: #FFF8F0;
+                    letter-spacing: -0.2px;
+                    opacity: 0;
+                    transition: opacity 0.2s ease;
+                }
+
+                .desktop-sidebar:hover .sidebar-brand-text {
+                    opacity: 1;
+                }
+
+                .sidebar-nav-section {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                    flex: 1;
+                    overflow-x: hidden;
+                    overflow-y: auto;
+                }
+
+                .sidebar-nav-label {
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: #C9C3CC;
+                    text-transform: uppercase;
+                    letter-spacing: 0.8px;
+                    padding: 0 10px 6px 10px;
+                    white-space: nowrap;
+                    opacity: 0;
+                    transition: opacity 0.2s ease;
+                }
+
+                .desktop-sidebar:hover .sidebar-nav-label {
+                    opacity: 1;
+                }
+
+                .sidebar-nav-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 10px 12px;
+                    border-radius: 10px;
+                    color: #C9C3CC;
+                    font-size: 13px;
+                    font-weight: 500;
+                    text-decoration: none;
+                    position: relative;
+                    white-space: nowrap;
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                 }
+
+                .sidebar-nav-item span {
+                    opacity: 0;
+                    transition: opacity 0.2s ease;
+                }
+
+                .desktop-sidebar:hover .sidebar-nav-item span {
+                    opacity: 1;
+                }
+
                 .sidebar-nav-item:hover {
                     background-color: rgba(233, 197, 228, 0.16);
-                    transform: translateX(4px);
                     color: #FFF8F0 !important;
                 }
-                .sidebar-logout-btn {
-                    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+                .sidebar-nav-item.is-active {
+                    background-color: #292831;
+                    color: #FFF8F0;
                 }
-                .sidebar-logout-btn:hover {
-                    background-color: rgba(255, 143, 154, 0.15);
-                    border-color: rgba(255, 143, 154, 0.45) !important;
+
+                .sidebar-icon-svg {
+                    width: 18px;
+                    height: 18px;
+                    color: #C9C3CC;
+                    flex-shrink: 0;
+                    transition: color 0.2s ease;
+                }
+
+                .sidebar-nav-item:hover .sidebar-icon-svg,
+                .sidebar-nav-item.is-active .sidebar-icon-svg {
+                    color: #FFF8F0;
+                }
+
+                .sidebar-footer {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                    padding-top: 16px;
+                    border-top: 1px solid #50545D;
+                }
+
+                .sidebar-user-card {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 8px;
+                    padding: 8px 6px;
+                    background-color: #292831;
+                    border: 1px solid #50545D;
+                    border-radius: 12px;
+                    box-sizing: border-box;
+                    white-space: nowrap;
+                    overflow: hidden;
+                }
+
+                .sidebar-user-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    min-width: 0;
+                    flex: 1;
+                }
+
+                .sidebar-user-avatar {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    border: 1px solid #50545D;
+                    flex-shrink: 0;
+                }
+
+                .sidebar-user-avatar-placeholder {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 50%;
+                    background-color: rgba(233, 197, 228, 0.18);
+                    border: 1px solid rgba(233, 197, 228, 0.4);
+                    color: #FFF8F0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 13px;
+                    font-weight: 700;
+                    flex-shrink: 0;
+                }
+
+                .sidebar-user-meta {
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 0;
+                    max-width: 0;
+                    opacity: 0;
+                    visibility: hidden;
+                    overflow: hidden;
+                    flex: 1;
+                    transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.2s ease;
+                }
+
+                .desktop-sidebar:hover .sidebar-user-meta {
+                    max-width: 130px;
+                    opacity: 1;
+                    visibility: visible;
+                }
+
+                .sidebar-user-name {
+                    color: #FFF8F0;
+                    font-size: 12px;
+                    font-weight: 600;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .sidebar-user-email {
+                    color: #C9C3CC;
+                    font-size: 10px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .sidebar-logout-icon-btn {
+                    background: rgba(255, 143, 154, 0.08);
+                    border: 1px solid rgba(255, 143, 154, 0.25);
+                    border-radius: 8px;
+                    width: 0;
+                    height: 30px;
+                    min-width: 0;
+                    max-width: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #FF8F9A;
+                    cursor: pointer;
+                    flex-shrink: 0;
+                    opacity: 0;
+                    visibility: hidden;
+                    overflow: hidden;
+                    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                .desktop-sidebar:hover .sidebar-logout-icon-btn {
+                    width: 30px;
+                    min-width: 30px;
+                    max-width: 30px;
+                    opacity: 1;
+                    visibility: visible;
+                }
+
+                .sidebar-logout-icon-btn:hover {
+                    background-color: rgba(255, 143, 154, 0.2);
+                    border-color: rgba(255, 143, 154, 0.5);
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 14px rgba(255, 143, 154, 0.15);
                 }
-                .sidebar-logout-btn:active {
+
+                .sidebar-logout-icon-btn:active {
                     transform: translateY(1px);
                 }
-                .mobile-active-dot {
+
+                /* Mobile Bottom Nav Bar */
+                .mobile-bottom-nav {
                     display: none;
                 }
 
                 @media (max-width: 768px) {
-                    .sidebar-container {
+                    .desktop-sidebar-wrapper {
+                        display: none !important;
+                    }
+                    .mobile-bottom-nav {
+                        display: flex !important;
                         position: fixed;
                         bottom: 14px;
                         left: 16px;
                         right: 16px;
-                        width: auto !important;
                         height: 58px;
                         flex-direction: row !important;
                         align-items: center !important;
@@ -104,45 +350,43 @@ export default function Sidebar({ activePage }) {
                         border-radius: 999px;
                         background-image: linear-gradient(180deg, #25232B 0%, #1A171C 100%) !important;
                         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), 0 0 14px rgba(233, 197, 228, 0.14);
+                        z-index: 200;
+                        box-sizing: border-box;
                     }
-                    .sidebar-nav-section {
-                        display: contents !important;
-                    }
-                    .sidebar-nav-label {
-                        display: none !important;
-                    }
-                    .sidebar-nav-item {
+                    .mobile-nav-item {
                         flex: 1 1 0 !important;
                         height: 100%;
+                        display: flex;
                         justify-content: center !important;
                         align-items: center !important;
-                        padding: 0 !important;
-                        gap: 0 !important;
-                        border-radius: 999px !important;
-                        background-image: none !important;
-                        box-shadow: none !important;
+                        position: relative;
+                        text-decoration: none;
+                        background: transparent;
+                        border: none;
+                        cursor: pointer;
+                        border-radius: 999px;
+                        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease;
                     }
-                    .sidebar-nav-item span:not(.mobile-active-dot) {
-                        display: none;
+                    .mobile-nav-item:hover {
+                        transform: scale(1.06);
+                        background-color: rgba(233, 197, 228, 0.16);
                     }
-                    .sidebar-nav-item:hover {
-                        transform: scale(1.06) !important;
-                        background-color: rgba(233, 197, 228, 0.16) !important;
+                    .mobile-nav-item:active {
+                        transform: scale(0.92);
                     }
-                    .sidebar-nav-item:active {
-                        transform: scale(0.92) !important;
+                    .mobile-nav-item.logout-btn:hover {
+                        background-color: rgba(255, 143, 154, 0.14);
                     }
-                    .sidebar-nav-item.is-active {
-                        color: #FFF8F0 !important;
-                    }
-                    .sidebar-nav-item.is-active .sidebar-icon-svg {
-                        color: #FFF8F0 !important;
-                        transform: translateY(-2px);
-                    }
-                    .sidebar-icon-svg {
+                    .mobile-nav-icon {
                         width: 20px !important;
                         height: 20px !important;
+                        color: #C9C3CC;
                         transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+                    }
+                    .mobile-nav-item.is-active .mobile-nav-icon,
+                    .mobile-nav-item:hover .mobile-nav-icon {
+                        color: #FFF8F0 !important;
+                        transform: translateY(-2px);
                     }
                     .mobile-active-dot {
                         display: block;
@@ -157,117 +401,156 @@ export default function Sidebar({ activePage }) {
                         opacity: 0;
                         transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
                     }
-                    .sidebar-nav-item.is-active .mobile-active-dot {
+                    .mobile-nav-item.is-active .mobile-active-dot {
                         transform: translateX(-50%) scale(1);
                         opacity: 1;
-                    }
-                    .sidebar-logout-container {
-                        display: contents !important;
-                    }
-                    .sidebar-logout-btn {
-                        flex: 1 1 0 !important;
-                        height: 100%;
-                        justify-content: center !important;
-                        align-items: center !important;
-                        width: auto !important;
-                        padding: 0 !important;
-                        gap: 0 !important;
-                        border-radius: 999px !important;
-                        border: none !important;
-                        background: transparent !important;
-                    }
-                    .sidebar-logout-btn span {
-                        display: none;
-                    }
-                    .sidebar-logout-btn:hover {
-                        transform: scale(1.06) !important;
-                        background-color: rgba(255, 143, 154, 0.14) !important;
-                    }
-                    .sidebar-logout-btn:active {
-                        transform: scale(0.92) !important;
-                    }
-                    .sidebar-logout-btn .sidebar-icon-svg {
-                        width: 20px !important;
-                        height: 20px !important;
                     }
                 }
             `}</style>
 
-            <div className="sidebar-container">
-                <div style={styles.navSection} className="sidebar-nav-section">
-                    <div style={styles.navLabel} className="sidebar-nav-label">Menu</div>
+            {/* Desktop Sidebar */}
+            <div className="desktop-sidebar-wrapper">
+                <nav className="desktop-sidebar">
+                    <div>
+                        <div className="sidebar-brand">
+                            <div className="sidebar-brand-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF8F0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="9"></circle>
+                                    <path d="M12 3v9l5.5 5.5"></path>
+                                </svg>
+                            </div>
+                            <span className="sidebar-brand-text">FleetFlow</span>
+                        </div>
 
-                    <Link
-                        href="/home"
-                        aria-label="Home"
-                        title="Home"
-                        className={`sidebar-nav-item ${activePage === 'home' ? 'is-active' : ''}`}
-                        style={{
-                            ...styles.navItem,
-                            ...(activePage === 'home' ? styles.navItemActive : {})
-                        }}
-                    >
-                        <svg className="sidebar-icon-svg" style={styles.navIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                        <span>Home</span>
-                        <span className="mobile-active-dot" />
-                    </Link>
+                        <div className="sidebar-nav-section">
+                            <div className="sidebar-nav-label">Menu</div>
 
-                    <Link
-                        href="/profile"
-                        aria-label="My Profile"
-                        title="My Profile"
-                        className={`sidebar-nav-item ${activePage === 'profile' ? 'is-active' : ''}`}
-                        style={{
-                            ...styles.navItem,
-                            ...(activePage === 'profile' ? styles.navItemActive : {})
-                        }}
-                    >
-                        <svg className="sidebar-icon-svg" style={styles.navIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <span>My Profile</span>
-                        <span className="mobile-active-dot" />
-                    </Link>
+                            <Link
+                                href="/home"
+                                aria-label="Home"
+                                title="Home"
+                                className={`sidebar-nav-item ${activePage === 'home' ? 'is-active' : ''}`}
+                            >
+                                <svg className="sidebar-icon-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                                </svg>
+                                <span>Home</span>
+                            </Link>
 
-                    <Link
-                        href="/settings"
-                        aria-label="Settings"
-                        title="Settings"
-                        className={`sidebar-nav-item ${activePage === 'settings' ? 'is-active' : ''}`}
-                        style={{
-                            ...styles.navItem,
-                            ...(activePage === 'settings' ? styles.navItemActive : {})
-                        }}
-                    >
-                        <svg className="sidebar-icon-svg" style={styles.navIcon} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span>Settings</span>
-                        <span className="mobile-active-dot" />
-                    </Link>
-                </div>
+                            <Link
+                                href="/profile"
+                                aria-label="My Profile"
+                                title="My Profile"
+                                className={`sidebar-nav-item ${activePage === 'profile' ? 'is-active' : ''}`}
+                            >
+                                <svg className="sidebar-icon-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span>My Profile</span>
+                            </Link>
 
-                <div style={styles.logoutContainer} className="sidebar-logout-container">
-                    <button
-                        onClick={handleLogout}
-                        aria-label="Log out"
-                        title="Log out"
-                        style={styles.logoutButton}
-                        className="sidebar-logout-btn"
-                        type="button"
-                        disabled={isLoggingOut}
-                    >
-                        <svg className="sidebar-icon-svg" style={{ ...styles.navIcon, color: '#FF8F9A' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        <span>Log out</span>
-                    </button>
-                </div>
+                            <Link
+                                href="/settings"
+                                aria-label="Settings"
+                                title="Settings"
+                                className={`sidebar-nav-item ${activePage === 'settings' ? 'is-active' : ''}`}
+                            >
+                                <svg className="sidebar-icon-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>Settings</span>
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="sidebar-footer">
+                        <div className="sidebar-user-card" title={user?.name || 'User'}>
+                            <div className="sidebar-user-left">
+                                {avatarUrl ? (
+                                    <img src={avatarUrl} alt={user?.name || 'User'} className="sidebar-user-avatar" />
+                                ) : (
+                                    <div className="sidebar-user-avatar-placeholder">
+                                        {(user?.name ? user.name.charAt(0).toUpperCase() : 'U')}
+                                    </div>
+                                )}
+                                <div className="sidebar-user-meta">
+                                    <span className="sidebar-user-name">{user?.name || 'User'}</span>
+                                    <span className="sidebar-user-email">{user?.email || 'user@example.com'}</span>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleLogout}
+                                aria-label="Log out"
+                                title="Log out"
+                                type="button"
+                                className="sidebar-logout-icon-btn"
+                                disabled={isLoggingOut}
+                            >
+                                <svg className="sidebar-icon-svg" style={{ color: '#FF8F9A', width: '15px', height: '15px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </nav>
             </div>
 
+            {/* Mobile Bottom Nav Bar */}
+            <div className="mobile-bottom-nav">
+                <Link
+                    href="/home"
+                    aria-label="Home"
+                    title="Home"
+                    className={`mobile-nav-item ${activePage === 'home' ? 'is-active' : ''}`}
+                >
+                    <svg className="mobile-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span className="mobile-active-dot" />
+                </Link>
+
+                <Link
+                    href="/profile"
+                    aria-label="My Profile"
+                    title="My Profile"
+                    className={`mobile-nav-item ${activePage === 'profile' ? 'is-active' : ''}`}
+                >
+                    <svg className="mobile-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="mobile-active-dot" />
+                </Link>
+
+                <Link
+                    href="/settings"
+                    aria-label="Settings"
+                    title="Settings"
+                    className={`mobile-nav-item ${activePage === 'settings' ? 'is-active' : ''}`}
+                >
+                    <svg className="mobile-nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="mobile-active-dot" />
+                </Link>
+
+                <button
+                    onClick={handleLogout}
+                    aria-label="Log out"
+                    title="Log out"
+                    type="button"
+                    className="mobile-nav-item logout-btn"
+                    disabled={isLoggingOut}
+                >
+                    <svg className="mobile-nav-icon" style={{ color: '#FF8F9A' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </div>
+
+            {/* Logout Loading Modal */}
             {isLoggingOut && (
                 <div style={styles.modalOverlay} className="animated-overlay">
                     <div style={styles.modalBox} className="animated-modal">
@@ -289,62 +572,6 @@ export default function Sidebar({ activePage }) {
 }
 
 const styles = {
-    navSection: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-    },
-    navLabel: {
-        fontSize: '11px',
-        fontWeight: '600',
-        color: '#C9C3CC',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px',
-        paddingLeft: '10px',
-        marginBottom: '8px',
-    },
-    navItem: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        padding: '10px 12px',
-        borderRadius: '8px',
-        color: '#C9C3CC',
-        fontSize: '13px',
-        fontWeight: '500',
-        textDecoration: 'none',
-    },
-    navItemActive: {
-        backgroundImage: 'linear-gradient(135deg, #373540 0%, #25232B 100%)',
-        color: '#FFF8F0',
-        boxShadow: 'inset 2px 0 0 #E9C5E4, 0 0 16px rgba(233, 197, 228, 0.14)',
-    },
-    navIcon: {
-        width: '16px',
-        height: '16px',
-        color: '#C9C3CC',
-        flexShrink: 0,
-    },
-    logoutContainer: {
-        paddingTop: '16px',
-        borderTop: '1px solid #50545D',
-    },
-    logoutButton: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        width: '100%',
-        padding: '10px 12px',
-        backgroundColor: 'rgba(255, 143, 154, 0.06)',
-        border: '1px solid rgba(255, 143, 154, 0.22)',
-        borderRadius: '10px',
-        color: '#FF8F9A',
-        fontSize: '13px',
-        fontWeight: '600',
-        cursor: 'pointer',
-        textAlign: 'left',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15), 0 0 10px rgba(255, 143, 154, 0.08)',
-    },
     modalOverlay: {
         position: 'fixed',
         top: 0,
