@@ -135,11 +135,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
     const [motoServices, setMotoServices] = useState(initialMotoServices);
     const [toastMessage, setToastMessage] = useState(null);
 
-    const [carHovered, setCarHovered] = useState(false);
-    const [motoHovered, setMotoHovered] = useState(false);
-
-    const [carOpenMobile, setCarOpenMobile] = useState(false);
-    const [motoOpenMobile, setMotoOpenMobile] = useState(false);
+    const [carOpen, setCarOpen] = useState(false);
+    const [motoOpen, setMotoOpen] = useState(false);
 
     const [tooltipOpen, setTooltipOpen] = useState(false);
     const tooltipRef = useRef(null);
@@ -460,12 +457,6 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 .settings-mobile-dropdown {
                     display: none;
                 }
-                @media (min-width: 769px) {
-                    .desktop-settings-card:hover .collapsible-wrapper {
-                        grid-template-rows: 1fr;
-                        opacity: 1;
-                    }
-                }
                 @media (max-width: 768px) {
                     .page-layout {
                         flex-direction: column !important;
@@ -746,15 +737,13 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
                         <div
                             style={styles.settingsCard}
-                            className="interactive-card page-card-anim desktop-settings-card"
-                            onMouseEnter={() => setCarHovered(true)}
-                            onMouseLeave={() => setCarHovered(false)}
+                            className="interactive-card page-card-anim"
                         >
-                            <div style={styles.cardTitleRow} onClick={() => setCarOpenMobile(!carOpenMobile)}>
+                            <div style={styles.cardTitleRow} onClick={() => setCarOpen(!carOpen)}>
                                 <div style={styles.cardTitleLeft}>
                                     <svg
                                         width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A99C2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                                        style={{ transform: (carHovered || carOpenMobile) ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
+                                        style={{ transform: carOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
                                     >
                                         <polyline points="9 18 15 12 9 6"></polyline>
                                     </svg>
@@ -772,7 +761,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 </div>
                             </div>
 
-                            <div className={`collapsible-wrapper ${(carHovered || carOpenMobile) ? 'is-expanded' : ''}`}>
+                            <div className={`collapsible-wrapper ${carOpen ? 'is-expanded' : ''}`}>
                                 <div className="collapsible-inner">
                                     {renderServiceList(carServices, 'car')}
                                 </div>
@@ -781,15 +770,13 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
                         <div
                             style={styles.settingsCard}
-                            className="interactive-card page-card-anim desktop-settings-card"
-                            onMouseEnter={() => setMotoHovered(true)}
-                            onMouseLeave={() => setMotoHovered(false)}
+                            className="interactive-card page-card-anim"
                         >
-                            <div style={styles.cardTitleRow} onClick={() => setMotoOpenMobile(!motoOpenMobile)}>
+                            <div style={styles.cardTitleRow} onClick={() => setMotoOpen(!motoOpen)}>
                                 <div style={styles.cardTitleLeft}>
                                     <svg
                                         width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A99C2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                                        style={{ transform: (motoHovered || motoOpenMobile) ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
+                                        style={{ transform: motoOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
                                     >
                                         <polyline points="9 18 15 12 9 6"></polyline>
                                     </svg>
@@ -807,7 +794,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 </div>
                             </div>
 
-                            <div className={`collapsible-wrapper ${(motoHovered || motoOpenMobile) ? 'is-expanded' : ''}`}>
+                            <div className={`collapsible-wrapper ${motoOpen ? 'is-expanded' : ''}`}>
                                 <div className="collapsible-inner">
                                     {renderServiceList(motoServices, 'moto')}
                                 </div>
