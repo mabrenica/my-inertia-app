@@ -227,6 +227,14 @@ export default function Sidebar({ activePage }) {
                     gap: 10px;
                     min-width: 0;
                     flex: 1;
+                    text-decoration: none;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    transition: opacity 0.2s ease;
+                }
+
+                .sidebar-user-left:hover {
+                    opacity: 0.85;
                 }
 
                 .sidebar-user-avatar {
@@ -438,18 +446,6 @@ export default function Sidebar({ activePage }) {
                             </Link>
 
                             <Link
-                                href="/profile"
-                                aria-label="My Profile"
-                                title="My Profile"
-                                className={`sidebar-nav-item ${activePage === 'profile' ? 'is-active' : ''}`}
-                            >
-                                <svg className="sidebar-icon-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                                <span>My Profile</span>
-                            </Link>
-
-                            <Link
                                 href="/settings"
                                 aria-label="Settings"
                                 title="Settings"
@@ -466,7 +462,7 @@ export default function Sidebar({ activePage }) {
 
                     <div className="sidebar-footer">
                         <div className="sidebar-user-card" title={user?.name || 'User'}>
-                            <div className="sidebar-user-left">
+                            <Link href="/profile" className="sidebar-user-left">
                                 {avatarUrl ? (
                                     <img src={avatarUrl} alt={user?.name || 'User'} className="sidebar-user-avatar" />
                                 ) : (
@@ -478,7 +474,7 @@ export default function Sidebar({ activePage }) {
                                     <span className="sidebar-user-name">{user?.name || 'User'}</span>
                                     <span className="sidebar-user-email">{user?.email || 'user@example.com'}</span>
                                 </div>
-                            </div>
+                            </Link>
 
                             <button
                                 onClick={handleLogout}
