@@ -1244,7 +1244,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     <th style={styles.th}>Date</th>
                                     <th style={styles.th}>Service</th>
                                     <th style={styles.th}>ODO</th>
-                                    <th style={styles.th}>Cost</th>
                                     <th style={styles.th}>Notes</th>
                                     <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
                                 </tr>
@@ -1252,7 +1251,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             <tbody>
                                 {filteredLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan="6" style={styles.emptyTableCell}>No maintenance records found.</td>
+                                        <td colSpan="5" style={styles.emptyTableCell}>No maintenance records found.</td>
                                     </tr>
                                 ) : (
                                     filteredLogs.map((log) => {
@@ -1332,16 +1331,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                 </td>
                                                 <td style={styles.td}>
                                                     {isEditing ? (
-                                                        <input type="text" value={inlineData.cost} onChange={e => {
-                                                            const val = e.target.value;
-                                                            if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
-                                                        }} style={styles.inlineInput} />
-                                                    ) : (
-                                                        log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
-                                                    )}
-                                                </td>
-                                                <td style={styles.td}>
-                                                    {isEditing ? (
                                                         <input type="text" value={inlineData.notes} onChange={e => setInlineData({ ...inlineData, notes: e.target.value })} style={styles.inlineInput} />
                                                     ) : (
                                                         log.notes || '—'
@@ -1400,9 +1389,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 const serviceTitle = (log.services && log.services.length > 0)
                                     ? log.services.join(', ')
                                     : 'Maintenance Service';
-                                const formattedCost = log.cost
-                                    ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    : '—';
 
                                 return (
                                     <div key={log.id} className="mobile-record-card">
@@ -1477,18 +1463,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                     />
                                                 </div>
                                                 <div className="mobile-edit-field">
-                                                    <span className="mobile-edit-label">Cost</span>
-                                                    <input
-                                                        type="text"
-                                                        value={inlineData.cost}
-                                                        onChange={e => {
-                                                            const val = e.target.value;
-                                                            if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
-                                                        }}
-                                                        style={styles.inlineInput}
-                                                    />
-                                                </div>
-                                                <div className="mobile-edit-field">
                                                     <span className="mobile-edit-label">Notes</span>
                                                     <input
                                                         type="text"
@@ -1522,7 +1496,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             <>
                                                 <div className="mobile-record-top-meta">
                                                     <span>{formatDateToReadable(log.date)}</span>
-                                                    <span style={{ color: '#FFFFFF', fontWeight: '700' }}>{formattedCost}</span>
                                                 </div>
                                                 <div className="mobile-record-header">
                                                     <div className="mobile-record-title-group">
@@ -1705,22 +1678,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 </div>
 
                                 <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Cost (PHP)</label>
-                                    <div style={styles.currencyWrapper}>
-                                        <span style={styles.currencySymbol}>₱</span>
-                                        <input
-                                            type="text" placeholder="0.00" value={data.cost}
-                                            onChange={e => {
-                                                const val = e.target.value;
-                                                if (/^\d*\.?\d*$/.test(val)) setData('cost', val);
-                                            }}
-                                            style={{ ...styles.input, paddingLeft: '26px' }}
-                                        />
-                                    </div>
-                                    {errors.cost && <span style={styles.errorText}>{errors.cost}</span>}
-                                </div>
-
-                                <div style={styles.inputGroup}>
                                     <label style={styles.label}>Notes (Optional)</label>
                                     <textarea placeholder="Mechanic notes, workshop details..." value={data.notes} onChange={e => setData('notes', e.target.value)} style={{ ...styles.input, height: '60px', resize: 'none' }} />
                                     {errors.notes && <span style={styles.errorText}>{errors.notes}</span>}
@@ -1888,8 +1845,6 @@ const styles = {
     checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', color: '#FFFFFF', fontSize: '12px', cursor: 'pointer' },
     checkboxInput: { accentColor: '#2F6BFF', width: '14px', height: '14px', cursor: 'pointer' },
     noServiceText: { color: '#8A99C2', fontSize: '12px', fontStyle: 'italic', textAlign: 'center' },
-    currencyWrapper: { position: 'relative', display: 'flex', alignItems: 'center' },
-    currencySymbol: { position: 'absolute', left: '10px', color: '#8A99C2', fontSize: '12px', fontWeight: '600' },
     errorText: { color: '#FFA11A', fontSize: '11px', marginTop: '2px' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #252D45', paddingTop: '14px', marginTop: '4px' },
     cancelBtn: { backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4)' },

@@ -135,8 +135,12 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
     const [motoServices, setMotoServices] = useState(initialMotoServices);
     const [toastMessage, setToastMessage] = useState(null);
 
-    const [carOpen, setCarOpen] = useState(false);
-    const [motoOpen, setMotoOpen] = useState(false);
+    const [carHovered, setCarHovered] = useState(false);
+    const [motoHovered, setMotoHovered] = useState(false);
+
+    const [carOpenMobile, setCarOpenMobile] = useState(false);
+    const [motoOpenMobile, setMotoOpenMobile] = useState(false);
+
     const [tooltipOpen, setTooltipOpen] = useState(false);
     const tooltipRef = useRef(null);
 
@@ -294,13 +298,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                             <div className="mobile-service-card-header">
                                 <div className="mobile-service-title-group">
                                     <h4 className="mobile-service-card-title">{item.name}</h4>
-                                    <p className="mobile-service-card-sub">
-                                        {type === 'car' ? 'Car maintenance interval' : 'Motorbike maintenance interval'}
-                                    </p>
+                                    <p className="mobile-service-card-sub">Maintenance Interval</p>
                                 </div>
-                                <span style={styles.intervalBadge}>
-                                    {type === 'car' ? 'CAR' : 'MOTO'}
-                                </span>
                             </div>
                             <div className="mobile-service-card-rows">
                                 <div className="mobile-service-card-row">
@@ -401,6 +400,24 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 .hover-btn:active {
                     transform: translateY(1px);
                 }
+                .collapsible-wrapper {
+                    display: grid;
+                    grid-template-rows: 0fr;
+                    transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                    opacity: 0;
+                    overflow: hidden;
+                }
+                .collapsible-wrapper.is-expanded {
+                    grid-template-rows: 1fr;
+                    opacity: 1;
+                }
+                .collapsible-inner {
+                    min-height: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                    padding-top: 4px;
+                }
                 input::-webkit-outer-spin-button,
                 input::-webkit-inner-spin-button {
                     -webkit-appearance: none;
@@ -442,6 +459,12 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 .mobile-modal-card-list,
                 .settings-mobile-dropdown {
                     display: none;
+                }
+                @media (min-width: 769px) {
+                    .desktop-settings-card:hover .collapsible-wrapper {
+                        grid-template-rows: 1fr;
+                        opacity: 1;
+                    }
                 }
                 @media (max-width: 768px) {
                     .page-layout {
@@ -721,12 +744,17 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         <h2 style={styles.sectionHeaderTitle}>Services Configuration</h2>
                         <p style={styles.sectionHeaderDesc}>Configure maintenance service types and periodic intervals for your fleet vehicles.</p>
 
-                        <div style={styles.settingsCard} className="interactive-card page-card-anim">
-                            <div style={styles.cardTitleRow} onClick={() => setCarOpen(!carOpen)}>
+                        <div
+                            style={styles.settingsCard}
+                            className="interactive-card page-card-anim desktop-settings-card"
+                            onMouseEnter={() => setCarHovered(true)}
+                            onMouseLeave={() => setCarHovered(false)}
+                        >
+                            <div style={styles.cardTitleRow} onClick={() => setCarOpenMobile(!carOpenMobile)}>
                                 <div style={styles.cardTitleLeft}>
                                     <svg
                                         width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A99C2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                                        style={{ transform: carOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
+                                        style={{ transform: (carHovered || carOpenMobile) ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
                                     >
                                         <polyline points="9 18 15 12 9 6"></polyline>
                                     </svg>
@@ -744,19 +772,24 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 </div>
                             </div>
 
-                            {carOpen && (
-                                <div style={styles.collapsibleContent}>
+                            <div className={`collapsible-wrapper ${(carHovered || carOpenMobile) ? 'is-expanded' : ''}`}>
+                                <div className="collapsible-inner">
                                     {renderServiceList(carServices, 'car')}
                                 </div>
-                            )}
+                            </div>
                         </div>
 
-                        <div style={styles.settingsCard} className="interactive-card page-card-anim">
-                            <div style={styles.cardTitleRow} onClick={() => setMotoOpen(!motoOpen)}>
+                        <div
+                            style={styles.settingsCard}
+                            className="interactive-card page-card-anim desktop-settings-card"
+                            onMouseEnter={() => setMotoHovered(true)}
+                            onMouseLeave={() => setMotoHovered(false)}
+                        >
+                            <div style={styles.cardTitleRow} onClick={() => setMotoOpenMobile(!motoOpenMobile)}>
                                 <div style={styles.cardTitleLeft}>
                                     <svg
                                         width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A99C2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                                        style={{ transform: motoOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
+                                        style={{ transform: (motoHovered || motoOpenMobile) ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
                                     >
                                         <polyline points="9 18 15 12 9 6"></polyline>
                                     </svg>
@@ -774,11 +807,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 </div>
                             </div>
 
-                            {motoOpen && (
-                                <div style={styles.collapsibleContent}>
+                            <div className={`collapsible-wrapper ${(motoHovered || motoOpenMobile) ? 'is-expanded' : ''}`}>
+                                <div className="collapsible-inner">
                                     {renderServiceList(motoServices, 'moto')}
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -991,13 +1024,12 @@ const styles = {
     sectionHeaderDesc: { color: '#8A99C2', fontSize: '13px', margin: '-10px 0 0 0' },
     settingsCard: {
         backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px',
-        padding: '20px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)', display: 'flex', flexDirection: 'column', gap: '16px',
+        padding: '14px 20px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)', display: 'flex', flexDirection: 'column', gap: '16px',
     },
     cardTitleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' },
     cardTitleLeft: { display: 'flex', alignItems: 'center', gap: '10px' },
     cardTitleRight: { display: 'flex', alignItems: 'center' },
-    cardTitle: { color: '#FFFFFF', fontSize: '15px', fontWeight: '600', margin: 0 },
-    collapsibleContent: { display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '4px' },
+    cardTitle: { color: '#FFFFFF', fontSize: '15px', fontWeight: '600', margin: 0, lineHeight: '1.2' },
     iconEditBtn: {
         backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45', width: '32px', height: '32px',
         borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
