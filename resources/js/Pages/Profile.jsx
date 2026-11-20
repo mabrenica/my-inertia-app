@@ -25,6 +25,11 @@ export default function Profile({ auth }) {
         phone_number: user.phone_number || '',
     });
 
+    const showAvatarFailureToast = (fallbackMessage = 'Something went wrong') => {
+        setToastMessage('Something went wrong');
+        setAvatarError(fallbackMessage);
+    };
+
     const handleCancel = () => {
         reset();
         setIsEditing(false);
@@ -36,6 +41,12 @@ export default function Profile({ auth }) {
             onSuccess: () => {
                 setIsEditing(false);
                 setToastMessage('Profile updated successfully!');
+            },
+            onError: () => {
+                setToastMessage('Something went wrong');
+            },
+            onInvalid: () => {
+                setToastMessage('Something went wrong');
             },
         });
     };
@@ -67,16 +78,17 @@ export default function Profile({ auth }) {
                     setShowViewModal(false);
                 },
                 onError: (errs) => {
-                    setToastMessage('Something went wrong');
-                    setAvatarError(errs.avatar || 'Unable to upload profile picture.');
+                    showAvatarFailureToast(errs?.avatar || 'Something went wrong');
+                },
+                onInvalid: () => {
+                    showAvatarFailureToast('Something went wrong');
                 },
                 onFinish: () => {
                     setIsOptimizingAvatar(false);
                 },
             });
         } catch (error) {
-            setToastMessage('Something went wrong');
-            setAvatarError(error.message || 'Unable to optimize this photo.');
+            showAvatarFailureToast(error?.message || 'Something went wrong');
             setIsOptimizingAvatar(false);
         } finally {
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -85,6 +97,7 @@ export default function Profile({ auth }) {
 
     const confirmDeleteAvatar = () => {
         if (isDeletingAvatar) return;
+        setAvatarError('');
         setIsDeletingAvatar(true);
         router.delete('/profile/avatar', {
             onSuccess: () => {
@@ -92,8 +105,11 @@ export default function Profile({ auth }) {
                 setShowViewModal(false);
                 setToastMessage('Profile picture removed.');
             },
-            onError: () => {
-                setToastMessage('Something went wrong');
+            onError: (errs) => {
+                showAvatarFailureToast(errs?.avatar || 'Something went wrong');
+            },
+            onInvalid: () => {
+                showAvatarFailureToast('Something went wrong');
             },
             onFinish: () => {
                 setIsDeletingAvatar(false);

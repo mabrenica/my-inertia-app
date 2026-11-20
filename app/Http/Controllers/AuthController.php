@@ -137,14 +137,31 @@ class AuthController extends Controller
 
         $user = $request->user();
         $oldAvatar = $user->avatar;
-        $newPath = OptimizedImageUploader::store($request->file('avatar'), 'avatars', 'avatar', 640);
-        $newUrl = Storage::disk('supabase')->url($newPath);
+        $newPath = null;
 
         try {
+            $newPath = OptimizedImageUploader::store($request->file('avatar'), 'avatars', 'avatar', 640);
+            $newUrl = Storage::disk('supabase')->url($newPath);
             $user->update(['avatar' => $newUrl]);
         } catch (\Throwable $exception) {
-            Storage::disk('supabase')->delete($newPath);
-            throw $exception;
+            if ($newPath !== null) {
+                try {
+                    Storage::disk('supabase')->delete($newPath);
+                } catch (\Throwable $cleanupException) {
+                    Log::warning('Unable to roll back uploaded avatar after failure', [
+                        'message' => $cleanupException->getMessage(),
+                    ]);
+                }
+            }
+
+            Log::error('Failed to update user avatar', [
+                'user_id' => $user->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'avatar' => 'Something went wrong',
+            ]);
         }
 
         // Delete the old file only after the new avatar is stored and saved.
@@ -157,7 +174,20 @@ class AuthController extends Controller
     {
         $user = $request->user();
         $oldAvatar = $user->avatar;
-        $user->update(['avatar' => null]);
+
+        try {
+            $user->update(['avatar' => null]);
+        } catch (\Throwable $exception) {
+            Log::error('Failed to remove user avatar', [
+                'user_id' => $user->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'avatar' => 'Something went wrong',
+            ]);
+        }
+
         $this->deleteStoredFile($oldAvatar);
 
         return back();
