@@ -167,6 +167,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const triggerShake = () => setShakeKey((k) => k + 1);
 
+    const showErrorToast = () => {
+        setToastMessage('Something went wrong');
+    };
+
     const clearLogEmptyError = (field) => {
         setLogEmptyFields((prev) => {
             if (!prev[field]) return prev;
@@ -185,7 +189,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         });
     };
 
-    const { data: odoData, setData: setOdoData, put: putOdo, processing: odoProcessing, errors: odoErrors, reset: resetOdo, clearErrors: clearOdoErrors } = useForm({
+    const { data: odoData, setData: setOdoData, put: putOdo, processing: odoProcessing, reset: resetOdo, clearErrors: clearOdoErrors } = useForm({
         current_odo: vehicle.current_odo || '',
     });
 
@@ -204,18 +208,35 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const handleUpdateOdo = (e) => {
         e.preventDefault();
+        if (odoProcessing) return;
+
         if (!String(odoData.current_odo ?? '').trim()) {
             setOdoEmptyError(true);
             triggerShake();
             return;
         }
         setOdoEmptyError(false);
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
         putOdo(`/vehicles/${vehicle.id}/odo`, {
             preserveScroll: true,
             onSuccess: () => {
                 closeOdoModal();
                 setToastMessage('Current ODO updated successfully!');
-            }
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
         });
     };
 
@@ -243,7 +264,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         return formatter.format(new Date());
     };
 
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+    const { data, setData, post, processing, reset, clearErrors } = useForm({
         services: [],
         odo: '',
         date: getPhilippineToday(),
@@ -302,6 +323,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             return;
         }
 
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
         setUpdatingLogId(logId);
 
         router.put(`/maintenance-logs/${logId}`, {
@@ -317,6 +343,15 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                 setEditingLogId(null);
                 setToastMessage('Maintenance log updated successfully!');
             },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
             onFinish: () => {
                 setUpdatingLogId(null);
             },
@@ -329,20 +364,35 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     };
 
     const confirmDeleteLog = () => {
-        if (logToDelete && !isDeletingLog) {
-            setIsDeletingLog(true);
-            router.delete(`/maintenance-logs/${logToDelete.id}`, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setShowDeleteLogModal(false);
-                    setLogToDelete(null);
-                    setToastMessage('Maintenance log deleted successfully!');
-                },
-                onFinish: () => {
-                    setIsDeletingLog(false);
-                },
-            });
+        if (!logToDelete || isDeletingLog) return;
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
         }
+
+        setIsDeletingLog(true);
+
+        router.delete(`/maintenance-logs/${logToDelete.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowDeleteLogModal(false);
+                setLogToDelete(null);
+                setToastMessage('Maintenance log deleted successfully!');
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+            onFinish: () => {
+                setIsDeletingLog(false);
+            },
+        });
     };
 
     const handleServiceToggle = (serviceName) => {
@@ -357,6 +407,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const handleSubmitLog = (e) => {
         e.preventDefault();
+        if (processing) return;
+
         const missing = {};
         if (!Array.isArray(data.services) || data.services.length === 0) missing.services = true;
         if (!String(data.odo ?? '').trim()) missing.odo = true;
@@ -368,11 +420,25 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             return;
         }
 
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
         post(`/vehicles/${vehicle.id}/maintenance-logs`, {
             preserveScroll: true,
             onSuccess: () => {
                 closeModal();
                 setToastMessage('Maintenance log added successfully!');
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
             },
         });
     };
@@ -1568,7 +1634,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         }}
                                         autoFocus
                                     />
-                                    {odoErrors.current_odo && <span style={styles.errorText}>{odoErrors.current_odo}</span>}
                                 </div>
                                 <div style={styles.modalActions}>
                                     <button type="button" onClick={closeOdoModal} style={styles.cancelBtn} className="hover-btn" disabled={odoProcessing}>Cancel</button>
@@ -1632,7 +1697,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             if (updatedServices.length > 0) clearLogEmptyError('services');
                                         }}
                                     />
-                                    {errors.services && <span style={styles.errorText}>{errors.services}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
@@ -1655,7 +1719,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             borderColor: logEmptyFields.odo ? '#FFA11A' : '#252D45',
                                         }}
                                     />
-                                    {errors.odo && <span style={styles.errorText}>{errors.odo}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
@@ -1674,13 +1737,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             borderColor: logEmptyFields.date ? '#FFA11A' : '#252D45',
                                         }}
                                     />
-                                    {errors.date && <span style={styles.errorText}>{errors.date}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Notes (Optional)</label>
                                     <textarea placeholder="Mechanic notes, workshop details..." value={data.notes} onChange={e => setData('notes', e.target.value)} style={{ ...styles.input, height: '60px', resize: 'none' }} />
-                                    {errors.notes && <span style={styles.errorText}>{errors.notes}</span>}
                                 </div>
 
                                 <div style={styles.modalActions}>
@@ -1851,3 +1912,4 @@ const styles = {
     saveBtn: { backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '85px', minHeight: '26px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 4px 10px rgba(47, 107, 255, 0.3)' },
     deleteCardBtn: { backgroundColor: 'rgba(255, 161, 26, 0.2)', color: '#FFA11A', border: '1px solid rgba(255, 161, 26, 0.4)', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '65px', minHeight: '26px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.4)' },
 };
+    

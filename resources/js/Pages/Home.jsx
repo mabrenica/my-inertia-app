@@ -157,6 +157,10 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
 
     const [toastMessage, setToastMessage] = useState(null);
 
+    const showErrorToast = () => {
+        setToastMessage('Something went wrong');
+    };
+
     useEffect(() => {
         if (flash?.success) {
             setToastMessage(flash.success);
@@ -352,18 +356,34 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     };
 
     const confirmDeleteVehicle = () => {
-        if (vehicleToDelete && !isDeletingVehicle) {
-            setIsDeletingVehicle(true);
-            router.delete(`/vehicles/${vehicleToDelete.id}`, {
-                onSuccess: () => {
-                    setShowDeleteModal(false);
-                    setVehicleToDelete(null);
-                },
-                onFinish: () => {
-                    setIsDeletingVehicle(false);
-                },
-            });
+        if (!vehicleToDelete || isDeletingVehicle) return;
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
         }
+
+        setIsDeletingVehicle(true);
+        router.delete(`/vehicles/${vehicleToDelete.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowDeleteModal(false);
+                setVehicleToDelete(null);
+                setToastMessage('Vehicle deleted successfully!');
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+            onFinish: () => {
+                setIsDeletingVehicle(false);
+            },
+        });
     };
 
     const handleFileChange = async (e) => {
@@ -438,6 +458,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
             return;
         }
 
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
         setIsSubmitting(true);
 
         const formData = {
@@ -445,38 +470,38 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
             remove_photo: removeExistingPhoto ? 1 : 0,
         };
 
+        const requestOptions = {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                setShowModal(false);
+                setEditingVehicle(null);
+                setRemoveExistingPhoto(false);
+                setToastMessage(editingVehicle ? 'Vehicle updated successfully!' : 'Vehicle added successfully!');
+            },
+            onError: (responseErrors) => {
+                if (responseErrors?.photo) {
+                    setError('photo', responseErrors.photo);
+                } else {
+                    showErrorToast();
+                }
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+            onFinish: () => {
+                setIsSubmitting(false);
+            },
+        };
+
         if (editingVehicle) {
-            router.post(`/vehicles/${editingVehicle.id}`, formData, {
-                forceFormData: true,
-                onError: (responseErrors) => {
-                    if (responseErrors.photo) setError('photo', responseErrors.photo);
-                    setIsSubmitting(false);
-                },
-                onSuccess: () => {
-                    reset();
-                    setShowModal(false);
-                    setEditingVehicle(null);
-                    setRemoveExistingPhoto(false);
-                },
-                onFinish: () => {
-                    setIsSubmitting(false);
-                },
-            });
+            router.post(`/vehicles/${editingVehicle.id}`, formData, requestOptions);
         } else {
-            router.post('/vehicles', formData, {
-                forceFormData: true,
-                onError: (responseErrors) => {
-                    if (responseErrors.photo) setError('photo', responseErrors.photo);
-                    setIsSubmitting(false);
-                },
-                onSuccess: () => {
-                    reset();
-                    setShowModal(false);
-                },
-                onFinish: () => {
-                    setIsSubmitting(false);
-                },
-            });
+            router.post('/vehicles', formData, requestOptions);
         }
     };
 

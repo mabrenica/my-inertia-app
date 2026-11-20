@@ -28,20 +28,6 @@ export default function Profile({ auth }) {
         setToastMessage('Something went wrong');
     };
 
-    const runVisitWithNetworkCatch = (visitFn) => {
-        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-            showErrorToast();
-            return null;
-        }
-
-        try {
-            return visitFn();
-        } catch {
-            showErrorToast();
-            return null;
-        }
-    };
-
     const handleCancel = () => {
         reset();
         setIsEditing(false);
@@ -49,23 +35,26 @@ export default function Profile({ auth }) {
 
     const handleSave = (e) => {
         e.preventDefault();
-        runVisitWithNetworkCatch(() =>
-            patch('/profile', {
-                onSuccess: () => {
-                    setIsEditing(false);
-                    setToastMessage('Profile updated successfully!');
-                },
-                onError: () => {
-                    showErrorToast();
-                },
-                onInvalid: () => {
-                    showErrorToast();
-                },
-                onException: () => {
-                    showErrorToast();
-                },
-            })
-        );
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
+        patch('/profile', {
+            onSuccess: () => {
+                setIsEditing(false);
+                setToastMessage('Profile updated successfully!');
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+        });
     };
 
     const handleAvatarClick = () => {
@@ -93,31 +82,25 @@ export default function Profile({ auth }) {
             const formData = new FormData();
             formData.append('avatar', optimized);
 
-            const started = runVisitWithNetworkCatch(() =>
-                router.post('/profile/avatar', formData, {
-                    forceFormData: true,
-                    onSuccess: () => {
-                        setToastMessage('Profile picture updated!');
-                        setShowViewModal(false);
-                    },
-                    onError: () => {
-                        showErrorToast();
-                    },
-                    onInvalid: () => {
-                        showErrorToast();
-                    },
-                    onException: () => {
-                        showErrorToast();
-                    },
-                    onFinish: () => {
-                        setIsOptimizingAvatar(false);
-                    },
-                })
-            );
-
-            if (!started) {
-                setIsOptimizingAvatar(false);
-            }
+            router.post('/profile/avatar', formData, {
+                forceFormData: true,
+                onSuccess: () => {
+                    setToastMessage('Profile picture updated!');
+                    setShowViewModal(false);
+                },
+                onError: () => {
+                    showErrorToast();
+                },
+                onInvalid: () => {
+                    showErrorToast();
+                },
+                onException: () => {
+                    showErrorToast();
+                },
+                onFinish: () => {
+                    setIsOptimizingAvatar(false);
+                },
+            });
         } catch {
             showErrorToast();
             setIsOptimizingAvatar(false);
@@ -136,31 +119,25 @@ export default function Profile({ auth }) {
 
         setIsDeletingAvatar(true);
 
-        const started = runVisitWithNetworkCatch(() =>
-            router.delete('/profile/avatar', {
-                onSuccess: () => {
-                    setShowDeleteModal(false);
-                    setShowViewModal(false);
-                    setToastMessage('Profile picture removed.');
-                },
-                onError: () => {
-                    showErrorToast();
-                },
-                onInvalid: () => {
-                    showErrorToast();
-                },
-                onException: () => {
-                    showErrorToast();
-                },
-                onFinish: () => {
-                    setIsDeletingAvatar(false);
-                },
-            })
-        );
-
-        if (!started) {
-            setIsDeletingAvatar(false);
-        }
+        router.delete('/profile/avatar', {
+            onSuccess: () => {
+                setShowDeleteModal(false);
+                setShowViewModal(false);
+                setToastMessage('Profile picture removed.');
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+            onFinish: () => {
+                setIsDeletingAvatar(false);
+            },
+        });
     };
 
     const avatarUrl = user.avatar

@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { useForm, Link } from '@inertiajs/react';
+import Toast from '@/Components/Toast';
 
 export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [emptyRequiredFields, setEmptyRequiredFields] = useState({});
     const [shakeKey, setShakeKey] = useState(0);
+    const [toastMessage, setToastMessage] = useState(null);
+
+    const showErrorToast = () => {
+        setToastMessage('Something went wrong');
+    };
 
     const { data, setData, post, processing, errors } = useForm({
         email: '',
@@ -32,13 +38,32 @@ export default function Login() {
             return;
         }
 
-        post('/login');
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
+        post('/login', {
+            preserveScroll: true,
+            onError: (responseErrors) => {
+                if (!responseErrors || Object.keys(responseErrors).length === 0) {
+                    showErrorToast();
+                }
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+        });
     };
 
     const isFieldInvalid = (field) => Boolean(emptyRequiredFields[field] || errors[field]);
 
     return (
         <div style={styles.page}>
+            <Toast message={toastMessage} duration={1000} onClose={() => setToastMessage(null)} />
             <style>{`
                 @keyframes spinnerRotate {
                     100% { transform: rotate(360deg); }

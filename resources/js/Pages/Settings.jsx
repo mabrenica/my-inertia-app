@@ -133,7 +133,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
     const [carServices, setCarServices] = useState(initialCarServices);
     const [motoServices, setMotoServices] = useState(initialMotoServices);
-    const [toastMessage, setToastMessage] = useState(null);
+    const [toast, setToast] = useState(null);
 
     const [carOpen, setCarOpen] = useState(false);
     const [motoOpen, setMotoOpen] = useState(false);
@@ -165,6 +165,14 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
             document.removeEventListener('touchstart', handleOutsideClick);
         };
     }, []);
+
+    const showToast = (message) => {
+        setToast({ id: Date.now() + Math.random(), message });
+    };
+
+    const showErrorToast = () => {
+        showToast('Something went wrong');
+    };
 
     const formatIntervalDays = (totalDays) => {
         const daysNum = Number(totalDays);
@@ -245,6 +253,12 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
     const handleSaveModal = () => {
         if (isSavingServices) return;
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
         setIsSavingServices(true);
         const updatedCar = activeModal === 'car' ? tempServices : carServices;
         const updatedMoto = activeModal === 'moto' ? tempServices : motoServices;
@@ -253,15 +267,25 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
             car_services: updatedCar,
             moto_services: updatedMoto,
         }, {
+            preserveScroll: true,
             onSuccess: () => {
                 if (activeModal === 'car') setCarServices(updatedCar);
                 if (activeModal === 'moto') setMotoServices(updatedMoto);
-                setToastMessage('Services updated successfully!');
+                showToast('Services updated successfully!');
                 closeModal();
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
             },
             onFinish: () => {
                 setIsSavingServices(false);
-            }
+            },
         });
     };
 
@@ -323,6 +347,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
         <div style={styles.page} className="page-layout">
             <style>{`
                 @keyframes spinnerRotate {
+                    0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
                 @keyframes spinnerDash {
@@ -330,14 +355,28 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
                     100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
                 }
-                .btn-spinner {
-                    animation: spinnerRotate 1.4s linear infinite;
+                .btn-spinner-wrap {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
                     width: 16px;
                     height: 16px;
+                    flex-shrink: 0;
+                    animation: spinnerRotate 0.9s linear infinite;
+                    transform-origin: center;
+                }
+                .btn-spinner {
+                    display: block;
+                    width: 16px;
+                    height: 16px;
+                    transform-box: fill-box;
+                    transform-origin: center;
                 }
                 .btn-spinner-circle {
                     animation: spinnerDash 1.2s ease-in-out infinite;
                     stroke-linecap: round;
+                    transform-box: fill-box;
+                    transform-origin: center;
                 }
                 @keyframes slideUpFade {
                     from { opacity: 0; transform: translateY(16px) scale(0.98); }
@@ -724,7 +763,12 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
             <Sidebar activePage="settings" />
 
             <div style={styles.mainContent} className="mainContent">
-                <Toast message={toastMessage} duration={1000} onClose={() => setToastMessage(null)} />
+                <Toast
+                    key={toast ? toast.id : 'toast-empty'}
+                    message={toast ? toast.message : null}
+                    duration={1000}
+                    onClose={() => setToast(null)}
+                />
 
                 <Breadcrumb items={[{ label: 'Main', href: '/home' }, { label: 'Settings' }]} />
 
@@ -976,15 +1020,17 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 <button onClick={closeModal} style={styles.cancelBtn} className="hover-btn" type="button" disabled={isSavingServices}>Cancel</button>
                                 <button onClick={handleSaveModal} style={styles.saveBtn} className="hover-btn" type="button" disabled={isSavingServices}>
                                     {isSavingServices ? (
-                                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
-                                            <circle
-                                                cx="25" cy="25" r="20"
-                                                fill="none"
-                                                stroke="#FFFFFF"
-                                                strokeWidth="5"
-                                                className="btn-spinner-circle"
-                                            />
-                                        </svg>
+                                        <span className="btn-spinner-wrap" aria-hidden="true">
+                                            <svg viewBox="0 0 50 50" className="btn-spinner">
+                                                <circle
+                                                    cx="25" cy="25" r="20"
+                                                    fill="none"
+                                                    stroke="#FFFFFF"
+                                                    strokeWidth="5"
+                                                    className="btn-spinner-circle"
+                                                />
+                                            </svg>
+                                        </span>
                                     ) : 'Save Changes'}
                                 </button>
                             </div>
