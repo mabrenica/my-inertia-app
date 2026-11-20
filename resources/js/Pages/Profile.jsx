@@ -8,7 +8,6 @@ import { optimizeImage } from '@/Utils/optimizeImage';
 export default function Profile({ auth }) {
     const user = auth?.user || {};
     const [isEditing, setIsEditing] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [avatarError, setAvatarError] = useState('');
@@ -64,17 +63,19 @@ export default function Profile({ auth }) {
             router.post('/profile/avatar', formData, {
                 forceFormData: true,
                 onSuccess: () => {
-                    setIsHovered(false);
                     setToastMessage('Profile picture updated!');
+                    setShowViewModal(false);
                 },
-                onError: (errors) => {
-                    setAvatarError(errors.avatar || 'Unable to upload profile picture.');
+                onError: (errs) => {
+                    setToastMessage('Something went wrong');
+                    setAvatarError(errs.avatar || 'Unable to upload profile picture.');
                 },
                 onFinish: () => {
                     setIsOptimizingAvatar(false);
                 },
             });
         } catch (error) {
+            setToastMessage('Something went wrong');
             setAvatarError(error.message || 'Unable to optimize this photo.');
             setIsOptimizingAvatar(false);
         } finally {
@@ -88,8 +89,11 @@ export default function Profile({ auth }) {
         router.delete('/profile/avatar', {
             onSuccess: () => {
                 setShowDeleteModal(false);
-                setIsHovered(false);
+                setShowViewModal(false);
                 setToastMessage('Profile picture removed.');
+            },
+            onError: () => {
+                setToastMessage('Something went wrong');
             },
             onFinish: () => {
                 setIsDeletingAvatar(false);
@@ -197,8 +201,7 @@ export default function Profile({ auth }) {
                     <div style={styles.profileHeader} className="animated-card">
                         <div
                             style={styles.avatarContainer}
-                            onMouseEnter={() => setIsHovered(true)}
-                            onMouseLeave={() => setIsHovered(false)}
+                            onClick={() => setShowViewModal(true)}
                         >
                             <div style={styles.avatarWrapper}>
                                 {avatarUrl ? (
@@ -210,55 +213,6 @@ export default function Profile({ auth }) {
                                         </svg>
                                     </div>
                                 )}
-                                {isOptimizingAvatar && (
-                                    <div
-                                        style={styles.avatarProgressOverlay}
-                                        role="status"
-                                        aria-label="Processing profile photo"
-                                    >
-                                        <svg viewBox="0 0 50 50" style={styles.avatarSpinnerSvg} className="avatar-spinner" aria-hidden="true">
-                                            <circle
-                                                cx="25" cy="25" r="20"
-                                                fill="none"
-                                                stroke="#FFFFFF"
-                                                strokeWidth="4"
-                                                className="avatar-spinner-circle"
-                                            />
-                                        </svg>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div style={{
-                                ...styles.hoverOverlay,
-                                opacity: isHovered && !isOptimizingAvatar ? 1 : 0,
-                                visibility: isHovered && !isOptimizingAvatar ? 'visible' : 'hidden',
-                            }}>
-                                <div style={styles.bottomActionRow}>
-                                    {avatarUrl && (
-                                        <button onClick={() => setShowViewModal(true)} style={styles.iconBtn} className="hover-btn" title="View Profile Picture" type="button">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                        </button>
-                                    )}
-                                    <button onClick={handleAvatarClick} disabled={isOptimizingAvatar} style={styles.iconBtnUpload} className="hover-btn" title="Upload Avatar" type="button">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                            <polyline points="17 8 12 3 7 8"></polyline>
-                                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                                        </svg>
-                                    </button>
-                                    {user.avatar && (
-                                        <button onClick={() => setShowDeleteModal(true)} style={styles.iconBtnDelete} className="hover-btn" title="Delete Avatar" type="button">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                            </svg>
-                                        </button>
-                                    )}
-                                </div>
                             </div>
                             <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/jpeg,image/png,image/webp" disabled={isOptimizingAvatar} style={{ display: 'none' }} />
                         </div>
@@ -398,6 +352,42 @@ export default function Profile({ auth }) {
                                     </div>
                                 )}
                             </div>
+                            <div style={styles.modalActionsRow}>
+                                <button onClick={handleAvatarClick} disabled={isOptimizingAvatar} style={styles.uploadIconBtn} className="hover-btn" title="Upload New Picture" type="button">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="17 8 12 3 7 8"></polyline>
+                                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                                    </svg>
+                                    Upload Photo
+                                </button>
+                                {user.avatar && (
+                                    <button onClick={() => setShowDeleteModal(true)} style={styles.deleteIconBtn} className="hover-btn" title="Remove Profile Picture" type="button">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                        Delete
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {isOptimizingAvatar && (
+                    <div style={styles.progressModalOverlay} role="status" aria-label="Uploading file">
+                        <div style={styles.progressModalBox}>
+                            <svg viewBox="0 0 50 50" style={styles.avatarSpinnerSvg} className="avatar-spinner" aria-hidden="true">
+                                <circle
+                                    cx="25" cy="25" r="20"
+                                    fill="none"
+                                    stroke="#2F6BFF"
+                                    strokeWidth="4"
+                                    className="avatar-spinner-circle"
+                                />
+                            </svg>
+                            <h4 style={styles.progressText}>Uploading...</h4>
                         </div>
                     </div>
                 )}
@@ -447,30 +437,25 @@ const styles = {
     },
     profileHeader: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '32px', width: '100%' },
     avatarContainer: { position: 'relative', marginBottom: '24px', cursor: 'pointer', width: '76px', height: '76px' },
-    avatarProgressOverlay: { position: 'absolute', inset: 0, borderRadius: '50%', backgroundColor: '#090A10', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20, pointerEvents: 'none' },
     avatarSpinnerSvg: { width: '32px', height: '32px', filter: 'drop-shadow(0 0 4px rgba(0, 0, 0, 0.2))' },
     avatarWrapper: { width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '2px solid #252D45', backgroundColor: '#1B2030', position: 'relative', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.4)' },
     avatar: { width: '100%', height: '100%', objectFit: 'cover' },
     blankAvatar: { width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#1B2030' },
     blankAvatarIcon: { width: '44px', height: '44px' },
-    hoverOverlay: {
-        position: 'absolute', bottom: '-14px', left: '50%', transform: 'translateX(-50%)',
-        display: 'flex', justifyContent: 'center',
-        zIndex: 10, transition: 'opacity 0.25s ease-in-out, visibility 0.25s ease-in-out',
-        width: 'max-content',
-    },
-    bottomActionRow: { display: 'flex', gap: '4px' },
-    iconBtn: { backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 5px rgba(0, 0, 0, 0.3)' },
-    iconBtnUpload: { backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 2px 5px rgba(0, 0, 0, 0.3)' },
-    iconBtnDelete: { backgroundColor: 'rgba(255, 161, 26, 0.2)', color: '#FFA11A', border: '1px solid rgba(255, 161, 26, 0.4)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 5px rgba(0, 0, 0, 0.3)' },
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
     viewModalBox: { backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '400px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.4)', boxSizing: 'border-box' },
     viewModalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
     closeModalBtn: { background: 'none', border: 'none', color: '#8A99C2', fontSize: '16px', cursor: 'pointer' },
-    fullImageContainer: { width: '100%', height: '320px', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#1B2030', borderRadius: '8px', overflow: 'hidden', border: '1px solid #252D45', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)' },
+    fullImageContainer: { width: '100%', height: '320px', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#1B2030', borderRadius: '8px', overflow: 'hidden', border: '1px solid #252D45', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)', marginBottom: '16px' },
     fullImage: { maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' },
     fullBlankAvatar: { width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#1B2030' },
-    modalBox: { backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.4)', textAlign: 'center', boxSizing: 'border-box' },
+    modalActionsRow: { display: 'flex', justifyContent: 'center', gap: '10px' },
+    uploadIconBtn: { backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 10px rgba(47, 107, 255, 0.3)' },
+    deleteIconBtn: { backgroundColor: 'rgba(255, 161, 26, 0.2)', color: '#FFA11A', border: '1px solid rgba(255, 161, 26, 0.5)', borderRadius: '6px', padding: '8px 16px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)' },
+    progressModalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.82)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '16px' },
+    progressModalBox: { backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.4)' },
+    progressText: { fontSize: '14px', fontWeight: '600', color: '#FFFFFF', margin: 0 },
+    modalBox: { backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '380px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.4)', textAlign: 'center', boxSizing: 'border-box', zIndex: 1050 },
     modalTitle: { fontSize: '16px', fontWeight: '600', color: '#FFFFFF', margin: 0 },
     modalText: { fontSize: '13px', color: '#8A99C2', margin: '0 0 20px 0', lineHeight: '1.4' },
     modalActions: { display: 'flex', justifyContent: 'center', gap: '10px' },
