@@ -673,7 +673,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         flex-direction: column !important;
                     }
                     .mainContent {
-                        padding: 16px 16px 96px 16px !important;
+                        padding: 16px 16px 130px 16px !important;
                     }
                     .tableContainer {
                         display: none !important;
@@ -1019,7 +1019,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         margin: 2px 0 0 0;
                     }
                     .floating-btn-anim {
-                        bottom: 84px !important;
+                        bottom: 92px !important;
                         right: 20px !important;
                     }
                 }
@@ -1912,4 +1912,3 @@ const styles = {
     saveBtn: { backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '85px', minHeight: '26px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 4px 10px rgba(47, 107, 255, 0.3)' },
     deleteCardBtn: { backgroundColor: 'rgba(255, 161, 26, 0.2)', color: '#FFA11A', border: '1px solid rgba(255, 161, 26, 0.4)', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '65px', minHeight: '26px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.4)' },
 };
-    
