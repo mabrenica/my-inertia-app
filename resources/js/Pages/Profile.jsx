@@ -25,9 +25,23 @@ export default function Profile({ auth }) {
         phone_number: user.phone_number || '',
     });
 
-    const showAvatarFailureToast = (fallbackMessage = 'Something went wrong') => {
+    const showErrorToast = (detailMessage = 'Something went wrong') => {
         setToastMessage('Something went wrong');
-        setAvatarError(fallbackMessage);
+        setAvatarError(detailMessage || 'Something went wrong');
+    };
+
+    const runVisitWithNetworkCatch = (visitFn) => {
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast('Something went wrong');
+            return null;
+        }
+
+        try {
+            return visitFn();
+        } catch (err) {
+            showErrorToast(err?.message || 'Something went wrong');
+            return null;
+        }
     };
 
     const handleCancel = () => {
@@ -37,18 +51,23 @@ export default function Profile({ auth }) {
 
     const handleSave = (e) => {
         e.preventDefault();
-        patch('/profile', {
-            onSuccess: () => {
-                setIsEditing(false);
-                setToastMessage('Profile updated successfully!');
-            },
-            onError: () => {
-                setToastMessage('Something went wrong');
-            },
-            onInvalid: () => {
-                setToastMessage('Something went wrong');
-            },
-        });
+        runVisitWithNetworkCatch(() =>
+            patch('/profile', {
+                onSuccess: () => {
+                    setIsEditing(false);
+                    setToastMessage('Profile updated successfully!');
+                },
+                onError: () => {
+                    setToastMessage('Something went wrong');
+                },
+                onInvalid: () => {
+                    setToastMessage('Something went wrong');
+                },
+                onException: () => {
+                    setToastMessage('Something went wrong');
+                },
+            })
+        );
     };
 
     const handleAvatarClick = () => {
@@ -58,6 +77,12 @@ export default function Profile({ auth }) {
     const handleAvatarChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file || isOptimizingAvatar) return;
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast('Something went wrong');
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
 
         setAvatarError('');
         setIsOptimizingAvatar(true);
@@ -71,24 +96,33 @@ export default function Profile({ auth }) {
             const formData = new FormData();
             formData.append('avatar', optimized);
 
-            router.post('/profile/avatar', formData, {
-                forceFormData: true,
-                onSuccess: () => {
-                    setToastMessage('Profile picture updated!');
-                    setShowViewModal(false);
-                },
-                onError: (errs) => {
-                    showAvatarFailureToast(errs?.avatar || 'Something went wrong');
-                },
-                onInvalid: () => {
-                    showAvatarFailureToast('Something went wrong');
-                },
-                onFinish: () => {
-                    setIsOptimizingAvatar(false);
-                },
-            });
+            const started = runVisitWithNetworkCatch(() =>
+                router.post('/profile/avatar', formData, {
+                    forceFormData: true,
+                    onSuccess: () => {
+                        setToastMessage('Profile picture updated!');
+                        setShowViewModal(false);
+                    },
+                    onError: (errs) => {
+                        showErrorToast(errs?.avatar || 'Something went wrong');
+                    },
+                    onInvalid: () => {
+                        showErrorToast('Something went wrong');
+                    },
+                    onException: (exception) => {
+                        showErrorToast(exception?.message || 'Something went wrong');
+                    },
+                    onFinish: () => {
+                        setIsOptimizingAvatar(false);
+                    },
+                })
+            );
+
+            if (!started) {
+                setIsOptimizingAvatar(false);
+            }
         } catch (error) {
-            showAvatarFailureToast(error?.message || 'Something went wrong');
+            showErrorToast(error?.message || 'Something went wrong');
             setIsOptimizingAvatar(false);
         } finally {
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -97,24 +131,40 @@ export default function Profile({ auth }) {
 
     const confirmDeleteAvatar = () => {
         if (isDeletingAvatar) return;
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast('Something went wrong');
+            return;
+        }
+
         setAvatarError('');
         setIsDeletingAvatar(true);
-        router.delete('/profile/avatar', {
-            onSuccess: () => {
-                setShowDeleteModal(false);
-                setShowViewModal(false);
-                setToastMessage('Profile picture removed.');
-            },
-            onError: (errs) => {
-                showAvatarFailureToast(errs?.avatar || 'Something went wrong');
-            },
-            onInvalid: () => {
-                showAvatarFailureToast('Something went wrong');
-            },
-            onFinish: () => {
-                setIsDeletingAvatar(false);
-            },
-        });
+
+        const started = runVisitWithNetworkCatch(() =>
+            router.delete('/profile/avatar', {
+                onSuccess: () => {
+                    setShowDeleteModal(false);
+                    setShowViewModal(false);
+                    setToastMessage('Profile picture removed.');
+                },
+                onError: (errs) => {
+                    showErrorToast(errs?.avatar || 'Something went wrong');
+                },
+                onInvalid: () => {
+                    showErrorToast('Something went wrong');
+                },
+                onException: (exception) => {
+                    showErrorToast(exception?.message || 'Something went wrong');
+                },
+                onFinish: () => {
+                    setIsDeletingAvatar(false);
+                },
+            })
+        );
+
+        if (!started) {
+            setIsDeletingAvatar(false);
+        }
     };
 
     const avatarUrl = user.avatar
