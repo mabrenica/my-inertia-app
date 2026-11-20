@@ -84,7 +84,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
         $vehicles = $user->vehicles()->with('maintenanceLogs')->get();
-        
+
         $preference = UserServicePreference::firstOrCreate(
             ['user_id' => $user->id],
             [
@@ -115,17 +115,28 @@ class AuthController extends Controller
             'phone_number' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $user->update($request->only([
-            'name',
-            'date_of_birth',
-            'gender',
-            'nationality',
-            'address',
-            'phone_number',
-        ]));
+        try {
+            $user->update($request->only([
+                'name',
+                'date_of_birth',
+                'gender',
+                'nationality',
+                'address',
+                'phone_number',
+            ]));
+        } catch (\Throwable $exception) {
+            Log::error('Failed to update user profile', [
+                'user_id' => $user->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'profile' => 'Something went wrong',
+            ]);
+        }
 
         return back();
-    }   
+    }
 
     public function updateAvatar(Request $request)
     {
@@ -137,14 +148,31 @@ class AuthController extends Controller
 
         $user = $request->user();
         $oldAvatar = $user->avatar;
-        $newPath = OptimizedImageUploader::store($request->file('avatar'), 'avatars', 'avatar', 640);
-        $newUrl = Storage::disk('supabase')->url($newPath);
+        $newPath = null;
 
         try {
+            $newPath = OptimizedImageUploader::store($request->file('avatar'), 'avatars', 'avatar', 640);
+            $newUrl = Storage::disk('supabase')->url($newPath);
             $user->update(['avatar' => $newUrl]);
         } catch (\Throwable $exception) {
-            Storage::disk('supabase')->delete($newPath);
-            throw $exception;
+            if ($newPath !== null) {
+                try {
+                    Storage::disk('supabase')->delete($newPath);
+                } catch (\Throwable $cleanupException) {
+                    Log::warning('Unable to roll back uploaded avatar after failure', [
+                        'message' => $cleanupException->getMessage(),
+                    ]);
+                }
+            }
+
+            Log::error('Failed to update user avatar', [
+                'user_id' => $user->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'avatar' => 'Something went wrong',
+            ]);
         }
 
         // Delete the old file only after the new avatar is stored and saved.
@@ -157,7 +185,20 @@ class AuthController extends Controller
     {
         $user = $request->user();
         $oldAvatar = $user->avatar;
-        $user->update(['avatar' => null]);
+
+        try {
+            $user->update(['avatar' => null]);
+        } catch (\Throwable $exception) {
+            Log::error('Failed to remove user avatar', [
+                'user_id' => $user->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'avatar' => 'Something went wrong',
+            ]);
+        }
+
         $this->deleteStoredFile($oldAvatar);
 
         return back();
@@ -177,12 +218,12 @@ class AuthController extends Controller
         $newPath = null;
         $photoUrl = null;
 
-        if ($request->hasFile('photo')) {
-            $newPath = OptimizedImageUploader::store($request->file('photo'), 'vehicles', 'photo', 1600);
-            $photoUrl = Storage::disk('supabase')->url($newPath);
-        }
-
         try {
+            if ($request->hasFile('photo')) {
+                $newPath = OptimizedImageUploader::store($request->file('photo'), 'vehicles', 'photo', 1600);
+                $photoUrl = Storage::disk('supabase')->url($newPath);
+            }
+
             $request->user()->vehicles()->create([
                 'type' => $validated['type'],
                 'make' => $validated['make'],
@@ -193,9 +234,23 @@ class AuthController extends Controller
             ]);
         } catch (\Throwable $exception) {
             if ($newPath !== null) {
-                Storage::disk('supabase')->delete($newPath);
+                try {
+                    Storage::disk('supabase')->delete($newPath);
+                } catch (\Throwable $cleanupException) {
+                    Log::warning('Unable to roll back uploaded vehicle photo after failure', [
+                        'message' => $cleanupException->getMessage(),
+                    ]);
+                }
             }
-            throw $exception;
+
+            Log::error('Failed to store vehicle', [
+                'user_id' => $request->user()->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'vehicle' => 'Something went wrong',
+            ]);
         }
 
         return back()->with('success', 'Vehicle successfully added!');
@@ -225,13 +280,13 @@ class AuthController extends Controller
             $photoUrl = null;
         }
 
-        // A newly selected photo takes precedence over remove_photo.
-        if ($request->hasFile('photo')) {
-            $newPath = OptimizedImageUploader::store($request->file('photo'), 'vehicles', 'photo', 1600);
-            $photoUrl = Storage::disk('supabase')->url($newPath);
-        }
-
         try {
+            // A newly selected photo takes precedence over remove_photo.
+            if ($request->hasFile('photo')) {
+                $newPath = OptimizedImageUploader::store($request->file('photo'), 'vehicles', 'photo', 1600);
+                $photoUrl = Storage::disk('supabase')->url($newPath);
+            }
+
             $vehicle->update([
                 'type' => $validated['type'],
                 'make' => $validated['make'],
@@ -242,9 +297,24 @@ class AuthController extends Controller
             ]);
         } catch (\Throwable $exception) {
             if ($newPath !== null) {
-                Storage::disk('supabase')->delete($newPath);
+                try {
+                    Storage::disk('supabase')->delete($newPath);
+                } catch (\Throwable $cleanupException) {
+                    Log::warning('Unable to roll back uploaded vehicle photo after update failure', [
+                        'message' => $cleanupException->getMessage(),
+                    ]);
+                }
             }
-            throw $exception;
+
+            Log::error('Failed to update vehicle', [
+                'user_id' => $request->user()->id,
+                'vehicle_id' => $vehicle->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'vehicle' => 'Something went wrong',
+            ]);
         }
 
         // Never delete the previous photo before the database update succeeds.
@@ -262,7 +332,21 @@ class AuthController extends Controller
             ->firstOrFail();
 
         $photoUrl = $vehicle->photo;
-        $vehicle->delete();
+
+        try {
+            $vehicle->delete();
+        } catch (\Throwable $exception) {
+            Log::error('Failed to delete vehicle', [
+                'user_id' => $request->user()->id,
+                'vehicle_id' => $vehicle->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'vehicle' => 'Something went wrong',
+            ]);
+        }
+
         $this->deleteStoredFile($photoUrl);
 
         return back()->with('success', 'Vehicle successfully deleted!');
@@ -308,14 +392,26 @@ class AuthController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        foreach ($request->services as $serviceName) {
-            VehicleMaintenanceLog::create([
+        try {
+            foreach ($request->services as $serviceName) {
+                VehicleMaintenanceLog::create([
+                    'vehicle_id' => $vehicle->id,
+                    'services' => [$serviceName],
+                    'odo' => $request->odo,
+                    'date' => $request->date,
+                    'cost' => $request->cost,
+                    'notes' => $request->notes,
+                ]);
+            }
+        } catch (\Throwable $exception) {
+            Log::error('Failed to store maintenance log', [
+                'user_id' => $request->user()->id,
                 'vehicle_id' => $vehicle->id,
-                'services' => [$serviceName],
-                'odo' => $request->odo,
-                'date' => $request->date,
-                'cost' => $request->cost,
-                'notes' => $request->notes,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return redirect()->back()->withErrors([
+                'maintenance_log' => 'Something went wrong',
             ]);
         }
 
@@ -343,13 +439,25 @@ class AuthController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $log->update([
-            'services' => $request->services,
-            'odo' => $request->odo,
-            'date' => $request->date,
-            'cost' => $request->cost,
-            'notes' => $request->notes,
-        ]);
+        try {
+            $log->update([
+                'services' => $request->services,
+                'odo' => $request->odo,
+                'date' => $request->date,
+                'cost' => $request->cost,
+                'notes' => $request->notes,
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Failed to update maintenance log', [
+                'user_id' => $request->user()->id,
+                'log_id' => $log->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return redirect()->back()->withErrors([
+                'maintenance_log' => 'Something went wrong',
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Maintenance log updated successfully!');
     }
@@ -367,7 +475,19 @@ class AuthController extends Controller
             abort(403);
         }
 
-        $log->delete();
+        try {
+            $log->delete();
+        } catch (\Throwable $exception) {
+            Log::error('Failed to delete maintenance log', [
+                'user_id' => $request->user()->id,
+                'log_id' => $log->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return redirect()->back()->withErrors([
+                'maintenance_log' => 'Something went wrong',
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Maintenance log deleted successfully!');
     }
@@ -382,10 +502,22 @@ class AuthController extends Controller
             'current_odo' => ['required', 'string', 'max:50'],
         ]);
 
-        $vehicle->update([
-            'current_odo' => $validated['current_odo'],
-            'odo_updated_at' => now(),
-        ]);
+        try {
+            $vehicle->update([
+                'current_odo' => $validated['current_odo'],
+                'odo_updated_at' => now(),
+            ]);
+        } catch (\Throwable $exception) {
+            Log::error('Failed to update vehicle ODO', [
+                'user_id' => $request->user()->id,
+                'vehicle_id' => $vehicle->id,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors([
+                'current_odo' => 'Something went wrong',
+            ]);
+        }
 
         return back()->with('success', 'Current ODO updated successfully!');
     }
@@ -429,5 +561,4 @@ class AuthController extends Controller
             ]);
         }
     }
-
 }

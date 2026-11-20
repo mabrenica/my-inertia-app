@@ -13,7 +13,7 @@ function MinimalTypeIcon({ type, size = 16 }) {
                 height={size}
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#FFF8F0"
+                stroke="#FFFFFF"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -32,7 +32,7 @@ function MinimalTypeIcon({ type, size = 16 }) {
             height={size}
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#FFF8F0"
+            stroke="#FFFFFF"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -70,7 +70,7 @@ function MobileVehicleTypeDropdown({ value, options = ['Car', 'Motorbike'], onCh
                 key={isInvalid ? `mobile-type-${shakeKey}` : 'mobile-type'}
                 type="button"
                 className={`home-mobile-type-trigger ${open ? 'is-focused' : ''} ${isInvalid ? 'shake-invalid' : ''}`}
-                style={isInvalid ? { borderColor: '#FF8F9A' } : undefined}
+                style={isInvalid ? { borderColor: '#FFA11A' } : undefined}
                 onClick={() => setOpen((prev) => !prev)}
                 aria-expanded={open}
             >
@@ -156,6 +156,10 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     const [isDeletingVehicle, setIsDeletingVehicle] = useState(false);
 
     const [toastMessage, setToastMessage] = useState(null);
+
+    const showErrorToast = () => {
+        setToastMessage('Something went wrong');
+    };
 
     useEffect(() => {
         if (flash?.success) {
@@ -352,18 +356,34 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
     };
 
     const confirmDeleteVehicle = () => {
-        if (vehicleToDelete && !isDeletingVehicle) {
-            setIsDeletingVehicle(true);
-            router.delete(`/vehicles/${vehicleToDelete.id}`, {
-                onSuccess: () => {
-                    setShowDeleteModal(false);
-                    setVehicleToDelete(null);
-                },
-                onFinish: () => {
-                    setIsDeletingVehicle(false);
-                },
-            });
+        if (!vehicleToDelete || isDeletingVehicle) return;
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
         }
+
+        setIsDeletingVehicle(true);
+        router.delete(`/vehicles/${vehicleToDelete.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowDeleteModal(false);
+                setVehicleToDelete(null);
+                setToastMessage('Vehicle deleted successfully!');
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+            onFinish: () => {
+                setIsDeletingVehicle(false);
+            },
+        });
     };
 
     const handleFileChange = async (e) => {
@@ -438,6 +458,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
             return;
         }
 
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
         setIsSubmitting(true);
 
         const formData = {
@@ -445,38 +470,38 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
             remove_photo: removeExistingPhoto ? 1 : 0,
         };
 
+        const requestOptions = {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                reset();
+                setShowModal(false);
+                setEditingVehicle(null);
+                setRemoveExistingPhoto(false);
+                setToastMessage(editingVehicle ? 'Vehicle updated successfully!' : 'Vehicle added successfully!');
+            },
+            onError: (responseErrors) => {
+                if (responseErrors?.photo) {
+                    setError('photo', responseErrors.photo);
+                } else {
+                    showErrorToast();
+                }
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+            onFinish: () => {
+                setIsSubmitting(false);
+            },
+        };
+
         if (editingVehicle) {
-            router.post(`/vehicles/${editingVehicle.id}`, formData, {
-                forceFormData: true,
-                onError: (responseErrors) => {
-                    if (responseErrors.photo) setError('photo', responseErrors.photo);
-                    setIsSubmitting(false);
-                },
-                onSuccess: () => {
-                    reset();
-                    setShowModal(false);
-                    setEditingVehicle(null);
-                    setRemoveExistingPhoto(false);
-                },
-                onFinish: () => {
-                    setIsSubmitting(false);
-                },
-            });
+            router.post(`/vehicles/${editingVehicle.id}`, formData, requestOptions);
         } else {
-            router.post('/vehicles', formData, {
-                forceFormData: true,
-                onError: (responseErrors) => {
-                    if (responseErrors.photo) setError('photo', responseErrors.photo);
-                    setIsSubmitting(false);
-                },
-                onSuccess: () => {
-                    reset();
-                    setShowModal(false);
-                },
-                onFinish: () => {
-                    setIsSubmitting(false);
-                },
-            });
+            router.post('/vehicles', formData, requestOptions);
         }
     };
 
@@ -542,23 +567,24 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                 }
                 .interactive-card:hover {
                     transform: translateY(-3px);
-                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08), 0 0 14px rgba(233, 197, 228, 0.14);
-                    border-color: #E9C5E4;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 12px 30px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(47, 107, 255, 0.25);
+                    border-color: #2F6BFF;
                 }
                 .hover-list-item {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .hover-list-item:hover {
                     transform: translateX(4px);
-                    background-color: rgba(233, 197, 228, 0.16) !important;
-                    border-color: #E9C5E4 !important;
+                    background-color: rgba(47, 107, 255, 0.15) !important;
+                    border-color: #2F6BFF !important;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
                 }
                 .hover-btn {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .hover-btn:hover {
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 0 14px rgba(233, 197, 228, 0.14);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 6px 14px rgba(47, 107, 255, 0.35);
                 }
                 .hover-btn:active {
                     transform: translateY(1px);
@@ -591,11 +617,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                     }
                     .home-mobile-type-trigger {
                         width: 100%;
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #1B2030;
+                        border: 1px solid #252D45;
                         border-radius: 10px;
                         padding: 10px 12px;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-size: 13px;
                         font-weight: 500;
                         display: flex;
@@ -604,13 +630,13 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         gap: 8px;
                         cursor: pointer;
                         box-sizing: border-box;
-                        box-shadow: 0 0 0 3px transparent, 0 0 14px rgba(233, 197, 228, 0.14);
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
                         transition: border-color 0.18s ease, box-shadow 0.18s ease;
                         text-align: left;
                     }
                     .home-mobile-type-trigger.is-focused {
-                        border-color: #E9C5E4;
-                        box-shadow: 0 0 0 3px rgba(233, 197, 228, 0.24);
+                        border-color: #2F6BFF;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(47, 107, 255, 0.25);
                     }
                     .home-mobile-type-value {
                         display: flex;
@@ -625,11 +651,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         top: calc(100% + 6px);
                         left: 0;
                         right: 0;
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #131722;
+                        border: 1px solid #252D45;
                         border-radius: 12px;
                         padding: 8px 6px 8px 8px;
-                        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14), 0 0 14px rgba(233, 197, 228, 0.14);
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 16px 32px rgba(0, 0, 0, 0.7);
                         z-index: 80;
                         max-height: 220px;
                         overflow-y: auto;
@@ -645,7 +671,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         background: transparent;
                     }
                     .home-mobile-type-popover::-webkit-scrollbar-thumb {
-                        background-color: #50545D;
+                        background-color: #252D45;
                         border-radius: 999px;
                     }
                     .home-mobile-type-option {
@@ -654,7 +680,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         border: none;
                         border-radius: 8px;
                         padding: 9px 10px;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-size: 13px;
                         font-weight: 400;
                         display: flex;
@@ -667,11 +693,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         transition: background-color 0.15s ease, color 0.15s ease;
                     }
                     .home-mobile-type-option:hover {
-                        background-color: #1D1A1B;
+                        background-color: #1B2030;
                     }
                     .home-mobile-type-option.is-selected {
-                        background-color: #1D1A1B;
-                        color: #FFF8F0;
+                        background-color: #1B2030;
+                        color: #FFFFFF;
                         font-weight: 600;
                     }
                     .home-mobile-type-option-left {
@@ -684,7 +710,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         flex: 1;
                     }
                     .home-mobile-type-check {
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         flex-shrink: 0;
                     }
                     .desktop-ride-content {
@@ -701,19 +727,21 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         height: 165px;
                         border-radius: 10px;
                         object-fit: cover;
-                        border: 1px solid #50545D;
+                        border: 1px solid #252D45;
                         display: block;
+                        box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.15), 0 4px 10px rgba(0, 0, 0, 0.5);
                     }
                     .mobile-ride-placeholder-banner {
                         width: 100%;
                         height: 130px;
                         border-radius: 10px;
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #1B2030;
+                        border: 1px solid #252D45;
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         box-sizing: border-box;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -2px 0 rgba(0, 0, 0, 0.5);
                     }
                     .mobile-ride-header {
                         display: flex;
@@ -724,7 +752,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                     .mobile-ride-title {
                         font-size: 15px;
                         font-weight: 700;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         margin: 0;
                         line-height: 1.25;
                     }
@@ -733,7 +761,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         flex-direction: column;
                         gap: 6px;
                         padding-top: 8px;
-                        border-top: 1px solid #50545D;
+                        border-top: 1px solid #252D45;
                     }
                     .mobile-ride-row {
                         display: flex;
@@ -743,12 +771,12 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         font-size: 12px;
                     }
                     .mobile-ride-label {
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         font-weight: 500;
                         flex-shrink: 0;
                     }
                     .mobile-ride-val {
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-weight: 600;
                         text-align: right;
                         overflow-wrap: anywhere;
@@ -762,8 +790,8 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         gap: 10px;
                     }
                     .mobile-alert-card {
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #1B2030;
+                        border: 1px solid #252D45;
                         border-radius: 10px;
                         padding: 12px;
                         text-decoration: none;
@@ -771,6 +799,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         flex-direction: column;
                         gap: 8px;
                         box-sizing: border-box;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.4);
                     }
                     .mobile-alert-card-top {
                         display: flex;
@@ -781,7 +810,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                     .mobile-alert-service-title {
                         font-size: 13px;
                         font-weight: 700;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         margin: 0;
                         line-height: 1.3;
                     }
@@ -790,7 +819,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         flex-direction: column;
                         gap: 4px;
                         padding-top: 6px;
-                        border-top: 1px solid #50545D;
+                        border-top: 1px solid #252D45;
                     }
                     .mobile-alert-row {
                         display: flex;
@@ -800,11 +829,11 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                         font-size: 12px;
                     }
                     .mobile-alert-label {
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         font-weight: 500;
                     }
                     .mobile-alert-val {
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-weight: 600;
                         text-align: right;
                     }
@@ -818,19 +847,19 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
 
                 input:focus-visible, select:focus-visible, textarea:focus-visible,
                 button:focus-visible, a:focus-visible {
-                    outline: 2px solid #E9C5E4;
+                    outline: 2px solid #2F6BFF;
                     outline-offset: 2px;
                 }
                 input::placeholder, textarea::placeholder {
-                    color: #ABA8B4;
+                    color: #7B8AB8;
                     opacity: 1;
                 }
                 input:-webkit-autofill,
                 input:-webkit-autofill:hover,
                 input:-webkit-autofill:focus {
-                    -webkit-box-shadow: 0 0 0 1000px #292831 inset !important;
-                    -webkit-text-fill-color: #FFF8F0 !important;
-                    caret-color: #FFF8F0;
+                    -webkit-box-shadow: 0 0 0 1000px #1B2030 inset !important;
+                    -webkit-text-fill-color: #FFFFFF !important;
+                    caret-color: #FFFFFF;
                 }
             `}</style>
 
@@ -1064,7 +1093,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                             }}
                                             style={{
                                                 ...styles.input,
-                                                borderColor: emptyRequiredFields.type ? '#FF8F9A' : '#50545D',
+                                                borderColor: emptyRequiredFields.type ? '#FFA11A' : '#252D45',
                                             }}
                                         >
                                             <option value="Car">Car</option>
@@ -1097,7 +1126,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                         }}
                                         style={{
                                             ...styles.input,
-                                            borderColor: emptyRequiredFields.make ? '#FF8F9A' : '#50545D',
+                                            borderColor: emptyRequiredFields.make ? '#FFA11A' : '#252D45',
                                         }}
                                     />
                                     {errors.make && <span style={styles.error}>{errors.make}</span>}
@@ -1117,7 +1146,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                         }}
                                         style={{
                                             ...styles.input,
-                                            borderColor: emptyRequiredFields.model ? '#FF8F9A' : '#50545D',
+                                            borderColor: emptyRequiredFields.model ? '#FFA11A' : '#252D45',
                                         }}
                                     />
                                     {errors.model && <span style={styles.error}>{errors.model}</span>}
@@ -1137,7 +1166,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                         }}
                                         style={{
                                             ...styles.input,
-                                            borderColor: emptyRequiredFields.year ? '#FF8F9A' : '#50545D',
+                                            borderColor: emptyRequiredFields.year ? '#FFA11A' : '#252D45',
                                         }}
                                     />
                                     {errors.year && <span style={styles.error}>{errors.year}</span>}
@@ -1158,7 +1187,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                                 <span style={styles.uploadText}>{originalPhotoName || data.photo.name}</span>
                                             ) : hasExistingPhoto ? (
                                                 <span style={styles.uploadIconOnly} aria-label="Uploaded photo" title="Uploaded photo">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFF8F0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                                                         <circle cx="8.5" cy="8.5" r="1.5"></circle>
                                                         <polyline points="21 15 16 10 5 21"></polyline>
@@ -1192,7 +1221,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                                 <circle
                                                     cx="25" cy="25" r="20"
                                                     fill="none"
-                                                    stroke="#110D08"
+                                                    stroke="#FFFFFF"
                                                     strokeWidth="5"
                                                     className="btn-spinner-circle"
                                                 />
@@ -1212,8 +1241,8 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                 <h3 style={styles.modalTitle}>Delete Vehicle</h3>
                                 <button onClick={() => setShowDeleteModal(false)} style={styles.closeBtn} type="button">✕</button>
                             </div>
-                            <p style={{ color: '#C9C3CC', fontSize: '13px', margin: '8px 0 16px 0' }}>
-                                Are you sure you want to delete <strong style={{ color: '#FFF8F0' }}>{vehicleToDelete?.make} {vehicleToDelete?.model}</strong>? This action cannot be undone.
+                            <p style={{ color: '#8A99C2', fontSize: '13px', margin: '8px 0 16px 0' }}>
+                                Are you sure you want to delete <strong style={{ color: '#FFFFFF' }}>{vehicleToDelete?.make} {vehicleToDelete?.model}</strong>? This action cannot be undone.
                             </p>
                             <div style={styles.modalActions}>
                                 <button type="button" onClick={() => setShowDeleteModal(false)} style={styles.cancelBtn} className="hover-btn" disabled={isDeletingVehicle}>Cancel</button>
@@ -1223,7 +1252,7 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
                                             <circle
                                                 cx="25" cy="25" r="20"
                                                 fill="none"
-                                                stroke="#FF8F9A"
+                                                stroke="#FFA11A"
                                                 strokeWidth="5"
                                                 className="btn-spinner-circle"
                                             />
@@ -1242,81 +1271,108 @@ export default function Home({ vehicles = [], servicePreferences = {} }) {
 const styles = {
     page: {
         height: '100vh', width: '100vw',
-        backgroundColor: '#110D08', display: 'flex', flexDirection: 'row',
+        backgroundColor: '#090A10', display: 'flex', flexDirection: 'row',
         margin: 0, padding: 0, boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         overflow: 'hidden',
     },
-    mainContent: { flex: 1, backgroundColor: '#110D08', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
+    mainContent: { flex: 1, backgroundColor: '#090A10', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '900px', width: '100%', paddingBottom: '30px', margin: '0 auto' },
     pageHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
-    addButton: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
-    pageTitle: { fontSize: '26px', fontWeight: '700', color: '#FFF8F0', letterSpacing: '-0.5px', margin: 0 },
-    sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#FFF8F0', margin: '4px 0 0 0' },
+    addButton: {
+        backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 4px 10px rgba(47, 107, 255, 0.3)'
+    },
+    pageTitle: { fontSize: '26px', fontWeight: '700', color: '#FFFFFF', letterSpacing: '-0.5px', margin: 0 },
+    sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#FFFFFF', margin: '4px 0 0 0' },
 
     dashboardGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', width: '100%' },
     alertCardUpcoming: {
-        backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px',
-        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04), 0 0 16px rgba(233, 197, 228, 0.14)'
+        backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px',
+        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)'
     },
     alertCardPastDue: {
-        backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px',
-        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04), 0 0 16px rgba(233, 197, 228, 0.14)'
+        backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px',
+        padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)'
     },
     alertCardHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     headerTitleGroup: { display: 'flex', alignItems: 'center', gap: '8px' },
-    dotUpcoming: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#EDF2B2' },
-    dotPastDue: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#FF8F9A' },
-    alertCardTitleUpcoming: { fontSize: '14px', fontWeight: '600', color: '#FFF8F0', margin: 0 },
-    alertCardTitlePastDue: { fontSize: '14px', fontWeight: '600', color: '#FFF8F0', margin: 0 },
-    badgeUpcoming: { backgroundColor: 'rgba(237, 242, 178, 0.24)', color: '#EDF2B2', border: '1px solid rgba(237, 242, 178, 0.60)', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', flexShrink: 0 },
-    badgePastDue: { backgroundColor: 'rgba(255, 143, 154, 0.15)', color: '#FF8F9A', border: '1px solid rgba(255, 143, 154, 0.50)', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', flexShrink: 0 },
+    dotUpcoming: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#2F6BFF', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 0 4px rgba(47,107,255,0.5)' },
+    dotPastDue: { width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#FFA11A', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.4), 0 0 4px rgba(255,161,26,0.5)' },
+    alertCardTitleUpcoming: { fontSize: '14px', fontWeight: '600', color: '#FFFFFF', margin: 0 },
+    alertCardTitlePastDue: { fontSize: '14px', fontWeight: '600', color: '#FFFFFF', margin: 0 },
+    badgeUpcoming: { backgroundColor: 'rgba(47, 107, 255, 0.2)', color: '#2F6BFF', border: '1px solid rgba(47, 107, 255, 0.5)', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', flexShrink: 0, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)' },
+    badgePastDue: { backgroundColor: 'rgba(255, 161, 26, 0.15)', color: '#FFA11A', border: '1px solid rgba(255, 161, 26, 0.5)', fontSize: '11px', fontWeight: '700', padding: '2px 8px', borderRadius: '10px', flexShrink: 0, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)' },
     alertList: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '150px', overflowY: 'auto' },
-    emptyAlertText: { fontSize: '12px', color: '#C9C3CC', fontStyle: 'italic', margin: 0, padding: '8px 0' },
+    emptyAlertText: { fontSize: '12px', color: '#8A99C2', fontStyle: 'italic', margin: 0, padding: '8px 0' },
     alertRow: {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '8px 10px', backgroundColor: '#292831', borderRadius: '6px', border: '1px solid #50545D',
+        padding: '8px 10px', backgroundColor: '#1B2030', borderRadius: '6px', border: '1px solid #252D45',
         textDecoration: 'none',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
     },
     alertRowLeft: { display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' },
-    vehicleNameTag: { fontSize: '11px', fontWeight: '600', color: '#1D1A1B', backgroundColor: '#FFF8F0', padding: '2px 6px', borderRadius: '4px', flexShrink: 0 },
-    serviceNameText: { fontSize: '12px', color: '#FFF8F0', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
-    triggerTextUpcoming: { fontSize: '11px', color: '#EDF2B2', backgroundColor: 'rgba(237, 242, 178, 0.24)', border: '1px solid rgba(237, 242, 178, 0.60)', padding: '2px 7px', borderRadius: '4px', fontWeight: '700', flexShrink: 0 },
-    triggerTextPastDue: { fontSize: '11px', color: '#FF8F9A', backgroundColor: 'rgba(255, 143, 154, 0.15)', border: '1px solid rgba(255, 143, 154, 0.50)', padding: '2px 7px', borderRadius: '4px', fontWeight: '700', flexShrink: 0 },
+    vehicleNameTag: { fontSize: '11px', fontWeight: '600', color: '#FFFFFF', backgroundColor: '#2F6BFF', padding: '2px 6px', borderRadius: '4px', flexShrink: 0, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25)' },
+    serviceNameText: { fontSize: '12px', color: '#FFFFFF', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' },
+    triggerTextUpcoming: { fontSize: '11px', color: '#2F6BFF', backgroundColor: 'rgba(47, 107, 255, 0.2)', border: '1px solid rgba(47, 107, 255, 0.5)', padding: '2px 7px', borderRadius: '4px', fontWeight: '700', flexShrink: 0 },
+    triggerTextPastDue: { fontSize: '11px', color: '#FFA11A', backgroundColor: 'rgba(255, 161, 26, 0.15)', border: '1px solid rgba(255, 161, 26, 0.5)', padding: '2px 7px', borderRadius: '4px', fontWeight: '700', flexShrink: 0 },
 
     vehicleGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '16px', paddingBottom: '10px', width: '100%' },
-    emptyText: { color: '#C9C3CC', fontSize: '13px', margin: 0 },
+    emptyText: { color: '#8A99C2', fontSize: '13px', margin: 0 },
     vehicleCard: {
-        backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px',
+        backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px',
         padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '16px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04), 0 0 16px rgba(233, 197, 228, 0.14)', width: '100%', boxSizing: 'border-box',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)', width: '100%', boxSizing: 'border-box',
     },
     cardContentClickable: { display: 'flex', gap: '14px', alignItems: 'flex-start', cursor: 'pointer' },
-    vehicleThumb: { width: '56px', height: '56px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid #50545D' },
-    placeholderThumb: { width: '56px', height: '56px', borderRadius: '8px', backgroundColor: '#292831', border: '1px solid #50545D', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0 },
+    vehicleThumb: { width: '56px', height: '56px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid #252D45', boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.15), 0 2px 5px rgba(0,0,0,0.4)' },
+    placeholderThumb: { width: '56px', height: '56px', borderRadius: '8px', backgroundColor: '#1B2030', border: '1px solid #252D45', display: 'flex', justifyContent: 'center', alignItems: 'center', flexShrink: 0, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -2px 0 rgba(0,0,0,0.4)' },
     vehicleInfo: { flex: 1, overflow: 'hidden' },
     vehicleHeaderRow: { display: 'flex', alignItems: 'center', marginBottom: '4px' },
-    vehicleCardTitle: { color: '#FFF8F0', fontSize: '14px', fontWeight: '600', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-    typeBadge: { display: 'inline-block', backgroundColor: 'rgba(233, 197, 228, 0.16)', color: '#FFF8F0', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' },
-    vehicleDesc: { color: '#C9C3CC', fontSize: '12px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' },
-    cardActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #50545D', paddingTop: '12px' },
-    editCardBtn: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer' },
-    deleteCardBtn: { backgroundColor: 'rgba(255, 143, 154, 0.10)', color: '#FF8F9A', border: '1px solid #50545D', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '60px', minHeight: '26px' },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.70)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
-    modalBox: { backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '380px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), 0 0 16px rgba(233, 197, 228, 0.14)', boxSizing: 'border-box' },
+    vehicleCardTitle: { color: '#FFFFFF', fontSize: '14px', fontWeight: '600', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+    typeBadge: { display: 'inline-block', backgroundColor: 'rgba(47, 107, 255, 0.2)', color: '#FFFFFF', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)' },
+    vehicleDesc: { color: '#8A99C2', fontSize: '12px', margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' },
+    cardActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #252D45', paddingTop: '12px' },
+    editCardBtn: {
+        backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)'
+    },
+    deleteCardBtn: {
+        backgroundColor: 'rgba(255, 161, 26, 0.12)', color: '#FFA11A', border: '1px solid #252D45', padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '60px', minHeight: '26px',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)'
+    },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
+    modalBox: { backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px', padding: '20px', width: '100%', maxWidth: '380px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.4)', boxSizing: 'border-box' },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' },
-    modalTitle: { color: '#FFF8F0', fontSize: '15px', fontWeight: '600', margin: 0 },
-    closeBtn: { background: 'none', border: 'none', color: '#C9C3CC', fontSize: '16px', cursor: 'pointer' },
+    modalTitle: { color: '#FFFFFF', fontSize: '15px', fontWeight: '600', margin: 0 },
+    closeBtn: { background: 'none', border: 'none', color: '#8A99C2', fontSize: '16px', cursor: 'pointer' },
     form: { display: 'flex', flexDirection: 'column', gap: '10px' },
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '4px' },
-    label: { color: '#C9C3CC', fontSize: '11px', fontWeight: '500' },
-    input: { backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '6px', padding: '6px 10px', color: '#FFF8F0', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%', transition: 'border-color 0.2s ease' },
+    label: { color: '#8A99C2', fontSize: '11px', fontWeight: '500' },
+    input: {
+        backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '6px', padding: '6px 10px', color: '#FFFFFF', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%', transition: 'border-color 0.2s ease',
+        boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+    },
     uploadBoxWrapper: { display: 'flex', gap: '8px', alignItems: 'center' },
-    uploadBox: { backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box', flex: 1, overflow: 'hidden', minHeight: '32px' },
-    uploadText: { color: '#FFF8F0', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'left' },
+    uploadBox: {
+        backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '6px', padding: '8px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', boxSizing: 'border-box', flex: 1, overflow: 'hidden', minHeight: '32px',
+        boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+    },
+    uploadText: { color: '#FFFFFF', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'left' },
     uploadIconOnly: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 },
-    removePhotoBtn: { backgroundColor: 'rgba(255, 143, 154, 0.10)', color: '#FF8F9A', border: '1px solid #50545D', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', flexShrink: 0 },
-    error: { color: '#FF8F9A', fontSize: '11px' },
+    removePhotoBtn: {
+        backgroundColor: 'rgba(255, 161, 26, 0.12)', color: '#FFA11A', border: '1px solid #252D45', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer', flexShrink: 0,
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -1px 0 rgba(0, 0, 0, 0.4)'
+    },
+    error: { color: '#FFA11A', fontSize: '11px' },
     modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' },
-    cancelBtn: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '60px', minHeight: '26px' },
+    cancelBtn: {
+        backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)'
+    },
+    saveBtn: {
+        backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '60px', minHeight: '26px',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 4px 10px rgba(47, 107, 255, 0.3)'
+    },
 };

@@ -1,95 +1,84 @@
+import { useEffect, useState } from 'react';
 
-import { useEffect } from 'react';
+export default function Toast({ message, duration = 3000, onClose }) {
+    const [visible, setVisible] = useState(false);
 
-export default function Toast({ message, duration = 1000, onClose }) {
     useEffect(() => {
-        if (!message) return;
+        if (!message) {
+            setVisible(false);
+            return;
+        }
 
+        setVisible(true);
         const timer = setTimeout(() => {
-            if (onClose) onClose();
+            setVisible(false);
+            if (onClose) setTimeout(onClose, 300); // Wait for exit animation
         }, duration);
 
         return () => clearTimeout(timer);
     }, [message, duration, onClose]);
 
-    if (!message) return null;
+    if (!message && !visible) return null;
 
     return (
-        <>
+        <div style={{
+            ...styles.toastContainer,
+            opacity: visible ? 1 : 0,
+            transform: visible ? 'translateY(0) scale(1)' : 'translateY(-12px) scale(0.96)',
+        }}>
             <style>{`
-                @keyframes toastSlideDown {
-                    from {
-                        opacity: 0;
-                        transform: translate(-50%, -14px) scale(0.96);
-                    }
-                    to {
-                        opacity: 1;
-                        transform: translate(-50%, 0) scale(1);
-                    }
-                }
-
-                .fleetflow-toast {
-                    position: fixed;
-                    top: 24px;
-                    left: 50%;
-                    transform: translate(-50%, 0);
-                    z-index: 1200;
-                    background-color: #110D08;
-                    color: #FFF8F0;
-                    border: 1px solid #50545D;
-                    border-left: 3px solid #EDF2B2;
-                    border-radius: 10px;
-                    padding: 12px 16px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    text-align: center;
-                    gap: 10px;
-                    font-size: 13px;
-                    font-weight: 500;
-                    box-shadow:
-                        0 12px 28px rgba(0, 0, 0, 0.22),
-                        0 0 14px rgba(233, 197, 228, 0.14);
-                    width: max-content;
-                    max-width: calc(100vw - 48px);
-                    box-sizing: border-box;
-                    animation: toastSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                }
-
-                .fleetflow-toast span {
-                    color: #FFF8F0;
-                }
-
-                @media (max-width: 768px) {
-                    .fleetflow-toast {
-                        top: 16px;
-                        max-width: calc(100vw - 32px);
-                    }
+                .toast-box {
+                    transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                 }
             `}</style>
-
-            <div
-                role="status"
-                aria-live="polite"
-                className="fleetflow-toast"
-            >
-                <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#EDF2B2"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ flexShrink: 0 }}
-                >
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-
-                <span>{message}</span>
+            <div style={styles.toastBox} className="toast-box">
+                <div style={styles.iconCircle}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2F6BFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <span style={styles.toastText}>{message}</span>
             </div>
-        </>
+        </div>
     );
 }
+
+const styles = {
+    toastContainer: {
+        position: 'fixed',
+        top: '24px',
+        right: '24px',
+        zIndex: 9999,
+        pointerEvents: 'none',
+        transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
+    },
+    toastBox: {
+        backgroundColor: '#131722',
+        border: '1px solid #252D45',
+        borderRadius: '12px',
+        padding: '12px 18px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 12px 30px rgba(0, 0, 0, 0.7), 0 4px 8px rgba(0, 0, 0, 0.4)',
+        pointerEvents: 'auto',
+    },
+    iconCircle: {
+        width: '24px',
+        height: '24px',
+        backgroundColor: 'rgba(47, 107, 255, 0.15)',
+        border: '1px solid rgba(47, 107, 255, 0.4)',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+    },
+    toastText: {
+        color: '#FFFFFF',
+        fontSize: '13px',
+        fontWeight: '600',
+        letterSpacing: '-0.2px',
+    },
+};

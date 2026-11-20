@@ -61,7 +61,7 @@ function MobileSelectDropdown({
                 key={isInvalid ? `mobile-sel-${shakeKey}` : 'mobile-sel'}
                 type="button"
                 className={`ref-mobile-select-trigger ${open ? 'is-focused' : ''} ${isInvalid ? 'shake-invalid' : ''}`}
-                style={isInvalid ? { borderColor: '#FF8F9A' } : undefined}
+                style={isInvalid ? { borderColor: '#FFA11A' } : undefined}
                 onClick={() => setOpen((prev) => !prev)}
                 aria-expanded={open}
             >
@@ -147,6 +147,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     const [isDeletingLog, setIsDeletingLog] = useState(false);
 
     const [editingLogId, setEditingLogId] = useState(null);
+    const [updatingLogId, setUpdatingLogId] = useState(null);
     const [inlineData, setInlineData] = useState({
         services: '',
         odo: '',
@@ -166,6 +167,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const triggerShake = () => setShakeKey((k) => k + 1);
 
+    const showErrorToast = () => {
+        setToastMessage('Something went wrong');
+    };
+
     const clearLogEmptyError = (field) => {
         setLogEmptyFields((prev) => {
             if (!prev[field]) return prev;
@@ -184,7 +189,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         });
     };
 
-    const { data: odoData, setData: setOdoData, put: putOdo, processing: odoProcessing, errors: odoErrors, reset: resetOdo, clearErrors: clearOdoErrors } = useForm({
+    const { data: odoData, setData: setOdoData, put: putOdo, processing: odoProcessing, reset: resetOdo, clearErrors: clearOdoErrors } = useForm({
         current_odo: vehicle.current_odo || '',
     });
 
@@ -203,18 +208,35 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const handleUpdateOdo = (e) => {
         e.preventDefault();
+        if (odoProcessing) return;
+
         if (!String(odoData.current_odo ?? '').trim()) {
             setOdoEmptyError(true);
             triggerShake();
             return;
         }
         setOdoEmptyError(false);
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
         putOdo(`/vehicles/${vehicle.id}/odo`, {
             preserveScroll: true,
             onSuccess: () => {
                 closeOdoModal();
                 setToastMessage('Current ODO updated successfully!');
-            }
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
         });
     };
 
@@ -242,7 +264,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
         return formatter.format(new Date());
     };
 
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+    const { data, setData, post, processing, reset, clearErrors } = useForm({
         services: [],
         odo: '',
         date: getPhilippineToday(),
@@ -288,6 +310,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     };
 
     const saveEditingRow = (logId) => {
+        if (updatingLogId) return;
+
         const missing = {};
         if (!String(inlineData.date || '').trim()) missing.date = true;
         if (!String(inlineData.services || '').trim()) missing.services = true;
@@ -298,6 +322,13 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             triggerShake();
             return;
         }
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
+        setUpdatingLogId(logId);
 
         router.put(`/maintenance-logs/${logId}`, {
             services: [inlineData.services],
@@ -312,6 +343,18 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                 setEditingLogId(null);
                 setToastMessage('Maintenance log updated successfully!');
             },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+            onFinish: () => {
+                setUpdatingLogId(null);
+            },
         });
     };
 
@@ -321,20 +364,35 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
     };
 
     const confirmDeleteLog = () => {
-        if (logToDelete && !isDeletingLog) {
-            setIsDeletingLog(true);
-            router.delete(`/maintenance-logs/${logToDelete.id}`, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    setShowDeleteLogModal(false);
-                    setLogToDelete(null);
-                    setToastMessage('Maintenance log deleted successfully!');
-                },
-                onFinish: () => {
-                    setIsDeletingLog(false);
-                },
-            });
+        if (!logToDelete || isDeletingLog) return;
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
         }
+
+        setIsDeletingLog(true);
+
+        router.delete(`/maintenance-logs/${logToDelete.id}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowDeleteLogModal(false);
+                setLogToDelete(null);
+                setToastMessage('Maintenance log deleted successfully!');
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+            onFinish: () => {
+                setIsDeletingLog(false);
+            },
+        });
     };
 
     const handleServiceToggle = (serviceName) => {
@@ -349,6 +407,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 
     const handleSubmitLog = (e) => {
         e.preventDefault();
+        if (processing) return;
+
         const missing = {};
         if (!Array.isArray(data.services) || data.services.length === 0) missing.services = true;
         if (!String(data.odo ?? '').trim()) missing.odo = true;
@@ -360,11 +420,25 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
             return;
         }
 
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
         post(`/vehicles/${vehicle.id}/maintenance-logs`, {
             preserveScroll: true,
             onSuccess: () => {
                 closeModal();
                 setToastMessage('Maintenance log added successfully!');
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
             },
         });
     };
@@ -547,22 +621,22 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .interactive-card:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 0 14px rgba(233, 197, 228, 0.14);
-                    border-color: #E9C5E4;
+                    transform: translateY(-3px);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 12px 30px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(47, 107, 255, 0.25);
+                    border-color: #2F6BFF;
                 }
                 .hover-table-row {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .hover-table-row:hover {
-                    background-color: rgba(233, 197, 228, 0.16) !important;
+                    background-color: rgba(47, 107, 255, 0.15) !important;
                 }
                 .hover-btn {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .hover-btn:hover {
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 0 14px rgba(233, 197, 228, 0.14);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 6px 14px rgba(47, 107, 255, 0.35);
                 }
                 .hover-btn:active {
                     transform: translateY(1px);
@@ -572,7 +646,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                 }
                 .floating-btn-anim:hover {
                     transform: scale(1.08) translateY(-2px);
-                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.70), 0 0 14px rgba(233, 197, 228, 0.14);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -3px 0 rgba(0, 0, 0, 0.5), 0 14px 32px rgba(47, 107, 255, 0.45);
                 }
                 .floating-btn-anim:active {
                     transform: scale(0.95);
@@ -581,6 +655,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     cursor: pointer;
                     opacity: 0.7;
                     transition: opacity 0.2s;
+                    filter: invert(1);
                 }
                 input[type="date"]::-webkit-calendar-picker-indicator:hover {
                     opacity: 1;
@@ -598,7 +673,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         flex-direction: column !important;
                     }
                     .mainContent {
-                        padding: 16px 16px 96px 16px !important;
+                        padding: 16px 16px 130px 16px !important;
                     }
                     .tableContainer {
                         display: none !important;
@@ -614,11 +689,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     }
                     .ref-mobile-select-trigger {
                         width: 100%;
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #1B2030;
+                        border: 1px solid #252D45;
                         border-radius: 10px;
                         padding: 10px 12px;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-size: 13px;
                         font-weight: 500;
                         display: flex;
@@ -627,13 +702,13 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         gap: 8px;
                         cursor: pointer;
                         box-sizing: border-box;
-                        box-shadow: 0 0 0 3px transparent, 0 0 14px rgba(233, 197, 228, 0.14);
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
                         transition: border-color 0.18s ease, box-shadow 0.18s ease;
                         text-align: left;
                     }
                     .ref-mobile-select-trigger.is-focused {
-                        border-color: #E9C5E4;
-                        box-shadow: 0 0 0 3px rgba(233, 197, 228, 0.24);
+                        border-color: #2F6BFF;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(47, 107, 255, 0.25);
                     }
                     .ref-mobile-select-value {
                         overflow: hidden;
@@ -645,11 +720,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         top: calc(100% + 6px);
                         left: 0;
                         right: 0;
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #131722;
+                        border: 1px solid #252D45;
                         border-radius: 12px;
                         padding: 8px 6px 8px 8px;
-                        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14), 0 0 14px rgba(233, 197, 228, 0.14);
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 16px 32px rgba(0, 0, 0, 0.7);
                         z-index: 80;
                         max-height: 220px;
                         overflow-y: auto;
@@ -665,7 +740,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         background: transparent;
                     }
                     .ref-mobile-popover::-webkit-scrollbar-thumb {
-                        background-color: #50545D;
+                        background-color: #252D45;
                         border-radius: 999px;
                     }
                     .ref-mobile-option {
@@ -674,7 +749,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         border: none;
                         border-radius: 8px;
                         padding: 9px 10px;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-size: 13px;
                         font-weight: 400;
                         display: flex;
@@ -687,11 +762,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         transition: background-color 0.15s ease, color 0.15s ease;
                     }
                     .ref-mobile-option:hover {
-                        background-color: #1D1A1B;
+                        background-color: #1B2030;
                     }
                     .ref-mobile-option.is-selected {
-                        background-color: #1D1A1B;
-                        color: #FFF8F0;
+                        background-color: #1B2030;
+                        color: #FFFFFF;
                         font-weight: 600;
                     }
                     .ref-mobile-option-label {
@@ -701,33 +776,33 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         flex: 1;
                     }
                     .ref-mobile-check {
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         flex-shrink: 0;
                     }
                     .ref-mobile-empty {
                         padding: 12px;
                         text-align: center;
                         font-size: 12px;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         font-style: italic;
                     }
                     .mobile-filter-toggle {
-                        background-color: #1D1A1B !important;
+                        background-color: #1B2030 !important;
                         border-radius: 10px !important;
                         padding: 9px 12px !important;
                         min-width: 156px !important;
-                        box-shadow: 0 0 0 3px transparent, 0 0 14px rgba(233, 197, 228, 0.14);
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
                         transition: border-color 0.18s ease, box-shadow 0.18s ease;
                     }
                     .mobile-filter-toggle.is-open {
-                        border-color: #E9C5E4 !important;
-                        box-shadow: 0 0 0 3px rgba(233, 197, 228, 0.24) !important;
+                        border-color: #2F6BFF !important;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(47, 107, 255, 0.25) !important;
                     }
                     .mobile-filter-menu {
                         width: 240px !important;
                         border-radius: 12px !important;
                         padding: 6px 4px 6px 6px !important;
-                        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14), 0 0 14px rgba(233, 197, 228, 0.14) !important;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 16px 32px rgba(0, 0, 0, 0.7) !important;
                     }
                     .mobile-filter-list {
                         max-height: 210px !important;
@@ -739,7 +814,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         width: 5px;
                     }
                     .mobile-filter-list::-webkit-scrollbar-thumb {
-                        background-color: #50545D;
+                        background-color: #252D45;
                         border-radius: 999px;
                     }
                     .mobile-filter-option {
@@ -748,7 +823,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         border: none;
                         border-radius: 8px !important;
                         padding: 9px 10px !important;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-size: 13px !important;
                         display: flex;
                         align-items: center;
@@ -760,11 +835,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         transition: background-color 0.15s ease;
                     }
                     .mobile-filter-option:hover {
-                        background-color: #1D1A1B !important;
+                        background-color: #1B2030 !important;
                         transform: none !important;
                     }
                     .mobile-filter-option.is-selected {
-                        background-color: #1D1A1B !important;
+                        background-color: #1B2030 !important;
                         font-weight: 600;
                     }
                     .mobile-card-list {
@@ -774,11 +849,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         width: 100%;
                     }
                     .mobile-record-card {
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #1B2030;
+                        border: 1px solid #252D45;
                         border-radius: 12px;
                         padding: 14px 16px;
-                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 0 14px rgba(233, 197, 228, 0.14);
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.4);
                         display: flex;
                         flex-direction: column;
                         gap: 10px;
@@ -791,7 +866,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         gap: 8px;
                         font-size: 11px;
                         font-weight: 600;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                     }
                     .mobile-record-header {
                         display: flex;
@@ -809,13 +884,13 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     .mobile-record-title {
                         font-size: 14px;
                         font-weight: 700;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         margin: 0;
                         line-height: 1.3;
                     }
                     .mobile-record-subtitle {
                         font-size: 12px;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         margin: 0;
                         line-height: 1.35;
                     }
@@ -824,7 +899,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         flex-direction: column;
                         gap: 6px;
                         padding-top: 8px;
-                        border-top: 1px solid #50545D;
+                        border-top: 1px solid #252D45;
                     }
                     .mobile-record-row {
                         display: flex;
@@ -834,12 +909,12 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         font-size: 12px;
                     }
                     .mobile-record-label {
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         font-weight: 500;
                         flex-shrink: 0;
                     }
                     .mobile-record-val {
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-weight: 500;
                         text-align: right;
                         overflow-wrap: anywhere;
@@ -858,7 +933,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         font-size: 10px;
                         font-weight: 600;
                         text-transform: uppercase;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         letter-spacing: 0.4px;
                     }
                     .mobile-edit-actions {
@@ -868,14 +943,15 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         padding-top: 4px;
                     }
                     .mobile-empty-card {
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #1B2030;
+                        border: 1px solid #252D45;
                         border-radius: 12px;
                         padding: 22px 16px;
                         text-align: center;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         font-size: 12px;
                         font-style: italic;
+                        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
                     }
                     .profileCard {
                         flex-direction: column !important;
@@ -917,20 +993,20 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     .mobile-vehicle-title {
                         font-size: 16px;
                         font-weight: 700;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         margin: 0;
                         line-height: 1.25;
                     }
                     .mobile-sub-line {
                         font-size: 13px;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         line-height: 1.35;
                         margin: 0;
                     }
                     .mobile-odo-line {
                         font-size: 13px;
                         font-weight: 600;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         text-decoration: underline;
                         text-underline-offset: 3px;
                         margin-top: 2px;
@@ -938,31 +1014,31 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                     }
                     .mobile-desc-line {
                         font-size: 12px;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         line-height: 1.45;
                         margin: 2px 0 0 0;
                     }
                     .floating-btn-anim {
-                        bottom: 84px !important;
+                        bottom: 92px !important;
                         right: 20px !important;
                     }
                 }
 
                 input:focus-visible, select:focus-visible, textarea:focus-visible,
                 button:focus-visible, a:focus-visible {
-                    outline: 2px solid #E9C5E4;
+                    outline: 2px solid #2F6BFF;
                     outline-offset: 2px;
                 }
                 input::placeholder, textarea::placeholder {
-                    color: #ABA8B4;
+                    color: #7B8AB8;
                     opacity: 1;
                 }
                 input:-webkit-autofill,
                 input:-webkit-autofill:hover,
                 input:-webkit-autofill:focus {
-                    -webkit-box-shadow: 0 0 0 1000px #292831 inset !important;
-                    -webkit-text-fill-color: #FFF8F0 !important;
-                    caret-color: #FFF8F0;
+                    -webkit-box-shadow: 0 0 0 1000px #1B2030 inset !important;
+                    -webkit-text-fill-color: #FFFFFF !important;
+                    caret-color: #FFFFFF;
                 }
             `}</style>
 
@@ -993,7 +1069,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 <div style={styles.photoThumbContainer} className="photoThumbContainer" onClick={() => setShowPhotoModal(true)} title="Click to view full size">
                                     <img src={photoUrl} alt={vehicle.make} style={styles.vehicleThumb} />
                                     <div style={styles.photoOverlay}>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D1A1B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <circle cx="11" cy="11" r="8"></circle>
                                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                             <line x1="11" y1="8" x2="11" y2="14"></line>
@@ -1003,7 +1079,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 </div>
                             ) : (
                                 <div style={styles.placeholderThumb} className="placeholderThumb" onClick={() => setShowPhotoModal(true)}>
-                                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#FFF8F0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#8A99C2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                         <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10l-2.5-4.5c-.3-.5-.9-.8-1.5-.8H10c-.6 0-1.2.3-1.5.8L6 10l-2.5 1.1C2.7 12.3 2 13.1 2 14v3c0 .6.4 1 1 1h2"></path>
                                         <circle cx="7" cy="17" r="2"></circle>
                                         <circle cx="17" cy="17" r="2"></circle>
@@ -1234,7 +1310,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                     <th style={styles.th}>Date</th>
                                     <th style={styles.th}>Service</th>
                                     <th style={styles.th}>ODO</th>
-                                    <th style={styles.th}>Cost</th>
                                     <th style={styles.th}>Notes</th>
                                     <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
                                 </tr>
@@ -1242,11 +1317,12 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                             <tbody>
                                 {filteredLogs.length === 0 ? (
                                     <tr>
-                                        <td colSpan="6" style={styles.emptyTableCell}>No maintenance records found.</td>
+                                        <td colSpan="5" style={styles.emptyTableCell}>No maintenance records found.</td>
                                     </tr>
                                 ) : (
                                     filteredLogs.map((log) => {
                                         const isEditing = editingLogId === log.id;
+                                        const isThisRowUpdating = updatingLogId === log.id;
                                         return (
                                             <tr key={log.id} style={styles.tableBodyRow} className="hover-table-row">
                                                 <td style={styles.td}>
@@ -1262,7 +1338,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                             className={inlineEmptyFields.date ? 'shake-invalid' : ''}
                                                             style={{
                                                                 ...styles.inlineInput,
-                                                                borderColor: inlineEmptyFields.date ? '#FF8F9A' : '#50545D',
+                                                                borderColor: inlineEmptyFields.date ? '#FFA11A' : '#252D45',
                                                             }}
                                                         />
                                                     ) : (
@@ -1281,7 +1357,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                             className={inlineEmptyFields.services ? 'shake-invalid' : ''}
                                                             style={{
                                                                 ...styles.inlineSelect,
-                                                                borderColor: inlineEmptyFields.services ? '#FF8F9A' : '#50545D',
+                                                                borderColor: inlineEmptyFields.services ? '#FFA11A' : '#252D45',
                                                             }}
                                                         >
                                                             {servicePreferences.map((srv, i) => (
@@ -1312,21 +1388,11 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                             className={inlineEmptyFields.odo ? 'shake-invalid' : ''}
                                                             style={{
                                                                 ...styles.inlineInput,
-                                                                borderColor: inlineEmptyFields.odo ? '#FF8F9A' : '#50545D',
+                                                                borderColor: inlineEmptyFields.odo ? '#FFA11A' : '#252D45',
                                                             }}
                                                         />
                                                     ) : (
                                                         log.odo
-                                                    )}
-                                                </td>
-                                                <td style={styles.td}>
-                                                    {isEditing ? (
-                                                        <input type="text" value={inlineData.cost} onChange={e => {
-                                                            const val = e.target.value;
-                                                            if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
-                                                        }} style={styles.inlineInput} />
-                                                    ) : (
-                                                        log.cost ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
                                                     )}
                                                 </td>
                                                 <td style={styles.td}>
@@ -1340,10 +1406,22 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                     <div style={styles.rowActions}>
                                                         {isEditing ? (
                                                             <>
-                                                                <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button">
-                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button" disabled={isThisRowUpdating}>
+                                                                    {isThisRowUpdating ? (
+                                                                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                                                            <circle
+                                                                                cx="25" cy="25" r="20"
+                                                                                fill="none"
+                                                                                stroke="#FFFFFF"
+                                                                                strokeWidth="5"
+                                                                                className="btn-spinner-circle"
+                                                                            />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                                    )}
                                                                 </button>
-                                                                <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button">
+                                                                <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button" disabled={isThisRowUpdating}>
                                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                                                 </button>
                                                             </>
@@ -1373,12 +1451,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                         ) : (
                             filteredLogs.map((log) => {
                                 const isEditing = editingLogId === log.id;
+                                const isThisRowUpdating = updatingLogId === log.id;
                                 const serviceTitle = (log.services && log.services.length > 0)
                                     ? log.services.join(', ')
                                     : 'Maintenance Service';
-                                const formattedCost = log.cost
-                                    ? `₱${Number(log.cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                    : '—';
 
                                 return (
                                     <div key={log.id} className="mobile-record-card">
@@ -1397,7 +1473,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                         className={inlineEmptyFields.date ? 'shake-invalid' : ''}
                                                         style={{
                                                             ...styles.inlineInput,
-                                                            borderColor: inlineEmptyFields.date ? '#FF8F9A' : '#50545D',
+                                                            borderColor: inlineEmptyFields.date ? '#FFA11A' : '#252D45',
                                                         }}
                                                     />
                                                 </div>
@@ -1412,7 +1488,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                             }}
                                                             style={{
                                                                 ...styles.inlineSelect,
-                                                                borderColor: inlineEmptyFields.services ? '#FF8F9A' : '#50545D',
+                                                                borderColor: inlineEmptyFields.services ? '#FFA11A' : '#252D45',
                                                             }}
                                                         >
                                                             {servicePreferences.map((srv, i) => (
@@ -1448,20 +1524,8 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                         className={inlineEmptyFields.odo ? 'shake-invalid' : ''}
                                                         style={{
                                                             ...styles.inlineInput,
-                                                            borderColor: inlineEmptyFields.odo ? '#FF8F9A' : '#50545D',
+                                                            borderColor: inlineEmptyFields.odo ? '#FFA11A' : '#252D45',
                                                         }}
-                                                    />
-                                                </div>
-                                                <div className="mobile-edit-field">
-                                                    <span className="mobile-edit-label">Cost</span>
-                                                    <input
-                                                        type="text"
-                                                        value={inlineData.cost}
-                                                        onChange={e => {
-                                                            const val = e.target.value;
-                                                            if (/^\d*\.?\d*$/.test(val)) setInlineData({ ...inlineData, cost: val });
-                                                        }}
-                                                        style={styles.inlineInput}
                                                     />
                                                 </div>
                                                 <div className="mobile-edit-field">
@@ -1474,11 +1538,23 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                     />
                                                 </div>
                                                 <div className="mobile-edit-actions">
-                                                    <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button">
+                                                    <button onClick={cancelEditingRow} style={styles.iconBtnCancel} className="hover-btn" title="Cancel" type="button" disabled={isThisRowUpdating}>
                                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                                     </button>
-                                                    <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button">
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                    <button onClick={() => saveEditingRow(log.id)} style={styles.iconBtnSave} className="hover-btn" title="Save changes" type="button" disabled={isThisRowUpdating}>
+                                                        {isThisRowUpdating ? (
+                                                            <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
+                                                                <circle
+                                                                    cx="25" cy="25" r="20"
+                                                                    fill="none"
+                                                                    stroke="#FFFFFF"
+                                                                    strokeWidth="5"
+                                                                    className="btn-spinner-circle"
+                                                                />
+                                                            </svg>
+                                                        ) : (
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                        )}
                                                     </button>
                                                 </div>
                                             </div>
@@ -1486,7 +1562,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             <>
                                                 <div className="mobile-record-top-meta">
                                                     <span>{formatDateToReadable(log.date)}</span>
-                                                    <span style={{ color: '#FFF8F0', fontWeight: '700' }}>{formattedCost}</span>
                                                 </div>
                                                 <div className="mobile-record-header">
                                                     <div className="mobile-record-title-group">
@@ -1555,11 +1630,10 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         className={odoEmptyError ? 'shake-invalid' : ''}
                                         style={{
                                             ...styles.input,
-                                            borderColor: odoEmptyError ? '#FF8F9A' : '#50545D',
+                                            borderColor: odoEmptyError ? '#FFA11A' : '#252D45',
                                         }}
                                         autoFocus
                                     />
-                                    {odoErrors.current_odo && <span style={styles.errorText}>{odoErrors.current_odo}</span>}
                                 </div>
                                 <div style={styles.modalActions}>
                                     <button type="button" onClick={closeOdoModal} style={styles.cancelBtn} className="hover-btn" disabled={odoProcessing}>Cancel</button>
@@ -1569,7 +1643,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                 <circle
                                                     cx="25" cy="25" r="20"
                                                     fill="none"
-                                                    stroke="#110D08"
+                                                    stroke="#FFFFFF"
                                                     strokeWidth="5"
                                                     className="btn-spinner-circle"
                                                 />
@@ -1596,7 +1670,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         key={logEmptyFields.services ? `log-svc-${shakeKey}` : 'log-svc'}
                                         style={{
                                             ...styles.checkboxContainer,
-                                            borderColor: logEmptyFields.services ? '#FF8F9A' : '#50545D',
+                                            borderColor: logEmptyFields.services ? '#FFA11A' : '#252D45',
                                         }}
                                         className={`desktop-only-services ${logEmptyFields.services ? 'shake-invalid' : ''}`}
                                     >
@@ -1623,7 +1697,6 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             if (updatedServices.length > 0) clearLogEmptyError('services');
                                         }}
                                     />
-                                    {errors.services && <span style={styles.errorText}>{errors.services}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
@@ -1643,10 +1716,9 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         className={logEmptyFields.odo ? 'shake-invalid' : ''}
                                         style={{
                                             ...styles.input,
-                                            borderColor: logEmptyFields.odo ? '#FF8F9A' : '#50545D',
+                                            borderColor: logEmptyFields.odo ? '#FFA11A' : '#252D45',
                                         }}
                                     />
-                                    {errors.odo && <span style={styles.errorText}>{errors.odo}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
@@ -1662,32 +1734,14 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                         className={logEmptyFields.date ? 'shake-invalid' : ''}
                                         style={{
                                             ...styles.input,
-                                            borderColor: logEmptyFields.date ? '#FF8F9A' : '#50545D',
+                                            borderColor: logEmptyFields.date ? '#FFA11A' : '#252D45',
                                         }}
                                     />
-                                    {errors.date && <span style={styles.errorText}>{errors.date}</span>}
-                                </div>
-
-                                <div style={styles.inputGroup}>
-                                    <label style={styles.label}>Cost (PHP)</label>
-                                    <div style={styles.currencyWrapper}>
-                                        <span style={styles.currencySymbol}>₱</span>
-                                        <input
-                                            type="text" placeholder="0.00" value={data.cost}
-                                            onChange={e => {
-                                                const val = e.target.value;
-                                                if (/^\d*\.?\d*$/.test(val)) setData('cost', val);
-                                            }}
-                                            style={{ ...styles.input, paddingLeft: '26px' }}
-                                        />
-                                    </div>
-                                    {errors.cost && <span style={styles.errorText}>{errors.cost}</span>}
                                 </div>
 
                                 <div style={styles.inputGroup}>
                                     <label style={styles.label}>Notes (Optional)</label>
                                     <textarea placeholder="Mechanic notes, workshop details..." value={data.notes} onChange={e => setData('notes', e.target.value)} style={{ ...styles.input, height: '60px', resize: 'none' }} />
-                                    {errors.notes && <span style={styles.errorText}>{errors.notes}</span>}
                                 </div>
 
                                 <div style={styles.modalActions}>
@@ -1698,7 +1752,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                                 <circle
                                                     cx="25" cy="25" r="20"
                                                     fill="none"
-                                                    stroke="#110D08"
+                                                    stroke="#FFFFFF"
                                                     strokeWidth="5"
                                                     className="btn-spinner-circle"
                                                 />
@@ -1718,7 +1772,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                 <h3 style={styles.modalTitle}>Delete Maintenance Log</h3>
                                 <button onClick={() => setShowDeleteLogModal(false)} style={styles.closeBtn} type="button">✕</button>
                             </div>
-                            <p style={{ color: '#C9C3CC', fontSize: '13px', margin: '8px 0 16px 0' }}>Are you sure you want to delete this maintenance record? This action cannot be undone.</p>
+                            <p style={{ color: '#8A99C2', fontSize: '13px', margin: '8px 0 16px 0' }}>Are you sure you want to delete this maintenance record? This action cannot be undone.</p>
                             <div style={styles.modalActions}>
                                 <button type="button" onClick={() => setShowDeleteLogModal(false)} style={styles.cancelBtn} className="hover-btn" disabled={isDeletingLog}>Cancel</button>
                                 <button type="button" onClick={confirmDeleteLog} style={styles.deleteCardBtn} className="hover-btn" disabled={isDeletingLog}>
@@ -1727,7 +1781,7 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
                                             <circle
                                                 cx="25" cy="25" r="20"
                                                 fill="none"
-                                                stroke="#FF8F9A"
+                                                stroke="#FFA11A"
                                                 strokeWidth="5"
                                                 className="btn-spinner-circle"
                                             />
@@ -1746,115 +1800,115 @@ export default function VehicleShow({ vehicle, servicePreferences = [], maintena
 const styles = {
     page: {
         height: '100vh', width: '100vw',
-        backgroundColor: '#110D08', display: 'flex', flexDirection: 'row',
+        backgroundColor: '#090A10', display: 'flex', flexDirection: 'row',
         margin: 0, padding: 0, boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         overflow: 'hidden',
     },
-    mainContent: { flex: 1, backgroundColor: '#110D08', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
+    mainContent: { flex: 1, backgroundColor: '#090A10', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '850px', width: '100%', paddingBottom: '60px', margin: '0 auto' },
 
     profileCard: {
-        backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px',
-        padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04), 0 0 16px rgba(233, 197, 228, 0.14)', display: 'flex', alignItems: 'center', gap: '24px',
+        backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px',
+        padding: '20px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)', display: 'flex', alignItems: 'center', gap: '24px',
         position: 'relative', width: '100%', boxSizing: 'border-box'
     },
     profileLeft: { flexShrink: 0 },
     photoThumbContainer: {
         width: '120px', height: '90px', borderRadius: '8px', overflow: 'hidden',
-        backgroundColor: '#292831', border: '1px solid #50545D', position: 'relative', cursor: 'pointer',
-        display: 'flex', justifyContent: 'center', alignItems: 'center'
+        backgroundColor: '#1B2030', border: '1px solid #252D45', position: 'relative', cursor: 'pointer',
+        display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)'
     },
     vehicleThumb: { width: '100%', height: '100%', objectFit: 'cover' },
     photoOverlay: {
         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.70)', display: 'flex', justifyContent: 'center', alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center',
         opacity: 0, transition: 'opacity 0.2s ease',
     },
-    placeholderThumb: { width: '120px', height: '90px', borderRadius: '8px', backgroundColor: '#292831', border: '1px solid #50545D', display: 'flex', justifyContent: 'center', alignItems: 'center' },
+    placeholderThumb: { width: '120px', height: '90px', borderRadius: '8px', backgroundColor: '#1B2030', border: '1px solid #252D45', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)' },
     profileRight: { flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' },
     detailItem: { display: 'flex', alignItems: 'center', fontSize: '13px', gap: '8px', flexWrap: 'wrap' },
-    detailKey: { color: '#C9C3CC', fontWeight: '500', width: '105px', flexShrink: 0 },
-    detailVal: { color: '#FFF8F0', fontWeight: '500' },
-    typeBadge: { display: 'inline-block', backgroundColor: 'rgba(233, 197, 228, 0.16)', color: '#FFF8F0', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0 },
+    detailKey: { color: '#8A99C2', fontWeight: '500', width: '105px', flexShrink: 0 },
+    detailVal: { color: '#FFFFFF', fontWeight: '500' },
+    typeBadge: { display: 'inline-block', backgroundColor: 'rgba(47, 107, 255, 0.2)', color: '#FFFFFF', fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.5px', flexShrink: 0, border: '1px solid rgba(47, 107, 255, 0.5)', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)' },
     updateOdoBtnTopRight: {
         position: 'absolute', top: '16px', right: '16px',
-        backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D',
+        backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45',
         padding: '5px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer',
         display: 'flex', alignItems: 'center', gap: '6px',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)',
     },
-    lastUpdatedText: { color: '#C9C3CC', fontSize: '11px', fontStyle: 'italic' },
+    lastUpdatedText: { color: '#8A99C2', fontSize: '11px', fontStyle: 'italic' },
 
     cellWithTag: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' },
-    tagUpcoming: { backgroundColor: 'rgba(237, 242, 178, 0.24)', color: '#EDF2B2', border: '1px solid rgba(237, 242, 178, 0.60)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', flexShrink: 0 },
-    tagPastDue: { backgroundColor: 'rgba(255, 143, 154, 0.15)', color: '#FF8F9A', border: '1px solid rgba(255, 143, 154, 0.50)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', flexShrink: 0 },
+    tagUpcoming: { backgroundColor: 'rgba(47, 107, 255, 0.2)', color: '#FFFFFF', border: '1px solid rgba(47, 107, 255, 0.5)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', flexShrink: 0, boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)' },
+    tagPastDue: { backgroundColor: 'rgba(255, 161, 26, 0.2)', color: '#FFA11A', border: '1px solid rgba(255, 161, 26, 0.5)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.4px', flexShrink: 0, boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)' },
 
-    fullPhotoBox: { backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px', padding: '16px', maxWidth: '85vw', maxHeight: '85vh', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 25px 50px rgba(0, 0, 0, 0.3), 0 0 16px rgba(233, 197, 228, 0.14)' },
+    fullPhotoBox: { backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px', padding: '16px', maxWidth: '85vw', maxHeight: '85vh', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 25px 50px rgba(0, 0, 0, 0.8), 0 4px 10px rgba(0, 0, 0, 0.5)' },
     fullImage: { maxWidth: '100%', maxHeight: '75vh', borderRadius: '8px', objectFit: 'contain' },
-    closePhotoBtn: { position: 'absolute', top: '12px', right: '12px', background: 'rgba(0, 0, 0, 0.7)', border: '1px solid #50545D', color: '#FFF8F0', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10 },
+    closePhotoBtn: { position: 'absolute', top: '12px', right: '12px', background: 'rgba(0, 0, 0, 0.75)', border: '1px solid #252D45', color: '#FFFFFF', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', zIndex: 10 },
 
     sectionHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', width: '100%', flexWrap: 'wrap', gap: '8px' },
-    sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#FFF8F0', margin: 0 },
+    sectionTitle: { fontSize: '18px', fontWeight: '600', color: '#FFFFFF', margin: 0 },
     dropdownWrapper: { position: 'relative' },
     dropdownToggleBtn: {
-        backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '6px',
-        padding: '7px 14px', color: '#FFF8F0', fontSize: '12px', fontWeight: '500',
+        backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '6px',
+        padding: '7px 14px', color: '#FFFFFF', fontSize: '12px', fontWeight: '500',
         display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', outline: 'none',
-        minWidth: '150px', justifyContent: 'space-between'
+        minWidth: '150px', justifyContent: 'space-between',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)'
     },
     dropdownToggleRight: { display: 'flex', alignItems: 'center', gap: '8px' },
-    clearIconBadge: { backgroundColor: 'rgba(255, 143, 154, 0.10)', color: '#FF8F9A', fontSize: '10px', fontWeight: '700', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
-    dropdownMenu: { position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: '220px', backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '8px', boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15), 0 0 16px rgba(233, 197, 228, 0.14)', zIndex: 50, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-    dropdownHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #50545D', backgroundColor: '#292831' },
-    dropdownTitle: { fontSize: '11px', fontWeight: '600', color: '#C9C3CC', textTransform: 'uppercase' },
-    dropdownClearText: { background: 'none', border: 'none', color: '#FF8F9A', fontSize: '11px', cursor: 'pointer', fontWeight: '700' },
+    clearIconBadge: { backgroundColor: 'rgba(255, 161, 26, 0.2)', color: '#FFA11A', fontSize: '10px', fontWeight: '700', width: '16px', height: '16px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', border: '1px solid rgba(255, 161, 26, 0.4)' },
+    dropdownMenu: { position: 'absolute', right: 0, top: 'calc(100% + 6px)', width: '220px', backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '8px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 16px 32px rgba(0, 0, 0, 0.7)', zIndex: 50, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+    dropdownHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #252D45', backgroundColor: '#1B2030' },
+    dropdownTitle: { fontSize: '11px', fontWeight: '600', color: '#8A99C2', textTransform: 'uppercase' },
+    dropdownClearText: { background: 'none', border: 'none', color: '#FFA11A', fontSize: '11px', cursor: 'pointer', fontWeight: '700' },
     dropdownList: { padding: '6px', display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '180px', overflowY: 'auto' },
-    dropdownItemLabel: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', color: '#FFF8F0', fontSize: '12px', cursor: 'pointer' },
-    dropdownCheckbox: { accentColor: '#E9C5E4', width: '13px', height: '13px', cursor: 'pointer' },
-    dropdownEmpty: { padding: '12px', textAlign: 'center', color: '#C9C3CC', fontSize: '12px', fontStyle: 'italic' },
+    dropdownItemLabel: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', color: '#FFFFFF', fontSize: '12px', cursor: 'pointer' },
+    dropdownCheckbox: { accentColor: '#2F6BFF', width: '13px', height: '13px', cursor: 'pointer' },
+    dropdownEmpty: { padding: '12px', textAlign: 'center', color: '#8A99C2', fontSize: '12px', fontStyle: 'italic' },
 
-    tableContainer: { backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04), 0 0 16px rgba(233, 197, 228, 0.14)', width: '100%', boxSizing: 'border-box' },
+    tableContainer: { backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px', overflow: 'hidden', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)', width: '100%', boxSizing: 'border-box' },
     table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' },
-    tableHeaderRow: { backgroundColor: '#292831', borderBottom: '1px solid #50545D', color: '#C9C3CC' },
+    tableHeaderRow: { backgroundColor: '#1B2030', borderBottom: '1px solid #252D45', color: '#8A99C2' },
     th: { padding: '10px 14px', fontWeight: '600', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.5px' },
-    tableBodyRow: { borderBottom: '1px solid #50545D' },
-    td: { padding: '12px 14px', color: '#FFF8F0', verticalAlign: 'middle' },
-    emptyTableCell: { padding: '24px', textAlign: 'center', color: '#C9C3CC', fontStyle: 'italic' },
+    tableBodyRow: { borderBottom: '1px solid #252D45' },
+    td: { padding: '12px 14px', color: '#FFFFFF', verticalAlign: 'middle' },
+    emptyTableCell: { padding: '24px', textAlign: 'center', color: '#8A99C2', fontStyle: 'italic' },
     serviceBadgeList: { display: 'flex', flexWrap: 'wrap', gap: '4px' },
-    serviceBadge: { backgroundColor: 'rgba(233, 197, 228, 0.16)', color: '#FFF8F0', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700' },
+    serviceBadge: { backgroundColor: 'rgba(47, 107, 255, 0.2)', color: '#FFFFFF', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: '700', border: '1px solid rgba(47, 107, 255, 0.5)', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)' },
 
-    inlineInput: { backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '4px', padding: '5px 8px', color: '#FFF8F0', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.2s ease' },
-    inlineSelect: { backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '4px', padding: '5px 8px', color: '#FFF8F0', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.2s ease' },
+    inlineInput: { backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '4px', padding: '5px 8px', color: '#FFFFFF', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.2s ease', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)' },
+    inlineSelect: { backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '4px', padding: '5px 8px', color: '#FFFFFF', fontSize: '12px', outline: 'none', width: '100%', boxSizing: 'border-box', transition: 'border-color 0.2s ease', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)' },
 
     rowActions: { display: 'flex', justifyContent: 'flex-end', gap: '6px', alignItems: 'center' },
-    iconBtnEdit: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
-    iconBtnDelete: { backgroundColor: 'rgba(255, 143, 154, 0.10)', color: '#FF8F9A', border: '1px solid #50545D', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
-    iconBtnSave: { backgroundColor: '#FFF8F015', color: '#FFF8F0', border: '1px solid #50545D', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
-    iconBtnCancel: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' },
+    iconBtnEdit: { backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4)' },
+    iconBtnDelete: { backgroundColor: 'rgba(255, 161, 26, 0.2)', color: '#FFA11A', border: '1px solid rgba(255, 161, 26, 0.4)', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4)' },
+    iconBtnSave: { backgroundColor: 'rgba(47, 107, 255, 0.2)', color: '#FFFFFF', border: '1px solid rgba(47, 107, 255, 0.5)', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.4)' },
+    iconBtnCancel: { backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45', width: '28px', height: '28px', borderRadius: '6px', display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4)' },
 
     floatingBtn: {
         position: 'fixed', bottom: '32px', right: '32px', width: '56px', height: '56px',
-        backgroundColor: '#E9C5E4', color: '#110D08', borderRadius: '50%', border: 'none',
+        backgroundColor: '#2F6BFF', color: '#FFFFFF', borderRadius: '50%', border: 'none',
         display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3), 0 0 16px rgba(233, 197, 228, 0.14)', zIndex: 100,
+        boxShadow: 'inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 0 rgba(0, 0, 0, 0.5), 0 12px 28px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(47, 107, 255, 0.4)', zIndex: 100,
     },
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.70)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
-    modalBox: { backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), 0 0 16px rgba(233, 197, 228, 0.14)', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
+    modalBox: { backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '14px', padding: '24px', width: '100%', maxWidth: '440px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 25px 50px rgba(0, 0, 0, 0.8), 0 4px 10px rgba(0, 0, 0, 0.5)', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '90vh', overflowY: 'auto', boxSizing: 'border-box' },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    modalTitle: { color: '#FFF8F0', fontSize: '16px', fontWeight: '600', margin: 0 },
-    closeBtn: { background: 'none', border: 'none', color: '#C9C3CC', fontSize: '16px', cursor: 'pointer' },
+    modalTitle: { color: '#FFFFFF', fontSize: '16px', fontWeight: '600', margin: 0 },
+    closeBtn: { background: 'none', border: 'none', color: '#8A99C2', fontSize: '16px', cursor: 'pointer' },
     form: { display: 'flex', flexDirection: 'column', gap: '12px' },
     inputGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
-    label: { color: '#C9C3CC', fontSize: '11px', fontWeight: '500' },
-    input: { backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '6px', padding: '8px 10px', color: '#FFF8F0', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%', transition: 'border-color 0.2s ease' },
-    checkboxContainer: { backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '140px', overflowY: 'auto', transition: 'border-color 0.2s ease' },
-    checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', color: '#FFF8F0', fontSize: '12px', cursor: 'pointer' },
-    checkboxInput: { accentColor: '#E9C5E4', width: '14px', height: '14px', cursor: 'pointer' },
-    noServiceText: { color: '#C9C3CC', fontSize: '12px', fontStyle: 'italic', textAlign: 'center' },
-    currencyWrapper: { position: 'relative', display: 'flex', alignItems: 'center' },
-    currencySymbol: { position: 'absolute', left: '10px', color: '#C9C3CC', fontSize: '12px', fontWeight: '600' },
-    errorText: { color: '#FF8F9A', fontSize: '11px', marginTop: '2px' },
-    modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #50545D', paddingTop: '14px', marginTop: '4px' },
-    cancelBtn: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '85px', minHeight: '26px' },
-    deleteCardBtn: { backgroundColor: 'rgba(255, 143, 154, 0.10)', color: '#FF8F9A', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '65px', minHeight: '26px' },
+    label: { color: '#8A99C2', fontSize: '11px', fontWeight: '500' },
+    input: { backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '6px', padding: '8px 10px', color: '#FFFFFF', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%', transition: 'border-color 0.2s ease', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)' },
+    checkboxContainer: { backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '6px', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '140px', overflowY: 'auto', transition: 'border-color 0.2s ease', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)' },
+    checkboxLabel: { display: 'flex', alignItems: 'center', gap: '8px', color: '#FFFFFF', fontSize: '12px', cursor: 'pointer' },
+    checkboxInput: { accentColor: '#2F6BFF', width: '14px', height: '14px', cursor: 'pointer' },
+    noServiceText: { color: '#8A99C2', fontSize: '12px', fontStyle: 'italic', textAlign: 'center' },
+    errorText: { color: '#FFA11A', fontSize: '11px', marginTop: '2px' },
+    modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #252D45', paddingTop: '14px', marginTop: '4px' },
+    cancelBtn: { backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4)' },
+    saveBtn: { backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '85px', minHeight: '26px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 4px 10px rgba(47, 107, 255, 0.3)' },
+    deleteCardBtn: { backgroundColor: 'rgba(255, 161, 26, 0.2)', color: '#FFA11A', border: '1px solid rgba(255, 161, 26, 0.4)', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '65px', minHeight: '26px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.4)' },
 };

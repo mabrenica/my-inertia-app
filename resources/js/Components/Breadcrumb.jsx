@@ -1,212 +1,76 @@
+import { Link } from '@inertiajs/react';
 
-import { Link, usePage } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
-
-export default function Breadcrumb({
-    items = [],
-    showBackButton = true
-}) {
-    const [canGoBack, setCanGoBack] = useState(false);
-
-    const { url } = usePage();
-
-    // Hide the back button on the Home page only
-    const currentPath = url?.split('?')[0].replace(/\/+$/, '');
-    const isHomePage = currentPath === '/home';
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setCanGoBack(window.history.length > 1);
-        }
-    }, []);
-
-    const handleBack = () => {
-        if (
-            typeof window !== 'undefined' &&
-            window.history.length > 1
-        ) {
-            window.history.back();
-        }
-    };
+export default function Breadcrumb({ items = [] }) {
+    if (!items || items.length === 0) return null;
 
     return (
-        <>
-            <style>{`
-                @media (max-width: 768px) {
-                    .mobile-hide-breadcrumb-trail {
-                        display: none !important;
-                    }
-                }
-
-                .breadcrumb-back-btn {
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    background-color: #1D1A1B;
-                    color: #FFF8F0;
-                    border: 1px solid #50545D;
-                    width: 30px;
-                    height: 30px;
-                    padding: 0;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    text-decoration: none;
-                    transition: all 0.2s cubic-bezier(
-                        0.16, 1, 0.3, 1
+        <nav style={styles.nav} aria-label="Breadcrumb">
+            <ol style={styles.list}>
+                {items.map((item, index) => {
+                    const isLast = index === items.length - 1;
+                    return (
+                        <li key={index} style={styles.item}>
+                            {index > 0 && (
+                                <span style={styles.separator} aria-hidden="true">/</span>
+                            )}
+                            {item.href && !isLast ? (
+                                <Link href={item.href} style={styles.link} className="breadcrumb-link">
+                                    {item.label}
+                                </Link>
+                            ) : (
+                                <span style={styles.current}>{item.label}</span>
+                            )}
+                        </li>
                     );
-                    box-shadow:
-                        0 2px 6px rgba(0, 0, 0, 0.04),
-                        0 0 14px rgba(233, 197, 228, 0.14);
-                    flex-shrink: 0;
-                    box-sizing: border-box;
+                })}
+            </ol>
+            <style>{`
+                .breadcrumb-link {
+                    transition: color 0.15s ease;
                 }
-
-                .breadcrumb-back-btn:hover {
-                    background-color: #292831;
-                    border-color: #E9C5E4;
-                    transform: translateY(-1px);
-                }
-
-                .breadcrumb-back-btn:active {
-                    transform: translateY(1px);
+                .breadcrumb-link:hover {
+                    color: #2F6BFF !important;
                 }
             `}</style>
-
-            <div style={styles.outerContainer}>
-
-                {/* Back button hidden on Home only */}
-                {showBackButton && !isHomePage && canGoBack && (
-                    <button
-                        type="button"
-                        onClick={handleBack}
-                        style={styles.backBtn}
-                        className="breadcrumb-back-btn"
-                        title="Back to previous page"
-                    >
-                        <svg
-                            width="15"
-                            height="15"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        >
-                            <line
-                                x1="19"
-                                y1="12"
-                                x2="5"
-                                y2="12"
-                            />
-                            <polyline
-                                points="12 19 5 12 12 5"
-                            />
-                        </svg>
-                    </button>
-                )}
-
-                {/* Breadcrumb navigation */}
-                <nav
-                    aria-label="Breadcrumb"
-                    className="mobile-hide-breadcrumb-trail"
-                    style={styles.container}
-                >
-                    {items.map((item, index) => {
-                        const isLast = index === items.length - 1;
-
-                        return (
-                            <span
-                                key={index}
-                                style={styles.itemWrapper}
-                            >
-                                {item.href && !isLast ? (
-                                    <Link
-                                        href={item.href}
-                                        style={styles.link}
-                                    >
-                                        {item.label}
-                                    </Link>
-                                ) : (
-                                    <span
-                                        style={
-                                            isLast
-                                                ? styles.active
-                                                : styles.label
-                                        }
-                                    >
-                                        {item.label}
-                                    </span>
-                                )}
-
-                                {!isLast && (
-                                    <span style={styles.separator}>
-                                        /
-                                    </span>
-                                )}
-                            </span>
-                        );
-                    })}
-                </nav>
-            </div>
-        </>
+        </nav>
     );
 }
 
 const styles = {
-    outerContainer: {
+    nav: {
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
+        marginBottom: '20px',
         width: '100%',
-        minHeight: '30px',
-        marginBottom: '12px',
+        boxSizing: 'border-box',
     },
-
-    backBtn: {
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-
-    container: {
+    list: {
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
-        fontSize: '12px',
-        lineHeight: '1',
-        color: '#C9C3CC',
+        listStyle: 'none',
         margin: 0,
+        padding: 0,
+        gap: '8px',
+        flexWrap: 'wrap',
     },
-
-    itemWrapper: {
-        display: 'inline-flex',
+    item: {
+        display: 'flex',
         alignItems: 'center',
-        gap: '6px',
-        lineHeight: '1',
+        gap: '8px',
+        fontSize: '12px',
     },
-
+    separator: {
+        color: '#7B8AB8',
+        fontSize: '12px',
+        userSelect: 'none',
+    },
     link: {
-        color: '#C9C3CC',
+        color: '#8A99C2',
         textDecoration: 'none',
         fontWeight: '500',
-        lineHeight: '1',
     },
-
-    label: {
-        color: '#C9C3CC',
-        fontWeight: '500',
-        lineHeight: '1',
-    },
-
-    active: {
-        color: '#FFF8F0',
+    current: {
+        color: '#FFFFFF',
         fontWeight: '600',
-        lineHeight: '1',
-    },
-
-    separator: {
-        color: '#E9C5E4',
-        lineHeight: '1',
     },
 };

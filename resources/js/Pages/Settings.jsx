@@ -133,10 +133,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
     const [carServices, setCarServices] = useState(initialCarServices);
     const [motoServices, setMotoServices] = useState(initialMotoServices);
-    const [toastMessage, setToastMessage] = useState(null);
+    const [toast, setToast] = useState(null);
 
     const [carOpen, setCarOpen] = useState(false);
     const [motoOpen, setMotoOpen] = useState(false);
+
     const [tooltipOpen, setTooltipOpen] = useState(false);
     const tooltipRef = useRef(null);
 
@@ -164,6 +165,14 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
             document.removeEventListener('touchstart', handleOutsideClick);
         };
     }, []);
+
+    const showToast = (message) => {
+        setToast({ id: Date.now() + Math.random(), message });
+    };
+
+    const showErrorToast = () => {
+        showToast('Something went wrong');
+    };
 
     const formatIntervalDays = (totalDays) => {
         const daysNum = Number(totalDays);
@@ -244,6 +253,12 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
     const handleSaveModal = () => {
         if (isSavingServices) return;
+
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
         setIsSavingServices(true);
         const updatedCar = activeModal === 'car' ? tempServices : carServices;
         const updatedMoto = activeModal === 'moto' ? tempServices : motoServices;
@@ -252,15 +267,25 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
             car_services: updatedCar,
             moto_services: updatedMoto,
         }, {
+            preserveScroll: true,
             onSuccess: () => {
                 if (activeModal === 'car') setCarServices(updatedCar);
                 if (activeModal === 'moto') setMotoServices(updatedMoto);
-                setToastMessage('Services updated successfully!');
+                showToast('Services updated successfully!');
                 closeModal();
+            },
+            onError: () => {
+                showErrorToast();
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
             },
             onFinish: () => {
                 setIsSavingServices(false);
-            }
+            },
         });
     };
 
@@ -294,13 +319,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                             <div className="mobile-service-card-header">
                                 <div className="mobile-service-title-group">
                                     <h4 className="mobile-service-card-title">{item.name}</h4>
-                                    <p className="mobile-service-card-sub">
-                                        {type === 'car' ? 'Car maintenance interval' : 'Motorbike maintenance interval'}
-                                    </p>
+                                    <p className="mobile-service-card-sub">Maintenance Interval</p>
                                 </div>
-                                <span style={styles.intervalBadge}>
-                                    {type === 'car' ? 'CAR' : 'MOTO'}
-                                </span>
                             </div>
                             <div className="mobile-service-card-rows">
                                 <div className="mobile-service-card-row">
@@ -327,6 +347,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
         <div style={styles.page} className="page-layout">
             <style>{`
                 @keyframes spinnerRotate {
+                    0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
                 }
                 @keyframes spinnerDash {
@@ -334,14 +355,28 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
                     100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
                 }
-                .btn-spinner {
-                    animation: spinnerRotate 1.4s linear infinite;
+                .btn-spinner-wrap {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
                     width: 16px;
                     height: 16px;
+                    flex-shrink: 0;
+                    animation: spinnerRotate 0.9s linear infinite;
+                    transform-origin: center;
+                }
+                .btn-spinner {
+                    display: block;
+                    width: 16px;
+                    height: 16px;
+                    transform-box: fill-box;
+                    transform-origin: center;
                 }
                 .btn-spinner-circle {
                     animation: spinnerDash 1.2s ease-in-out infinite;
                     stroke-linecap: round;
+                    transform-box: fill-box;
+                    transform-origin: center;
                 }
                 @keyframes slideUpFade {
                     from { opacity: 0; transform: translateY(16px) scale(0.98); }
@@ -378,27 +413,46 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .interactive-card:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08), 0 0 14px rgba(233, 197, 228, 0.14);
-                    border-color: #E9C5E4;
+                    transform: translateY(-3px);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 12px 30px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(47, 107, 255, 0.25);
+                    border-color: #2F6BFF;
                 }
                 .hover-list-item {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .hover-list-item:hover {
                     transform: translateX(4px);
-                    background-color: rgba(233, 197, 228, 0.16) !important;
-                    border-color: #E9C5E4 !important;
+                    background-color: rgba(47, 107, 255, 0.15) !important;
+                    border-color: #2F6BFF !important;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
                 }
                 .hover-btn {
                     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
                 .hover-btn:hover {
                     transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 0 14px rgba(233, 197, 228, 0.14);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 6px 14px rgba(47, 107, 255, 0.35);
                 }
                 .hover-btn:active {
                     transform: translateY(1px);
+                }
+                .collapsible-wrapper {
+                    display: grid;
+                    grid-template-rows: 0fr;
+                    transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                    opacity: 0;
+                    overflow: hidden;
+                }
+                .collapsible-wrapper.is-expanded {
+                    grid-template-rows: 1fr;
+                    opacity: 1;
+                }
+                .collapsible-inner {
+                    min-height: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                    padding-top: 4px;
                 }
                 input::-webkit-outer-spin-button,
                 input::-webkit-inner-spin-button {
@@ -413,8 +467,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                 .tooltip-text {
                     visibility: hidden;
                     width: 240px;
-                    background-color: #1D1A1B;
-                    color: #FFF8F0;
+                    background-color: #131722;
+                    color: #FFFFFF;
                     text-align: left;
                     border-radius: 6px;
                     padding: 8px 12px;
@@ -428,8 +482,8 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     font-size: 11px;
                     font-weight: normal;
                     line-height: 1.4;
-                    border: 1px solid #50545D;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3), 0 0 14px rgba(233, 197, 228, 0.14);
+                    border: 1px solid #252D45;
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 8px 20px rgba(0, 0, 0, 0.8);
                     pointer-events: none;
                 }
                 .tooltip-container:hover .tooltip-text,
@@ -464,11 +518,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     }
                     .settings-mobile-dropdown-trigger {
                         width: 100%;
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #1B2030;
+                        border: 1px solid #252D45;
                         border-radius: 10px;
                         padding: 10px 12px;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-size: 13px;
                         font-weight: 500;
                         display: flex;
@@ -477,13 +531,13 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         gap: 8px;
                         cursor: pointer;
                         box-sizing: border-box;
-                        box-shadow: 0 0 0 3px transparent, 0 0 14px rgba(233, 197, 228, 0.14);
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
                         transition: border-color 0.18s ease, box-shadow 0.18s ease;
                         text-align: left;
                     }
                     .settings-mobile-dropdown-trigger.is-focused {
-                        border-color: #E9C5E4;
-                        box-shadow: 0 0 0 3px rgba(233, 197, 228, 0.24);
+                        border-color: #2F6BFF;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 0 0 3px rgba(47, 107, 255, 0.25);
                     }
                     .settings-mobile-dropdown-value {
                         overflow: hidden;
@@ -495,11 +549,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         top: calc(100% + 6px);
                         left: 0;
                         right: 0;
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #131722;
+                        border: 1px solid #252D45;
                         border-radius: 12px;
                         padding: 8px 6px 8px 8px;
-                        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14), 0 0 14px rgba(233, 197, 228, 0.14);
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 16px 32px rgba(0, 0, 0, 0.7);
                         z-index: 80;
                         max-height: 220px;
                         overflow-y: auto;
@@ -515,7 +569,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         background: transparent;
                     }
                     .settings-mobile-popover::-webkit-scrollbar-thumb {
-                        background-color: #50545D;
+                        background-color: #252D45;
                         border-radius: 999px;
                     }
                     .settings-mobile-option {
@@ -524,7 +578,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         border: none;
                         border-radius: 8px;
                         padding: 9px 10px;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-size: 13px;
                         font-weight: 400;
                         display: flex;
@@ -537,11 +591,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         transition: background-color 0.15s ease, color 0.15s ease;
                     }
                     .settings-mobile-option:hover {
-                        background-color: #1D1A1B;
+                        background-color: #1B2030;
                     }
                     .settings-mobile-option.is-selected {
-                        background-color: #1D1A1B;
-                        color: #FFF8F0;
+                        background-color: #1B2030;
+                        color: #FFFFFF;
                         font-weight: 600;
                     }
                     .settings-mobile-option-label {
@@ -551,14 +605,14 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         flex: 1;
                     }
                     .settings-mobile-check {
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         flex-shrink: 0;
                     }
                     .settings-mobile-empty {
                         padding: 12px;
                         text-align: center;
                         font-size: 12px;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         font-style: italic;
                     }
                     .desktop-service-list,
@@ -573,11 +627,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         width: 100%;
                     }
                     .mobile-service-card {
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #1B2030;
+                        border: 1px solid #252D45;
                         border-radius: 10px;
                         padding: 12px 14px;
-                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 14px rgba(233, 197, 228, 0.14);
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 4px 10px rgba(0, 0, 0, 0.4);
                         display: flex;
                         flex-direction: column;
                         gap: 8px;
@@ -599,13 +653,13 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                     .mobile-service-card-title {
                         font-size: 13px;
                         font-weight: 700;
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         margin: 0;
                         line-height: 1.3;
                     }
                     .mobile-service-card-sub {
                         font-size: 11px;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         margin: 0;
                     }
                     .mobile-service-card-rows {
@@ -613,7 +667,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         flex-direction: column;
                         gap: 6px;
                         padding-top: 8px;
-                        border-top: 1px solid #50545D;
+                        border-top: 1px solid #252D45;
                     }
                     .mobile-service-card-row {
                         display: flex;
@@ -623,11 +677,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         font-size: 12px;
                     }
                     .mobile-service-row-label {
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         font-weight: 500;
                     }
                     .mobile-service-row-val {
-                        color: #FFF8F0;
+                        color: #FFFFFF;
                         font-weight: 600;
                         text-align: right;
                     }
@@ -658,14 +712,15 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         padding-right: 2px;
                     }
                     .mobile-modal-card {
-                        background-color: #1D1A1B;
-                        border: 1px solid #50545D;
+                        background-color: #1B2030;
+                        border: 1px solid #252D45;
                         border-radius: 10px;
                         padding: 12px;
                         display: flex;
                         flex-direction: column;
                         gap: 8px;
                         box-sizing: border-box;
+                        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -2px 0 rgba(0, 0, 0, 0.5);
                     }
                     .mobile-modal-card-top {
                         display: flex;
@@ -677,7 +732,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         font-size: 10px;
                         font-weight: 600;
                         text-transform: uppercase;
-                        color: #C9C3CC;
+                        color: #8A99C2;
                         letter-spacing: 0.4px;
                     }
                     .mobile-modal-two-col {
@@ -689,26 +744,31 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 
                 input:focus-visible, select:focus-visible, textarea:focus-visible,
                 button:focus-visible, a:focus-visible {
-                    outline: 2px solid #E9C5E4;
+                    outline: 2px solid #2F6BFF;
                     outline-offset: 2px;
                 }
                 input::placeholder, textarea::placeholder {
-                    color: #ABA8B4;
+                    color: #7B8AB8;
                     opacity: 1;
                 }
                 input:-webkit-autofill,
                 input:-webkit-autofill:hover,
                 input:-webkit-autofill:focus {
-                    -webkit-box-shadow: 0 0 0 1000px #292831 inset !important;
-                    -webkit-text-fill-color: #FFF8F0 !important;
-                    caret-color: #FFF8F0;
+                    -webkit-box-shadow: 0 0 0 1000px #1B2030 inset !important;
+                    -webkit-text-fill-color: #FFFFFF !important;
+                    caret-color: #FFFFFF;
                 }
             `}</style>
 
             <Sidebar activePage="settings" />
 
             <div style={styles.mainContent} className="mainContent">
-                <Toast message={toastMessage} duration={1000} onClose={() => setToastMessage(null)} />
+                <Toast
+                    key={toast ? toast.id : 'toast-empty'}
+                    message={toast ? toast.message : null}
+                    duration={1000}
+                    onClose={() => setToast(null)}
+                />
 
                 <Breadcrumb items={[{ label: 'Main', href: '/home' }, { label: 'Settings' }]} />
 
@@ -719,11 +779,14 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                         <h2 style={styles.sectionHeaderTitle}>Services Configuration</h2>
                         <p style={styles.sectionHeaderDesc}>Configure maintenance service types and periodic intervals for your fleet vehicles.</p>
 
-                        <div style={styles.settingsCard} className="interactive-card page-card-anim">
+                        <div
+                            style={styles.settingsCard}
+                            className="interactive-card page-card-anim"
+                        >
                             <div style={styles.cardTitleRow} onClick={() => setCarOpen(!carOpen)}>
                                 <div style={styles.cardTitleLeft}>
                                     <svg
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9C3CC" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A99C2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                                         style={{ transform: carOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
                                     >
                                         <polyline points="9 18 15 12 9 6"></polyline>
@@ -742,18 +805,21 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 </div>
                             </div>
 
-                            {carOpen && (
-                                <div style={styles.collapsibleContent}>
+                            <div className={`collapsible-wrapper ${carOpen ? 'is-expanded' : ''}`}>
+                                <div className="collapsible-inner">
                                     {renderServiceList(carServices, 'car')}
                                 </div>
-                            )}
+                            </div>
                         </div>
 
-                        <div style={styles.settingsCard} className="interactive-card page-card-anim">
+                        <div
+                            style={styles.settingsCard}
+                            className="interactive-card page-card-anim"
+                        >
                             <div style={styles.cardTitleRow} onClick={() => setMotoOpen(!motoOpen)}>
                                 <div style={styles.cardTitleLeft}>
                                     <svg
-                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9C3CC" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                        width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A99C2" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
                                         style={{ transform: motoOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}
                                     >
                                         <polyline points="9 18 15 12 9 6"></polyline>
@@ -772,11 +838,11 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 </div>
                             </div>
 
-                            {motoOpen && (
-                                <div style={styles.collapsibleContent}>
+                            <div className={`collapsible-wrapper ${motoOpen ? 'is-expanded' : ''}`}>
+                                <div className="collapsible-inner">
                                     {renderServiceList(motoServices, 'moto')}
                                 </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -795,7 +861,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                         style={styles.tooltipIconWrapper}
                                         onClick={() => setTooltipOpen((prev) => !prev)}
                                     >
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C9C3CC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer' }}>
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A99C2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer' }}>
                                             <circle cx="12" cy="12" r="10"></circle>
                                             <line x1="12" y1="16" x2="12" y2="12"></line>
                                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
@@ -822,7 +888,7 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                         style={{
                                             ...styles.modalInput,
                                             flex: 2,
-                                            borderColor: emptyNameError ? '#FF8F9A' : '#50545D',
+                                            borderColor: emptyNameError ? '#FFA11A' : '#252D45',
                                         }}
                                         className={`modalInput ${emptyNameError ? 'shake-invalid' : ''}`}
                                     />
@@ -954,15 +1020,17 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
                                 <button onClick={closeModal} style={styles.cancelBtn} className="hover-btn" type="button" disabled={isSavingServices}>Cancel</button>
                                 <button onClick={handleSaveModal} style={styles.saveBtn} className="hover-btn" type="button" disabled={isSavingServices}>
                                     {isSavingServices ? (
-                                        <svg viewBox="0 0 50 50" className="btn-spinner" aria-hidden="true">
-                                            <circle
-                                                cx="25" cy="25" r="20"
-                                                fill="none"
-                                                stroke="#110D08"
-                                                strokeWidth="5"
-                                                className="btn-spinner-circle"
-                                            />
-                                        </svg>
+                                        <span className="btn-spinner-wrap" aria-hidden="true">
+                                            <svg viewBox="0 0 50 50" className="btn-spinner">
+                                                <circle
+                                                    cx="25" cy="25" r="20"
+                                                    fill="none"
+                                                    stroke="#FFFFFF"
+                                                    strokeWidth="5"
+                                                    className="btn-spinner-circle"
+                                                />
+                                            </svg>
+                                        </span>
                                     ) : 'Save Changes'}
                                 </button>
                             </div>
@@ -977,70 +1045,73 @@ export default function Settings({ carServices: initialCarServices = [], motoSer
 const styles = {
     page: {
         height: '100vh', width: '100vw',
-        backgroundColor: '#110D08', display: 'flex', flexDirection: 'row',
+        backgroundColor: '#090A10', display: 'flex', flexDirection: 'row',
         margin: 0, padding: 0, boxSizing: 'border-box', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         overflow: 'hidden',
     },
-    mainContent: { flex: 1, backgroundColor: '#110D08', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
+    mainContent: { flex: 1, backgroundColor: '#090A10', height: '100vh', overflowY: 'auto', padding: '24px 36px', display: 'flex', flexDirection: 'column', position: 'relative', alignItems: 'center', boxSizing: 'border-box' },
     contentBody: { display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '750px', width: '100%', paddingBottom: '40px', margin: '0 auto' },
-    pageTitle: { fontSize: '28px', fontWeight: '700', color: '#FFF8F0', letterSpacing: '-0.5px', margin: 0 },
+    pageTitle: { fontSize: '28px', fontWeight: '700', color: '#FFFFFF', letterSpacing: '-0.5px', margin: 0 },
     sectionBlock: { display: 'flex', flexDirection: 'column', gap: '16px' },
-    sectionHeaderTitle: { color: '#FFF8F0', fontSize: '18px', fontWeight: '600', margin: 0 },
-    sectionHeaderDesc: { color: '#C9C3CC', fontSize: '13px', margin: '-10px 0 0 0' },
+    sectionHeaderTitle: { color: '#FFFFFF', fontSize: '18px', fontWeight: '600', margin: 0 },
+    sectionHeaderDesc: { color: '#8A99C2', fontSize: '13px', margin: '-10px 0 0 0' },
     settingsCard: {
-        backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '12px',
-        padding: '20px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04), 0 0 16px rgba(233, 197, 228, 0.14)', display: 'flex', flexDirection: 'column', gap: '16px',
+        backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '12px',
+        padding: '14px 20px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.3)', display: 'flex', flexDirection: 'column', gap: '16px',
     },
     cardTitleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' },
     cardTitleLeft: { display: 'flex', alignItems: 'center', gap: '10px' },
     cardTitleRight: { display: 'flex', alignItems: 'center' },
-    cardTitle: { color: '#FFF8F0', fontSize: '15px', fontWeight: '600', margin: 0 },
-    collapsibleContent: { display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '4px' },
+    cardTitle: { color: '#FFFFFF', fontSize: '15px', fontWeight: '600', margin: 0, lineHeight: '1.2' },
     iconEditBtn: {
-        backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', width: '32px', height: '32px',
+        backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45', width: '32px', height: '32px',
         borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)',
     },
     emptyContainer: {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: '12px', padding: '24px 0', border: '1px dashed #50545D', borderRadius: '8px', backgroundColor: '#50545D',
+        gap: '12px', padding: '24px 0', border: '1px dashed #252D45', borderRadius: '8px', backgroundColor: '#1B2030',
+        boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)',
     },
-    emptyStateText: { color: '#C9C3CC', fontSize: '13px', fontStyle: 'italic' },
-    primaryAddBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' },
+    emptyStateText: { color: '#8A99C2', fontSize: '13px', fontStyle: 'italic' },
+    primaryAddBtn: { backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', borderRadius: '6px', padding: '6px 14px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 4px 10px rgba(47, 107, 255, 0.3)' },
     verticalList: { display: 'flex', flexDirection: 'column', gap: '8px' },
     verticalItem: {
-        backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '8px',
+        backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '8px',
         padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
     },
-    verticalItemText: { color: '#FFF8F0', fontSize: '13px', fontWeight: '500' },
+    verticalItemText: { color: '#FFFFFF', fontSize: '13px', fontWeight: '500' },
     intervalTagsGroup: { display: 'flex', gap: '6px', flexWrap: 'wrap' },
-    intervalBadge: { backgroundColor: 'rgba(233, 197, 228, 0.16)', color: '#FFF8F0', fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', flexShrink: 0 },
+    intervalBadge: { backgroundColor: 'rgba(47, 107, 255, 0.2)', color: '#FFFFFF', fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '4px', flexShrink: 0, border: '1px solid rgba(47, 107, 255, 0.5)', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2)' },
 
-    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.70)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
+    modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.75)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000, padding: '16px' },
     modalBox: {
-        backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '14px',
-        padding: '24px', width: '100%', maxWidth: '640px', boxShadow: '0 25px 50px rgba(0, 0, 0, 0.2), 0 0 16px rgba(233, 197, 228, 0.14)',
+        backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '14px',
+        padding: '24px', width: '100%', maxWidth: '640px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 25px 50px rgba(0, 0, 0, 0.8), 0 4px 10px rgba(0, 0, 0, 0.5)',
         display: 'flex', flexDirection: 'column', gap: '16px', boxSizing: 'border-box',
     },
     modalHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     modalTitleWrapper: { display: 'flex', alignItems: 'center', gap: '10px' },
-    modalTitle: { color: '#FFF8F0', fontSize: '16px', fontWeight: '600', margin: 0 },
+    modalTitle: { color: '#FFFFFF', fontSize: '16px', fontWeight: '600', margin: 0 },
     tooltipIconWrapper: { display: 'flex', alignItems: 'center' },
-    closeBtn: { background: 'none', border: 'none', color: '#C9C3CC', fontSize: '16px', cursor: 'pointer' },
+    closeBtn: { background: 'none', border: 'none', color: '#8A99C2', fontSize: '16px', cursor: 'pointer' },
     addItemForm: { display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', boxSizing: 'border-box' },
     formRow: { display: 'flex', gap: '8px', width: '100%', alignItems: 'center', boxSizing: 'border-box', flexWrap: 'wrap' },
-    modalInput: { backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '6px', padding: '8px 10px', color: '#FFF8F0', fontSize: '12px', outline: 'none', boxSizing: 'border-box', minWidth: '100px', transition: 'border-color 0.2s ease' },
-    modalAddBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0 },
-    modalListHeader: { display: 'flex', gap: '8px', padding: '0 8px', color: '#C9C3CC', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', boxSizing: 'border-box' },
+    modalInput: { backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '6px', padding: '8px 10px', color: '#FFFFFF', fontSize: '12px', outline: 'none', boxSizing: 'border-box', minWidth: '100px', transition: 'border-color 0.2s ease', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)' },
+    modalAddBtn: { backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', flexShrink: 0, boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 4px 10px rgba(47, 107, 255, 0.3)' },
+    modalListHeader: { display: 'flex', gap: '8px', padding: '0 8px', color: '#8A99C2', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', boxSizing: 'border-box' },
     modalListContainer: { display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '260px', overflowY: 'auto', paddingRight: '4px', boxSizing: 'border-box' },
-    modalEmptyText: { color: '#C9C3CC', fontSize: '12px', textAlign: 'center', margin: '12px 0' },
+    modalEmptyText: { color: '#8A99C2', fontSize: '12px', textAlign: 'center', margin: '12px 0' },
     modalListItem: {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        backgroundColor: '#292831', border: '1px solid #50545D', borderRadius: '6px',
+        backgroundColor: '#1B2030', border: '1px solid #252D45', borderRadius: '6px',
         padding: '6px 8px', gap: '8px', boxSizing: 'border-box', width: '100%',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 rgba(0, 0, 0, 0.3)',
     },
-    modalInlineInput: { backgroundColor: '#1D1A1B', border: '1px solid #50545D', borderRadius: '4px', color: '#FFF8F0', fontSize: '12px', outline: 'none', padding: '6px 8px', boxSizing: 'border-box' },
-    iconDeleteBtn: { backgroundColor: 'transparent', border: 'none', color: '#FF8F9A', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.9, flexShrink: 0 },
-    modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #50545D', paddingTop: '14px', marginTop: '4px', boxSizing: 'border-box' },
-    cancelBtn: { backgroundColor: '#292831', color: '#FFF8F0', border: '1px solid #50545D', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer' },
-    saveBtn: { backgroundColor: '#E9C5E4', color: '#110D08', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '95px', minHeight: '26px' },
+    modalInlineInput: { backgroundColor: '#131722', border: '1px solid #252D45', borderRadius: '4px', color: '#FFFFFF', fontSize: '12px', outline: 'none', padding: '6px 8px', boxSizing: 'border-box', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4)' },
+    iconDeleteBtn: { backgroundColor: 'transparent', border: 'none', color: '#FFA11A', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.9, flexShrink: 0 },
+    modalActions: { display: 'flex', justifyContent: 'flex-end', gap: '8px', borderTop: '1px solid #252D45', paddingTop: '14px', marginTop: '4px', boxSizing: 'border-box' },
+    cancelBtn: { backgroundColor: '#1B2030', color: '#FFFFFF', border: '1px solid #252D45', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)' },
+    saveBtn: { backgroundColor: '#2F6BFF', color: '#FFFFFF', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '95px', minHeight: '26px', boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 4px 10px rgba(47, 107, 255, 0.3)' },
 };

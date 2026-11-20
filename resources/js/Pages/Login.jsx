@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { useForm, Link } from '@inertiajs/react';
+import Toast from '@/Components/Toast';
 
 export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [emptyRequiredFields, setEmptyRequiredFields] = useState({});
     const [shakeKey, setShakeKey] = useState(0);
+    const [toastMessage, setToastMessage] = useState(null);
+
+    const showErrorToast = () => {
+        setToastMessage('Something went wrong');
+    };
 
     const { data, setData, post, processing, errors } = useForm({
         email: '',
@@ -32,13 +38,32 @@ export default function Login() {
             return;
         }
 
-        post('/login');
+        if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+            showErrorToast();
+            return;
+        }
+
+        post('/login', {
+            preserveScroll: true,
+            onError: (responseErrors) => {
+                if (!responseErrors || Object.keys(responseErrors).length === 0) {
+                    showErrorToast();
+                }
+            },
+            onInvalid: () => {
+                showErrorToast();
+            },
+            onException: () => {
+                showErrorToast();
+            },
+        });
     };
 
     const isFieldInvalid = (field) => Boolean(emptyRequiredFields[field] || errors[field]);
 
     return (
         <div style={styles.page}>
+            <Toast message={toastMessage} duration={1000} onClose={() => setToastMessage(null)} />
             <style>{`
                 @keyframes spinnerRotate {
                     100% { transform: rotate(360deg); }
@@ -93,20 +118,20 @@ export default function Login() {
                 }
                 .hover-btn:hover {
                     transform: translateY(-1px);
-                    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45), 0 0 18px rgba(233, 197, 228, 0.34);
+                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 6px 14px rgba(47, 107, 255, 0.35);
                 }
                 .hover-btn:active {
                     transform: translateY(1px);
                 }
                 .auth-form-section input::placeholder {
-                    color: #ABA8B4;
+                    color: #7B8AB8;
                 }
                 .auth-form-section input:-webkit-autofill,
                 .auth-form-section input:-webkit-autofill:hover,
                 .auth-form-section input:-webkit-autofill:focus {
-                    -webkit-box-shadow: 0 0 0 1000px #292831 inset !important;
-                    -webkit-text-fill-color: #FFF8F0 !important;
-                    caret-color: #FFF8F0;
+                    -webkit-box-shadow: 0 0 0 1000px #1B2030 inset !important;
+                    -webkit-text-fill-color: #FFFFFF !important;
+                    caret-color: #FFFFFF;
                 }
                 @media (max-width: 768px) {
                     .auth-card-container {
@@ -140,7 +165,7 @@ export default function Login() {
                                     className={emptyRequiredFields.email ? 'shake-invalid' : ''}
                                     style={{
                                         ...styles.inputWrapper,
-                                        borderColor: isFieldInvalid('email') ? '#FF8F9A' : '#50545D'
+                                        borderColor: isFieldInvalid('email') ? '#FFA11A' : '#252D45'
                                     }}
                                 >
                                     <input
@@ -168,7 +193,7 @@ export default function Login() {
                                     className={emptyRequiredFields.password ? 'shake-invalid' : ''}
                                     style={{
                                         ...styles.inputWrapper,
-                                        borderColor: isFieldInvalid('password') ? '#FF8F9A' : '#50545D'
+                                        borderColor: isFieldInvalid('password') ? '#FFA11A' : '#252D45'
                                     }}
                                 >
                                     <input
@@ -216,7 +241,7 @@ export default function Login() {
                     <div style={styles.overlay} />
                     <div style={styles.logoBadge}>
                         <div style={styles.logoIcon}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF8F0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="12" cy="12" r="9"></circle>
                                 <path d="M12 3v9l5.5 5.5"></path>
                             </svg>
@@ -233,7 +258,7 @@ export default function Login() {
                             <circle
                                 cx="25" cy="25" r="20"
                                 fill="none"
-                                stroke="#E9C5E4"
+                                stroke="#FFA11A"
                                 strokeWidth="5"
                                 className="btn-spinner-circle"
                             />
@@ -250,7 +275,7 @@ const styles = {
     page: {
         height: '100vh',
         width: '100vw',
-        backgroundColor: '#110D08',
+        backgroundColor: '#090A10',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -263,12 +288,12 @@ const styles = {
         width: '100%',
         maxWidth: '1100px',
         minHeight: '680px',
-        backgroundColor: '#1D1A1B',
+        backgroundColor: '#131722',
         borderRadius: '20px',
         display: 'flex',
         overflow: 'hidden',
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.55), 0 0 28px rgba(233, 197, 228, 0.20)',
-        border: '1px solid #50545D',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.8), 0 4px 8px rgba(0, 0, 0, 0.4)',
+        border: '1px solid #252D45',
     },
     formSection: {
         flex: '1.1',
@@ -276,7 +301,7 @@ const styles = {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        backgroundColor: '#1D1A1B',
+        backgroundColor: '#131722',
         boxSizing: 'border-box',
     },
     contentGroup: {
@@ -287,18 +312,17 @@ const styles = {
     title: {
         fontSize: '32px',
         fontWeight: '700',
-        color: '#FFF8F0',
+        color: '#FFFFFF',
         margin: '0 0 8px 0',
         letterSpacing: '-0.5px',
-        textShadow: '0 0 18px rgba(233, 197, 228, 0.22)',
     },
     subtitle: {
-        color: '#C9C3CC',
+        color: '#8A99C2',
         fontSize: '13px',
         margin: '0 0 32px 0',
     },
     link: {
-        color: '#FFF8F0',
+        color: '#2F6BFF',
         textDecoration: 'none',
         fontWeight: '600',
     },
@@ -314,46 +338,46 @@ const styles = {
     },
     label: {
         fontSize: '11px',
-        color: '#C9C3CC',
+        color: '#8A99C2',
         marginLeft: '4px',
         fontWeight: '500',
     },
     inputWrapper: {
         display: 'flex',
         alignItems: 'center',
-        backgroundColor: '#292831',
+        backgroundColor: '#1B2030',
         borderRadius: '8px',
         padding: '10px 14px',
-        border: '1px solid #50545D',
+        border: '1px solid #252D45',
         transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-        boxShadow: '0 6px 18px rgba(0,0,0,0.25), 0 0 12px rgba(233, 197, 228, 0.16)',
+        boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
     },
     input: {
         width: '100%',
         backgroundColor: 'transparent',
         border: 'none',
         outline: 'none',
-        color: '#FFF8F0',
+        color: '#FFFFFF',
         fontSize: '13px',
     },
     icon: {
         width: '16px',
         height: '16px',
-        color: '#C9C3CC',
+        color: '#8A99C2',
         marginLeft: '10px',
         flexShrink: 0,
     },
     eyeIcon: {
         width: '16px',
         height: '16px',
-        color: '#C9C3CC',
+        color: '#8A99C2',
         marginLeft: '10px',
         flexShrink: 0,
         cursor: 'pointer',
     },
     errorText: {
         fontSize: '11px',
-        color: '#FF8F9A',
+        color: '#FFA11A',
         marginTop: '2px',
         marginLeft: '4px',
     },
@@ -364,14 +388,14 @@ const styles = {
     primaryButton: {
         width: '100%',
         padding: '12px 20px',
-        backgroundColor: '#E9C5E4',
-        color: '#110D08',
+        backgroundColor: '#2F6BFF',
+        color: '#FFFFFF',
         border: 'none',
         borderRadius: '8px',
         fontWeight: '700',
         fontSize: '13px',
         cursor: 'pointer',
-        boxShadow: '0 10px 24px rgba(0,0,0,0.34), 0 0 16px rgba(233, 197, 228, 0.26)',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.4), 0 4px 10px rgba(47, 107, 255, 0.3)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -394,33 +418,34 @@ const styles = {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(17, 13, 8, 0.62)',
+        backgroundColor: 'rgba(9, 10, 16, 0.7)',
     },
     logoBadge: {
         position: 'relative',
         zIndex: 2,
-        backgroundColor: 'rgba(29, 26, 27, 0.94)',
+        backgroundColor: '#131722',
         backdropFilter: 'blur(8px)',
-        border: '1px solid rgba(255, 248, 240, 0.1)',
+        border: '1px solid #252D45',
         padding: '8px 16px',
         borderRadius: '10px',
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.3), 0 0 16px rgba(233, 197, 228, 0.20)',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -2px 0 rgba(0, 0, 0, 0.5), 0 8px 20px rgba(0,0,0,0.5)',
     },
     logoIcon: {
         width: '28px',
         height: '28px',
-        backgroundColor: 'rgba(233, 197, 228, 0.18)',
-        border: '1px solid rgba(233, 197, 228, 0.55)',
+        backgroundColor: 'rgba(47, 107, 255, 0.2)',
+        border: '1px solid rgba(47, 107, 255, 0.5)',
         borderRadius: '6px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.25), inset 0 -1px 0 rgba(0, 0, 0, 0.4), 0 2px 5px rgba(0, 0, 0, 0.3)',
     },
     logoText: {
-        color: '#FFF8F0',
+        color: '#FFFFFF',
         fontSize: '14px',
         fontWeight: '600',
         letterSpacing: '-0.2px',
@@ -431,7 +456,7 @@ const styles = {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.70)',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -439,8 +464,8 @@ const styles = {
         padding: '16px',
     },
     modalBox: {
-        backgroundColor: '#1D1A1B',
-        border: '1px solid #50545D',
+        backgroundColor: '#131722',
+        border: '1px solid #252D45',
         borderRadius: '14px',
         padding: '24px 32px',
         display: 'flex',
@@ -448,11 +473,11 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         gap: '12px',
-        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.35), 0 0 20px rgba(233, 197, 228, 0.18)',
+        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -2px 0 rgba(0, 0, 0, 0.6), 0 25px 50px rgba(0, 0, 0, 0.8), 0 4px 10px rgba(0, 0, 0, 0.5)',
         boxSizing: 'border-box',
     },
     modalText: {
-        color: '#FFF8F0',
+        color: '#FFFFFF',
         fontSize: '14px',
         fontWeight: '600',
         letterSpacing: '-0.2px',
