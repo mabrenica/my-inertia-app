@@ -24,7 +24,7 @@ export default function Toast({ message, duration = 3000, onClose }) {
         <div style={{
             ...styles.toastContainer,
             opacity: visible ? 1 : 0,
-            transform: visible ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.96)',
+            transform: visible ? 'translateY(0) scale(1)' : 'translateY(-12px) scale(0.96)',
         }}>
             <style>{`
                 .toast-box {
@@ -46,7 +46,7 @@ export default function Toast({ message, duration = 3000, onClose }) {
 const styles = {
     toastContainer: {
         position: 'fixed',
-        bottom: '24px',
+        top: '24px',
         right: '24px',
         zIndex: 9999,
         pointerEvents: 'none',
